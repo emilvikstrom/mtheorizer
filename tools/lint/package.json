@@ -1,0 +1,17 @@
+{
+  "name": "mtheorizer-lint",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Lint and format toolchain. Kept apart from the app because typescript-eslint needs TypeScript's JS API (TS 6), while the app typechecks with TS 7.",
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.15.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.14.0",
+    "prettier": "3.10.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2"
+  }
+}

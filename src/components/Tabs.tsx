@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useRef } from 'react';
+import { type KeyboardEvent, useRef } from "react";
 
 export interface TabItem<Id extends string> {
   readonly id: Id;
@@ -23,11 +23,15 @@ export function Tabs<Id extends string>({ label, tabs, value, onChange }: TabsPr
     const index = tabs.findIndex((t) => t.id === value);
     const last = tabs.length - 1;
     const next =
-      event.key === 'ArrowRight' ? (index + 1) % tabs.length
-      : event.key === 'ArrowLeft' ? (index + last) % tabs.length
-      : event.key === 'Home' ? 0
-      : event.key === 'End' ? last
-      : undefined;
+      event.key === "ArrowRight"
+        ? (index + 1) % tabs.length
+        : event.key === "ArrowLeft"
+          ? (index + last) % tabs.length
+          : event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? last
+              : undefined;
     const tab = next === undefined ? undefined : tabs[next];
     if (!tab) return;
     event.preventDefault();

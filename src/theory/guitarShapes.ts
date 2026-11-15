@@ -3,9 +3,9 @@
  * reads a chord diagram or a scale position.
  */
 
-import { type NeckPlace, type OpenString, STANDARD_TUNING, positionsOnNeck } from './fretboard';
-import { pitchClass } from './notes';
-import type { HighlightTone } from './voicing';
+import { type NeckPlace, type OpenString, STANDARD_TUNING, positionsOnNeck } from "./fretboard";
+import { pitchClass } from "./notes";
+import type { HighlightTone } from "./voicing";
 
 /** How many frets a view shows. A hand covers about four frets. */
 export const VIEW_FRETS = 4;
@@ -50,7 +50,8 @@ function fingersNeeded(frets: readonly number[]): number {
   // so every string under it must be fretted at or above that fret.
   const barreFrom = frets.lastIndexOf(lowest);
   const underBarre = frets.slice(0, barreFrom + 1);
-  const canBarre = underBarre.every((f) => f >= lowest) && fretted.filter((f) => f === lowest).length > 1;
+  const canBarre =
+    underBarre.every((f) => f >= lowest) && fretted.filter((f) => f === lowest).length > 1;
   return canBarre ? 1 + fretted.filter((f) => f > lowest).length : fretted.length;
 }
 
@@ -89,15 +90,16 @@ function bestShapeInWindow(
   onNeck: readonly NeckTone[],
   stringCount: number,
   first: number,
-): Omit<ChordShape, 'firstFret' | 'frets'> | undefined {
+): Omit<ChordShape, "firstFret" | "frets"> | undefined {
   const last = first + VIEW_FRETS - 1;
-  const reachable = (p: NeckTone) => (p.fret >= first && p.fret <= last) || (first === 1 && p.fret === 0);
+  const reachable = (p: NeckTone) =>
+    (p.fret >= first && p.fret <= last) || (first === 1 && p.fret === 0);
   const candidates = Array.from({ length: stringCount }, (_, i) =>
     onNeck.filter((p) => p.string === i + 1 && reachable(p)),
   );
   const required = tones.filter((t) => !t.optional).map((t) => pitchClass(t.note));
 
-  let best: (Omit<ChordShape, 'firstFret' | 'frets'> & { cost: number[] }) | undefined;
+  let best: (Omit<ChordShape, "firstFret" | "frets"> & { cost: number[] }) | undefined;
   // Strings 1..sounding are played; the bass strings below them are muted.
   for (let sounding = stringCount; sounding >= MIN_STRINGS; sounding--) {
     const bassChoices = (candidates[sounding - 1] ?? []).filter((p) => p.isRoot);
@@ -120,6 +122,7 @@ function bestShapeInWindow(
     }
   }
   if (!best) return undefined;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- drop the search-only cost
   const { cost: _cost, ...shape } = best;
   return shape;
 }
@@ -127,7 +130,9 @@ function bestShapeInWindow(
 /** "x 3 2 0 1 0": the fret on each string from the lowest string up, x for muted. */
 export function formatShape(view: NeckView, stringCount = STANDARD_TUNING.length): string {
   const fretOn = new Map(view.positions.map((p) => [p.string, p.fret]));
-  return Array.from({ length: stringCount }, (_, i) => fretOn.get(stringCount - i) ?? 'x').join(' ');
+  return Array.from({ length: stringCount }, (_, i) => fretOn.get(stringCount - i) ?? "x").join(
+    " ",
+  );
 }
 
 /**
@@ -181,7 +186,9 @@ export function scalePositions(
     firstFret,
     frets: VIEW_FRETS,
     positions: onNeck.filter(
-      (p) => (p.fret >= firstFret && p.fret < firstFret + VIEW_FRETS) || (firstFret === 1 && p.fret === 0),
+      (p) =>
+        (p.fret >= firstFret && p.fret < firstFret + VIEW_FRETS) ||
+        (firstFret === 1 && p.fret === 0),
     ),
     muted: [],
   }));

@@ -64,6 +64,6 @@ Resultat:
 - Delbara länkar som sparar valet i URL:en (`#/Db/major`).
 - Svenskt gränssnitt och valbar H/B-notation (svensk tradition: H = B, B = B♭).
 - Låta användaren välja enharmonisk stavning själv (C♯-dur i stället för D♭-dur).
-- CI: GitHub Actions som kör Docker-bygget (typkontroll och tester).
-- Lint och formattering (ESLint och Prettier).
+- ✅ CI: GitHub Actions som kör Docker-bygget (X-02).
+- ✅ Lint och formattering med ESLint och Prettier, i Docker-bygget (X-03).
 - ✅ Visning på gitarrhals som alternativ till pianot (X-07), fyra band i taget med spelbara ackordgrepp och skallägen (G-01). Fler stämningar och fingersättning ligger i backloggen (G-02–G-04).

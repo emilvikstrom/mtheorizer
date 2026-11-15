@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
-import { ChordInfo } from './ChordInfo';
-import { ChordQualityPicker } from './ChordQualityPicker';
-import { Fretboard } from './Fretboard';
-import { OptionPicker, type PickerOption } from './OptionPicker';
-import { Piano } from './Piano';
-import { RootPicker } from './RootPicker';
-import { ScaleInfo } from './ScaleInfo';
+import { useMemo, useState } from "react";
+import { ChordInfo } from "./ChordInfo";
+import { ChordQualityPicker } from "./ChordQualityPicker";
+import { Fretboard } from "./Fretboard";
+import { OptionPicker, type PickerOption } from "./OptionPicker";
+import { Piano } from "./Piano";
+import { RootPicker } from "./RootPicker";
+import { ScaleInfo } from "./ScaleInfo";
 import {
   CHORD_QUALITIES,
   type ChordQualityId,
@@ -23,39 +23,39 @@ import {
   scaleOnKeyboard,
   scaleOnPitchClass,
   scalePositions,
-} from '../theory';
+} from "../theory";
 
-type View = 'chord' | 'scale';
-type Instrument = 'piano' | 'guitar';
+type View = "chord" | "scale";
+type Instrument = "piano" | "guitar";
 
 const VIEW_OPTIONS: readonly PickerOption<View>[] = [
-  { value: 'chord', label: 'Chord' },
-  { value: 'scale', label: 'Scale' },
+  { value: "chord", label: "Chord" },
+  { value: "scale", label: "Scale" },
 ];
 
 const SCALE_OPTIONS: readonly PickerOption<ScaleId>[] = [
-  { value: 'major', label: 'Major' },
-  { value: 'naturalMinor', label: 'Natural minor' },
+  { value: "major", label: "Major" },
+  { value: "naturalMinor", label: "Natural minor" },
 ];
 
 const INSTRUMENT_OPTIONS: readonly PickerOption<Instrument>[] = [
-  { value: 'piano', label: 'Piano' },
-  { value: 'guitar', label: 'Guitar' },
+  { value: "piano", label: "Piano" },
+  { value: "guitar", label: "Guitar" },
 ];
 
 /** A scale choice that matches no chord picks the plain triad of that scale. */
-const TRIAD_FOR_SCALE: Record<ScaleId, ChordQualityId> = { major: 'major', naturalMinor: 'minor' };
+const TRIAD_FOR_SCALE: Record<ScaleId, ChordQualityId> = { major: "major", naturalMinor: "minor" };
 
-const CHORD_LEGEND = { root: 'Root', tone: 'Chord tone' };
-const SCALE_LEGEND = { root: 'Tonic', tone: 'Scale tone' };
+const CHORD_LEGEND = { root: "Root", tone: "Chord tone" };
+const SCALE_LEGEND = { root: "Tonic", tone: "Scale tone" };
 
 /** Look up a chord or a scale and see it on the piano or the guitar neck. */
 export function Lookup() {
-  const [view, setView] = useState<View>('chord');
+  const [view, setView] = useState<View>("chord");
   const [rootPitchClass, setRootPitchClass] = useState(0);
-  const [quality, setQuality] = useState<ChordQualityId>('major');
-  const [scaleId, setScaleId] = useState<ScaleId>('major');
-  const [instrument, setInstrument] = useState<Instrument>('piano');
+  const [quality, setQuality] = useState<ChordQualityId>("major");
+  const [scaleId, setScaleId] = useState<ScaleId>("major");
+  const [instrument, setInstrument] = useState<Instrument>("piano");
   const [inversion, setInversion] = useState(0);
 
   // Chord and scale follow each other, so "A minor seventh" turns into the A
@@ -81,18 +81,38 @@ export function Lookup() {
 
   return (
     <>
-      <section className="controls" aria-label={view === 'chord' ? 'Choose a chord' : 'Choose a scale'}>
-        <OptionPicker legend="Look up" name="view" options={VIEW_OPTIONS} value={view} onChange={setView} />
+      <section
+        className="controls"
+        aria-label={view === "chord" ? "Choose a chord" : "Choose a scale"}
+      >
+        <OptionPicker
+          legend="Look up"
+          name="view"
+          options={VIEW_OPTIONS}
+          value={view}
+          onChange={setView}
+        />
         <RootPicker
-          legend={view === 'chord' ? 'Root' : 'Tonic'}
+          legend={view === "chord" ? "Root" : "Tonic"}
           value={rootPitchClass}
           onChange={setRootPitchClass}
         />
-        {view === 'chord' ? (
+        {view === "chord" ? (
           <>
-            <ChordQualityPicker rootPitchClass={rootPitchClass} value={quality} onChange={chooseQuality} />
+            <ChordQualityPicker
+              rootPitchClass={rootPitchClass}
+              value={quality}
+              onChange={chooseQuality}
+            />
             {instrumentPicker}
-            {instrument === 'piano' && <InversionPicker quality={quality} rootPitchClass={rootPitchClass} value={inversion} onChange={setInversion} />}
+            {instrument === "piano" && (
+              <InversionPicker
+                quality={quality}
+                rootPitchClass={rootPitchClass}
+                value={inversion}
+                onChange={setInversion}
+              />
+            )}
           </>
         ) : (
           <div className="controls__row">
@@ -108,8 +128,13 @@ export function Lookup() {
         )}
       </section>
 
-      {view === 'chord' ? (
-        <ChordView pc={rootPitchClass} quality={quality} instrument={instrument} inversion={inversion} />
+      {view === "chord" ? (
+        <ChordView
+          pc={rootPitchClass}
+          quality={quality}
+          instrument={instrument}
+          inversion={inversion}
+        />
       ) : (
         <ScaleView pc={rootPitchClass} scaleId={scaleId} instrument={instrument} />
       )}
@@ -126,11 +151,11 @@ interface InstrumentViewProps {
   /** The tones voiced on the keyboard. */
   keys: readonly KeyboardTone[];
   /** Chord shapes or scale positions on the guitar neck. */
-  neck: { kind: 'shape' | 'position'; views: readonly NeckView[] };
+  neck: { kind: "shape" | "position"; views: readonly NeckView[] };
 }
 
 function InstrumentView({ instrument, name, legend, tones, keys, neck }: InstrumentViewProps) {
-  return instrument === 'piano' ? (
+  return instrument === "piano" ? (
     <Piano tones={keys} name={name} legend={legend} />
   ) : (
     <Fretboard views={neck.views} kind={neck.kind} tones={tones} name={name} legend={legend} />
@@ -149,7 +174,10 @@ function InversionPicker({
   onChange: (inversion: number) => void;
 }) {
   const count = inversionCount(chordOnPitchClass(rootPitchClass, quality));
-  const options = Array.from({ length: count + 1 }, (_, i) => ({ value: String(i), label: inversionName(i) }));
+  const options = Array.from({ length: count + 1 }, (_, i) => ({
+    value: String(i),
+    label: inversionName(i),
+  }));
   return (
     <OptionPicker
       legend="Inversion"
@@ -184,13 +212,21 @@ function ChordView({
         legend={CHORD_LEGEND}
         tones={tones}
         keys={chordOnKeyboard(chord, 4, inversion)}
-        neck={{ kind: 'shape', views: shapes }}
+        neck={{ kind: "shape", views: shapes }}
       />
     </>
   );
 }
 
-function ScaleView({ pc, scaleId, instrument }: { pc: number; scaleId: ScaleId; instrument: Instrument }) {
+function ScaleView({
+  pc,
+  scaleId,
+  instrument,
+}: {
+  pc: number;
+  scaleId: ScaleId;
+  instrument: Instrument;
+}) {
   const scale = scaleOnPitchClass(pc, scaleId);
   const tones = scaleHighlights(scale);
   return (
@@ -202,7 +238,7 @@ function ScaleView({ pc, scaleId, instrument }: { pc: number; scaleId: ScaleId; 
         legend={SCALE_LEGEND}
         tones={tones}
         keys={scaleOnKeyboard(scale)}
-        neck={{ kind: 'position', views: scalePositions(tones) }}
+        neck={{ kind: "position", views: scalePositions(tones) }}
       />
     </>
   );

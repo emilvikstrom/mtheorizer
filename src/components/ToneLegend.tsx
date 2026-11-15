@@ -8,7 +8,7 @@ interface ToneLegendProps {
 }
 
 /** Colour key shared by the piano and the guitar neck. */
-export function ToneLegend({ root = 'Root', tone = 'Chord tone', bass = false }: ToneLegendProps) {
+export function ToneLegend({ root = "Root", tone = "Chord tone", bass = false }: ToneLegendProps) {
   return (
     <figcaption className="tone-legend">
       <span className="legend legend--root">{root}</span>

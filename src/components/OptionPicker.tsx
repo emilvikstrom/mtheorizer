@@ -14,7 +14,13 @@ interface OptionPickerProps<T extends string> {
 }
 
 /** A small set of mutually exclusive choices, shown as a segmented control. */
-export function OptionPicker<T extends string>({ legend, name, options, value, onChange }: OptionPickerProps<T>) {
+export function OptionPicker<T extends string>({
+  legend,
+  name,
+  options,
+  value,
+  onChange,
+}: OptionPickerProps<T>) {
   return (
     <fieldset className="picker">
       <legend className="picker__legend">{legend}</legend>

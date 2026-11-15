@@ -1,6 +1,6 @@
-import type { Chord, ChordTone } from './chords';
-import { type Note, note, pitchClass } from './notes';
-import { midiOf } from './voicing';
+import type { Chord, ChordTone } from "./chords";
+import { type Note, note, pitchClass } from "./notes";
+import { midiOf } from "./voicing";
 
 /** An open string: its spelled note and octave (scientific pitch notation). */
 export interface OpenString {
@@ -13,12 +13,12 @@ export interface OpenString {
  * the order guitarists number the strings and tablature draws them.
  */
 export const STANDARD_TUNING: readonly OpenString[] = [
-  { note: note('E'), octave: 4 },
-  { note: note('B'), octave: 3 },
-  { note: note('G'), octave: 3 },
-  { note: note('D'), octave: 3 },
-  { note: note('A'), octave: 2 },
-  { note: note('E'), octave: 2 },
+  { note: note("E"), octave: 4 },
+  { note: note("B"), octave: 3 },
+  { note: note("G"), octave: 3 },
+  { note: note("D"), octave: 3 },
+  { note: note("A"), octave: 2 },
+  { note: note("E"), octave: 2 },
 ];
 
 /** Where on the neck a tone is played. */
