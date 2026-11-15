@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { type KeyboardTone, formatNote, midiOf } from "../theory";
 import { ToneLegend } from "./ToneLegend";
 
@@ -11,7 +12,21 @@ const BLACK_WIDTH = 24;
 const BLACK_HEIGHT = 100;
 const BLACK_PITCH_CLASSES = new Set([1, 3, 6, 8, 10]);
 
-interface KeyShape {
+/** Below this width the keyboard shows only the part around the tones, so the labels stay readable. */
+const NARROW_QUERY = "(max-width: 600px)";
+/** Even a single note gets about an octave of keyboard around it. */
+const MIN_VISIBLE_WHITE_KEYS = 8;
+const MARGIN_WHITE_KEYS = 1;
+
+function subscribeNarrow(listener: () => void) {
+  const query = window.matchMedia?.(NARROW_QUERY);
+  query?.addEventListener("change", listener);
+  return () => query?.removeEventListener("change", listener);
+}
+
+const isNarrow = () => window.matchMedia?.(NARROW_QUERY).matches ?? false;
+
+export interface KeyShape {
   readonly midi: number;
   readonly black: boolean;
   readonly x: number;
@@ -32,6 +47,27 @@ function keyboard(fromOctave: number, toOctave: number): KeyShape[] {
     }
   }
   return keys;
+}
+
+/**
+ * The stretch of the keyboard to show on a narrow screen: all of `tones` with a
+ * white key to spare on each side, at least `MIN_VISIBLE_WHITE_KEYS` wide, and
+ * never past either end of the keyboard.
+ */
+export function visibleSpan(
+  keys: readonly KeyShape[],
+  tones: readonly KeyboardTone[],
+): { x: number; width: number } {
+  const total = keys.filter((k) => !k.black).length * WHITE_WIDTH;
+  const shapes = keys.filter((k) => tones.some((t) => t.midi === k.midi));
+  if (shapes.length === 0) return { x: 0, width: total };
+  const left = Math.min(...shapes.map((k) => k.x)) - MARGIN_WHITE_KEYS * WHITE_WIDTH;
+  const right =
+    Math.max(...shapes.map((k) => k.x + (k.black ? BLACK_WIDTH : WHITE_WIDTH))) +
+    MARGIN_WHITE_KEYS * WHITE_WIDTH;
+  const width = Math.min(total, Math.max(right - left, MIN_VISIBLE_WHITE_KEYS * WHITE_WIDTH));
+  const centred = (left + right) / 2 - width / 2;
+  return { x: Math.min(Math.max(centred, 0), total - width), width };
 }
 
 const octaveOf = (midi: number) => Math.floor(midi / 12) - 1;
@@ -90,6 +126,7 @@ interface PianoProps {
 
 /** A keyboard from C4 to at least B5, wide enough for all of `tones`, with `tones` highlighted. */
 export function Piano({ tones, name, legend }: PianoProps) {
+  const narrow = useSyncExternalStore(subscribeNarrow, isNarrow, () => false);
   const midis = tones.map((tone) => tone.midi);
   const keys = keyboard(
     Math.min(MIN_OCTAVE, ...midis.map(octaveOf)),
@@ -97,7 +134,7 @@ export function Piano({ tones, name, legend }: PianoProps) {
   );
   const whiteKeys = keys.filter((k) => !k.black);
   const blackKeys = keys.filter((k) => k.black);
-  const width = whiteKeys.length * WHITE_WIDTH;
+  const span = narrow ? visibleSpan(keys, tones) : { x: 0, width: whiteKeys.length * WHITE_WIDTH };
   const toneAt = new Map(tones.map((tone) => [tone.midi, tone]));
   const description = `Piano keyboard showing ${name}: ${tones.map((tone) => formatNote(tone.note)).join(", ")}`;
 
@@ -107,7 +144,7 @@ export function Piano({ tones, name, legend }: PianoProps) {
         className="piano__svg"
         role="img"
         aria-label={description}
-        viewBox={`-1 -1 ${width + 2} ${WHITE_HEIGHT + 2}`}
+        viewBox={`${span.x - 1} -1 ${span.width + 2} ${WHITE_HEIGHT + 2}`}
       >
         <title>{description}</title>
         {whiteKeys.map((shape) => (

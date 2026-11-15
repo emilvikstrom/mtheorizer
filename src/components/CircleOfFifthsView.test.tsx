@@ -1,7 +1,14 @@
 import { render, screen, within } from "@testing-library/react";
+import { useState } from "react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+import { type Key, key, note } from "../theory";
 import { CircleOfFifthsView } from "./CircleOfFifthsView";
+
+function Harness() {
+  const [selected, setSelected] = useState<Key>(key(note("C"), "major"));
+  return <CircleOfFifthsView value={selected} onChange={setSelected} />;
+}
 
 const heading = () => screen.getByRole("heading", { level: 2 });
 const listText = (name: string) =>
@@ -15,7 +22,7 @@ const triadSymbols = () =>
 
 describe("CircleOfFifthsView", () => {
   it("starts on C major", () => {
-    render(<CircleOfFifthsView />);
+    render(<Harness />);
     expect(heading()).toHaveTextContent("C major");
     expect(screen.getByRole("radio", { name: "C major" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByText("No sharps or flats")).toBeInTheDocument();
@@ -24,14 +31,14 @@ describe("CircleOfFifthsView", () => {
   });
 
   it("has 12 major and 12 minor keys", () => {
-    render(<CircleOfFifthsView />);
+    render(<Harness />);
     const circle = screen.getByRole("radiogroup", { name: /Circle of fifths/ });
     expect(within(circle).getAllByRole("radio")).toHaveLength(24);
   });
 
   it("selects a key by clicking it", async () => {
     const user = userEvent.setup();
-    render(<CircleOfFifthsView />);
+    render(<Harness />);
     await user.click(screen.getByRole("radio", { name: "E♭ major" }));
 
     expect(heading()).toHaveTextContent("E♭ major");
@@ -42,7 +49,7 @@ describe("CircleOfFifthsView", () => {
 
   it("lets you choose between enharmonic spellings", async () => {
     const user = userEvent.setup();
-    render(<CircleOfFifthsView />);
+    render(<Harness />);
     await user.click(screen.getByRole("radio", { name: "F♯ major / G♭ major" }));
     expect(heading()).toHaveTextContent("F♯ major");
 
@@ -61,7 +68,7 @@ describe("CircleOfFifthsView", () => {
 
   it("shows minor keys with the harmonic minor dominant", async () => {
     const user = userEvent.setup();
-    render(<CircleOfFifthsView />);
+    render(<Harness />);
     await user.click(screen.getByRole("radio", { name: "A minor" }));
 
     expect(heading()).toHaveTextContent("A minor");
@@ -71,7 +78,7 @@ describe("CircleOfFifthsView", () => {
 
   it("jumps to related keys", async () => {
     const user = userEvent.setup();
-    render(<CircleOfFifthsView />);
+    render(<Harness />);
     await user.click(screen.getByRole("button", { name: /Relative minor/ }));
     expect(heading()).toHaveTextContent("A minor");
 
@@ -87,7 +94,7 @@ describe("CircleOfFifthsView", () => {
 
   it("moves around the circle with the arrow keys", async () => {
     const user = userEvent.setup();
-    render(<CircleOfFifthsView />);
+    render(<Harness />);
     screen.getByRole("radio", { name: "C major" }).focus();
 
     await user.keyboard("{ArrowRight}");

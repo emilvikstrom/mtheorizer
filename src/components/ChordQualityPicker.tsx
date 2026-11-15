@@ -1,14 +1,17 @@
 import {
   CHORD_GROUPS,
   type ChordQualityId,
+  type Note,
   chordSymbol,
+  noteEquals,
+  pitchClass,
   preferredRootSpelling,
   qualitiesInGroup,
 } from "../theory";
 
 interface ChordQualityPickerProps {
-  /** Pitch class of the chosen root, so each choice can show its chord symbol (C♯m, D♭maj7). */
-  rootPitchClass: number;
+  /** The chosen root, so each choice can show its chord symbol (C♯m, D♭maj7). */
+  root: Note;
   value: ChordQualityId;
   onChange: (quality: ChordQualityId) => void;
 }
@@ -16,7 +19,10 @@ interface ChordQualityPickerProps {
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 /** Every chord quality, grouped by family. Each choice shows the chord symbol on the chosen root. */
-export function ChordQualityPicker({ rootPitchClass, value, onChange }: ChordQualityPickerProps) {
+export function ChordQualityPicker({ root, value, onChange }: ChordQualityPickerProps) {
+  const pc = pitchClass(root);
+  // A root the app spelled by itself is spelled per chord (D♭ but C♯m); one the user picked is used as is.
+  const automatic = noteEquals(root, preferredRootSpelling(pc, value));
   return (
     <fieldset className="picker">
       <legend className="picker__legend">Quality</legend>
@@ -43,7 +49,10 @@ export function ChordQualityPicker({ rootPitchClass, value, onChange }: ChordQua
                     onChange={() => onChange(quality.id)}
                   />
                   <span>
-                    {chordSymbol(preferredRootSpelling(rootPitchClass, quality.id), quality.id)}
+                    {chordSymbol(
+                      automatic ? preferredRootSpelling(pc, quality.id) : root,
+                      quality.id,
+                    )}
                   </span>
                 </label>
               ))}

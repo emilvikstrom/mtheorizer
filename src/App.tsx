@@ -1,7 +1,16 @@
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 import { CircleOfFifthsView } from "./components/CircleOfFifthsView";
 import { Lookup } from "./components/Lookup";
 import { type TabItem, Tabs, panelId, tabId } from "./components/Tabs";
+import {
+  type CircleRoute,
+  type LookupRoute,
+  defaultChordRoute,
+  defaultCircleRoute,
+  navigate,
+  storedInstrument,
+  useRoute,
+} from "./route";
 
 type Tab = "lookup" | "circle-of-fifths";
 
@@ -11,7 +20,23 @@ const TABS: readonly TabItem<Tab>[] = [
 ];
 
 export function App() {
-  const [tab, setTab] = useState<Tab>("lookup");
+  const route = useRoute();
+  const tab: Tab = route.page === "circle" ? "circle-of-fifths" : "lookup";
+
+  // Each tab keeps its own choice while you look at the other one.
+  const lastLookup = useRef<LookupRoute | undefined>(undefined);
+  const lastCircle = useRef<CircleRoute | undefined>(undefined);
+  useEffect(() => {
+    if (route.page === "circle") lastCircle.current = route;
+    else lastLookup.current = route;
+  }, [route]);
+
+  const showTab = (next: Tab) =>
+    navigate(
+      next === "circle-of-fifths"
+        ? (lastCircle.current ?? defaultCircleRoute())
+        : (lastLookup.current ?? defaultChordRoute(storedInstrument())),
+    );
 
   return (
     <main className="app">
@@ -20,10 +45,17 @@ export function App() {
         <p className="app__tagline">Look up chords, scales and keys.</p>
       </header>
 
-      <Tabs label="Views" tabs={TABS} value={tab} onChange={setTab} />
+      <Tabs label="Views" tabs={TABS} value={tab} onChange={showTab} />
 
       <div className="app__panel" role="tabpanel" id={panelId(tab)} aria-labelledby={tabId(tab)}>
-        {tab === "lookup" ? <Lookup /> : <CircleOfFifthsView />}
+        {route.page === "circle" ? (
+          <CircleOfFifthsView
+            value={route.key}
+            onChange={(key) => navigate({ page: "circle", key })}
+          />
+        ) : (
+          <Lookup route={route} onChange={navigate} />
+        )}
       </div>
     </main>
   );
