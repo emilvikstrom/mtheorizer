@@ -9,10 +9,11 @@ Fliken **Circle of fifths** visar kvintcirkeln. Välj en tonart för att se dess
 Det enda som krävs är Docker (till exempel Docker Desktop).
 
 ```bash
-docker compose up --build
+make up      # bygger och startar appen
+make down    # stoppar den
 ```
 
-Öppna sedan http://localhost:8080.
+Öppna sedan http://localhost:8080. Utan `make` går det lika bra med `docker compose up --build -d` och `docker compose down`.
 
 ## Utveckling
 
