@@ -4,6 +4,7 @@ import { ChordQualityPicker } from "./ChordQualityPicker";
 import { Fretboard } from "./Fretboard";
 import { OptionPicker, type PickerOption } from "./OptionPicker";
 import { Piano } from "./Piano";
+import { PlayButtons } from "./PlayButtons";
 import { RootPicker } from "./RootPicker";
 import { type ChordRoute, type Instrument, type LookupRoute, type ScaleRoute } from "../route";
 import { ScaleInfo } from "./ScaleInfo";
@@ -252,15 +253,17 @@ function ChordView({ route }: { route: ChordRoute }) {
   const shapes = useMemo(() => chordShapes(tones), [tones]);
   // The inversion is clamped to what this chord has: a triad has no third inversion.
   const inversion = Math.min(route.inversion, inversionCount(chord));
+  const keys = chordOnKeyboard(chord, 4, inversion);
   return (
     <>
       <ChordInfo chord={chord} />
+      <PlayButtons midis={keys.map((k) => k.midi)} kind="chord" name={chord.name} />
       <InstrumentView
         instrument={instrument}
         name={chord.name}
         legend={CHORD_LEGEND}
         tones={tones}
-        keys={chordOnKeyboard(chord, 4, inversion)}
+        keys={keys}
         neck={{ kind: "shape", views: shapes }}
       />
     </>
@@ -270,15 +273,17 @@ function ChordView({ route }: { route: ChordRoute }) {
 function ScaleView({ route }: { route: ScaleRoute }) {
   const scale = spellScale(route.root, route.scaleId);
   const tones = scaleHighlights(scale);
+  const keys = scaleOnKeyboard(scale);
   return (
     <>
       <ScaleInfo scale={scale} />
+      <PlayButtons midis={keys.map((k) => k.midi)} kind="scale" name={scale.name} />
       <InstrumentView
         instrument={route.instrument}
         name={scale.name}
         legend={SCALE_LEGEND}
         tones={tones}
-        keys={scaleOnKeyboard(scale)}
+        keys={keys}
         neck={{ kind: "position", views: scalePositions(tones) }}
       />
     </>
