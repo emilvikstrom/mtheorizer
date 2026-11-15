@@ -32,6 +32,25 @@ describe('App', () => {
     expect(highlightedKeys(container)).toEqual(['60:root', '64:third', '67:fifth']);
   });
 
+  it('shows inversions on the piano with the bass marked', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    const inversions = within(screen.getByRole('group', { name: 'Inversion' }));
+    expect(inversions.getAllByRole('radio')).toHaveLength(3);
+    expect(container.querySelector('[data-bass="true"]')?.getAttribute('data-midi')).toBe('60');
+
+    await user.click(inversions.getByRole('radio', { name: '1st inversion' }));
+    expect(highlightedKeys(container)).toEqual(['64:third', '67:fifth', '72:root']);
+    expect(container.querySelector('[data-bass="true"]')?.getAttribute('data-midi')).toBe('64');
+
+    await user.click(inversions.getByRole('radio', { name: '2nd inversion' }));
+    expect(container.querySelector('[data-bass="true"]')?.getAttribute('data-midi')).toBe('67');
+
+    // A seventh chord has a third inversion; the inversion picker adapts to the chord.
+    await user.click(screen.getByRole('radio', { name: 'Dominant seventh' }));
+    expect(within(screen.getByRole('group', { name: 'Inversion' })).getAllByRole('radio')).toHaveLength(4);
+  });
+
   it('offers all 12 roots and every chord quality, grouped by family', () => {
     render(<App />);
     expect(within(screen.getByRole('group', { name: 'Root' })).getAllByRole('radio')).toHaveLength(12);

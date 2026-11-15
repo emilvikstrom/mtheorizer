@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CHORD_QUALITIES, CHORD_QUALITY_IDS, chordOnPitchClass, qualitiesInGroup } from './chords';
 import { scaleOnPitchClass } from './scales';
-import { chordOnKeyboard, midiOf, rootPosition, scaleOnKeyboard } from './voicing';
+import { chordOnKeyboard, inversionCount, inversionName, midiOf, rootPosition, scaleOnKeyboard } from './voicing';
 
 describe('voicing', () => {
   it('numbers middle C as 60', () => {
@@ -48,6 +48,52 @@ describe('voicing', () => {
       '69:root:true',
       '72:third:false',
       '76:fifth:false',
+    ]);
+  });
+
+  it('moves the lowest tone up an octave for each inversion', () => {
+    const c = chordOnPitchClass(0, 'major');
+    const voicing = (inv: number) => chordOnKeyboard(c, 4, inv).map((t) => t.midi);
+    expect(voicing(0)).toEqual([60, 64, 67]);
+    expect(voicing(1)).toEqual([72, 64, 67]);
+    expect(voicing(2)).toEqual([72, 76, 67]);
+    const seventh = chordOnPitchClass(7, 'dominant7');
+    expect(chordOnKeyboard(seventh, 4, 3).map((t) => t.midi)).toEqual([79, 83, 86, 77]);
+  });
+
+  it('marks the bass: the chord tone that follows from the inversion', () => {
+    for (let pc = 0; pc < 12; pc++) {
+      for (const quality of CHORD_QUALITY_IDS) {
+        const chord = chordOnPitchClass(pc, quality);
+        for (let inv = 0; inv <= inversionCount(chord); inv++) {
+          const tones = chordOnKeyboard(chord, 4, inv);
+          const bass = tones.filter((t) => t.isBass);
+          expect(bass).toHaveLength(1);
+          const byPitch = rootPosition(chord).sort((a, b) => a.midi - b.midi);
+          expect(bass[0]?.role).toBe(byPitch[inv]?.role);
+          expect(bass[0]?.midi).toBe(Math.min(...tones.map((t) => t.midi)));
+          expect(tones.map((t) => t.note)).toEqual(chord.tones.map((t) => t.note));
+          expect(tones.filter((t) => t.isRoot)).toHaveLength(1);
+        }
+      }
+    }
+  });
+
+  it('offers two inversions of a triad and three of larger chords, and clamps', () => {
+    expect(inversionCount(chordOnPitchClass(0, 'major'))).toBe(2);
+    expect(inversionCount(chordOnPitchClass(0, 'dominant7'))).toBe(3);
+    expect(inversionCount(chordOnPitchClass(0, 'dominant13'))).toBe(3);
+    const c = chordOnPitchClass(0, 'major');
+    expect(chordOnKeyboard(c, 4, 3)).toEqual(chordOnKeyboard(c, 4, 2));
+    expect(chordOnKeyboard(c, 4, -1)).toEqual(chordOnKeyboard(c, 4, 0));
+  });
+
+  it('names the inversions', () => {
+    expect([0, 1, 2, 3].map(inversionName)).toEqual([
+      'Root position',
+      '1st inversion',
+      '2nd inversion',
+      '3rd inversion',
     ]);
   });
 

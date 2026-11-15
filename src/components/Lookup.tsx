@@ -14,6 +14,8 @@ import {
   type NeckView,
   type ScaleId,
   chordHighlights,
+  inversionCount,
+  inversionName,
   chordOnKeyboard,
   chordOnPitchClass,
   chordShapes,
@@ -54,6 +56,7 @@ export function Lookup() {
   const [quality, setQuality] = useState<ChordQualityId>('major');
   const [scaleId, setScaleId] = useState<ScaleId>('major');
   const [instrument, setInstrument] = useState<Instrument>('piano');
+  const [inversion, setInversion] = useState(0);
 
   // Chord and scale follow each other, so "A minor seventh" turns into the A
   // natural minor scale, and back again to the same chord.
@@ -89,6 +92,7 @@ export function Lookup() {
           <>
             <ChordQualityPicker rootPitchClass={rootPitchClass} value={quality} onChange={chooseQuality} />
             {instrumentPicker}
+            {instrument === 'piano' && <InversionPicker quality={quality} rootPitchClass={rootPitchClass} value={inversion} onChange={setInversion} />}
           </>
         ) : (
           <div className="controls__row">
@@ -105,7 +109,7 @@ export function Lookup() {
       </section>
 
       {view === 'chord' ? (
-        <ChordView pc={rootPitchClass} quality={quality} instrument={instrument} />
+        <ChordView pc={rootPitchClass} quality={quality} instrument={instrument} inversion={inversion} />
       ) : (
         <ScaleView pc={rootPitchClass} scaleId={scaleId} instrument={instrument} />
       )}
@@ -133,7 +137,41 @@ function InstrumentView({ instrument, name, legend, tones, keys, neck }: Instrum
   );
 }
 
-function ChordView({ pc, quality, instrument }: { pc: number; quality: ChordQualityId; instrument: Instrument }) {
+function InversionPicker({
+  quality,
+  rootPitchClass,
+  value,
+  onChange,
+}: {
+  quality: ChordQualityId;
+  rootPitchClass: number;
+  value: number;
+  onChange: (inversion: number) => void;
+}) {
+  const count = inversionCount(chordOnPitchClass(rootPitchClass, quality));
+  const options = Array.from({ length: count + 1 }, (_, i) => ({ value: String(i), label: inversionName(i) }));
+  return (
+    <OptionPicker
+      legend="Inversion"
+      name="inversion"
+      options={options}
+      value={String(Math.min(value, count))}
+      onChange={(v) => onChange(Number(v))}
+    />
+  );
+}
+
+function ChordView({
+  pc,
+  quality,
+  instrument,
+  inversion,
+}: {
+  pc: number;
+  quality: ChordQualityId;
+  instrument: Instrument;
+  inversion: number;
+}) {
   const chord = useMemo(() => chordOnPitchClass(pc, quality), [pc, quality]);
   const tones = useMemo(() => chordHighlights(chord), [chord]);
   const shapes = useMemo(() => chordShapes(tones), [tones]);
@@ -145,7 +183,7 @@ function ChordView({ pc, quality, instrument }: { pc: number; quality: ChordQual
         name={chord.name}
         legend={CHORD_LEGEND}
         tones={tones}
-        keys={chordOnKeyboard(chord)}
+        keys={chordOnKeyboard(chord, 4, inversion)}
         neck={{ kind: 'shape', views: shapes }}
       />
     </>
