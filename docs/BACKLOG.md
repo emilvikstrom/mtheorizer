@@ -19,12 +19,6 @@ _Inget just nu._
 
 - [ ] **X-01** Delbar länk till valt ackord
   - Acceptans: Valet syns i URL:en (`#/Db/major`), och sidan öppnas med det valet när länken laddas. Bakåt/framåt i webbläsaren fungerar. Ogiltiga länkar faller tillbaka till C-dur. Vald flik, och vald tonart på kvintcirkeln, ska också gå att länka till.
-- [ ] **M2-01** Förminskade och överstigande treklanger
-  - Acceptans: Kvalitetsväljaren har Diminished och Augmented. Stavningen är korrekt, till exempel B° = B–D–F och C+ = C–E–G♯, och alla 12 grundtoner × 2 nya kvaliteter är tabelltestade.
-- [ ] **M2-02** Sus2 och sus4
-  - Acceptans: Csus2 = C–D–G och Csus4 = C–F–G, med tabelltest för alla grundtoner. Rollnamnen i UI:t blir rätt (Second/Fourth i stället för Third).
-- [ ] **M2-03** Septimackord (maj7, 7, m7, m7♭5, dim7)
-  - Acceptans: Fyra toner visas och markeras, och stavningen följer reglerna (B♭7 = B♭–D–F–A♭). Ackordet får plats på pianot eller så utökas tangentbordet.
 - [ ] **M2-04** Omvändningar
   - Acceptans: Man kan välja grundläge eller 1:a, 2:a (och 3:e) omvändning. Pianot visar rätt läge, och basen markeras.
 
@@ -36,11 +30,14 @@ _Inget just nu._
 - [ ] **X-05** Svenskt gränssnitt och H/B-notation
 - [ ] **X-06** Bättre pianovisning på mobil: etiketterna på svarta tangenter blir små vid 375 px bredd (större text eller bara den del av tangentbordet som behövs)
 - [ ] **M4-01** Spela upp ackordet med Web Audio
-- [ ] **M5-04** Klicka på ett diatoniskt ackord i kvintcirkelfliken för att öppna det i ackordfliken (kräver förminskade ackord från M2-01)
+- [ ] **M5-04** Klicka på ett diatoniskt ackord i kvintcirkelfliken för att öppna det i ackordfliken (förminskade ackord finns nu, M2-01)
 - [ ] **X-08** Kom ihåg valet piano/gitarr (i URL:en tillsammans med X-01, eller i localStorage)
 - [ ] **G-02** Andra stämningar (Drop D, DADGAD) och vänsterhänt hals
 - [ ] **G-03** Fingersättning i greppen (vilket finger på vilken ton, barré markerad)
 - [ ] **G-04** Fler varianter av samma grepp (t.ex. x13331 och x10331 för B♭), i dag visas bara det bästa i varje läge
+- [ ] **G-05** Kvintackord (C5, powerchord) och andra grepp där de ljusa strängarna är dämpade. Greppsökningen kräver i dag att alla strängar från basen upp till sträng 1 spelas
+- [ ] **M2-05** Fler ackord vid behov: 7♭13, 7♯5♯9, m(maj9), 13sus4, add4/add2 som egna namn, och snedackord (C/E)
+- [ ] **M2-06** Ange vilka toner som utelämnas i greppen (t.ex. "utan kvint") i gitarrvyn
 
 ## Klart
 
@@ -54,4 +51,7 @@ _Inget just nu._
 - [x] **G-01** Gitarrhalsen visar fyra band i taget med pilar ←/→. Ackord visas som spelbara grepp i grundläge (CAGED-formerna hittas automatiskt: basen är grundtonen, alla ackordtoner klingar, högst fyra fingrar med barré som ett). Skalor visas som lägen med hela skalan inom fyra band. Vid byte av ackord behålls läget på halsen _(2026-11-15)_
 - [x] **M5-01** Flikar i appen (Chords & scales / Circle of fifths) med tangentbordsnavigering _(2026-11-15)_
 - [x] **M5-02** Teorimodul för tonarter: förtecken, kvintcirkelns positioner med enharmoniska stavningar, relativ-, parallell-, dominant- och subdominanttonart samt diatoniska treklanger med steg och funktion, tabelltestat för alla positioner _(2026-11-15)_
+- [x] **M2-01** Förminskade och överstigande treklanger: B° = B–D–F, C+ = C–E–G♯ _(2026-11-15)_
+- [x] **M2-02** Sus2 och sus4, med tonerna märkta Major second och Perfect fourth _(2026-11-15)_
+- [x] **M2-03** Septimackord och större: 36 ackordtyper i sju grupper (treklanger, sext-, septim-, non-, undecim- och tredecimackord samt tillagda toner). Allt är data i `chords.ts` med tabelltest för alla 12 grundtoner. Grundtonen på en svart tangent stavas så att ackordet får färst förtecken (C♯°, G♭+, B♭7). Toner som får utelämnas (ofta kvinten) markeras, och gitarrgreppen får hoppa över dem. Pianot växer till tre oktaver när ackordet når förbi B5. Väljaren visar ackordsymbolen på vald grundton _(2026-11-15)_
 - [x] **M5-03** Kvintcirkeln i SVG med tonartspanel: välj med klick eller piltangenter, välj stavning, hoppa till närliggande tonarter _(2026-11-15)_

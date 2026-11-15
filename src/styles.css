@@ -177,7 +177,49 @@ body {
   color: var(--on-accent);
 }
 
+/* Chord quality picker: one row of chord symbols per family. */
+
+.quality-groups {
+  display: grid;
+  gap: 8px;
+}
+
+.quality-group {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  align-items: start;
+  gap: 12px;
+}
+
+.quality-group__name {
+  /* Centred on the first row of chips, which are 40px high. */
+  line-height: 40px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.quality-group__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quality-group__options span {
+  min-width: 4rem;
+  min-height: 40px;
+  padding: 4px 10px;
+}
+
 @media (max-width: 640px) {
+  .quality-group {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .quality-group__name {
+    line-height: normal;
+  }
+
   .picker__options--roots {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
@@ -212,7 +254,7 @@ body {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
 }
 
@@ -259,6 +301,17 @@ body {
 
 .tone__semitones {
   font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.tone--optional {
+  border-style: dashed;
+  border-left-style: solid;
+}
+
+.tone__optional {
+  font-size: 0.75rem;
+  font-style: italic;
   color: var(--muted);
 }
 

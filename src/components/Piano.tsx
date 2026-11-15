@@ -1,9 +1,9 @@
 import { type KeyboardTone, formatNote, midiOf } from '../theory';
 import { ToneLegend } from './ToneLegend';
 
-const LOWEST_OCTAVE = 4;
-const OCTAVES = 2;
-const FIRST_MIDI = midiOf(0, LOWEST_OCTAVE); // C4
+/** The keyboard always shows at least C4–B5; it grows by whole octaves for wider chords. */
+const MIN_OCTAVE = 4;
+const MAX_OCTAVE = 5;
 
 const WHITE_WIDTH = 40;
 const WHITE_HEIGHT = 160;
@@ -17,12 +17,13 @@ interface KeyShape {
   readonly x: number;
 }
 
-/** Key positions for C4–B5. Black keys sit centred on the gap between two white keys. */
-const KEYS: readonly KeyShape[] = (() => {
+/** Key positions for whole octaves `fromOctave`–`toOctave`. Black keys sit centred on the gap between two white keys. */
+function keyboard(fromOctave: number, toOctave: number): KeyShape[] {
+  const firstMidi = midiOf(0, fromOctave);
   const keys: KeyShape[] = [];
   let whiteCount = 0;
-  for (let i = 0; i < 12 * OCTAVES; i++) {
-    const midi = FIRST_MIDI + i;
+  for (let i = 0; i < 12 * (toOctave - fromOctave + 1); i++) {
+    const midi = firstMidi + i;
     if (BLACK_PITCH_CLASSES.has(i % 12)) {
       keys.push({ midi, black: true, x: whiteCount * WHITE_WIDTH - BLACK_WIDTH / 2 });
     } else {
@@ -31,17 +32,15 @@ const KEYS: readonly KeyShape[] = (() => {
     }
   }
   return keys;
-})();
+}
 
-const WHITE_KEYS = KEYS.filter((k) => !k.black);
-const BLACK_KEYS = KEYS.filter((k) => k.black);
-const WIDTH = WHITE_KEYS.length * WHITE_WIDTH;
+const octaveOf = (midi: number) => Math.floor(midi / 12) - 1;
 
 function PianoKey({ shape, tone }: { shape: KeyShape; tone: KeyboardTone | undefined }) {
   const width = shape.black ? BLACK_WIDTH : WHITE_WIDTH;
   const height = shape.black ? BLACK_HEIGHT : WHITE_HEIGHT;
   const centre = shape.x + width / 2;
-  const isC = (shape.midi - FIRST_MIDI) % 12 === 0;
+  const isC = shape.midi % 12 === 0;
   const classes = [
     'key',
     shape.black ? 'key--black' : 'key--white',
@@ -65,7 +64,7 @@ function PianoKey({ shape, tone }: { shape: KeyShape; tone: KeyboardTone | undef
       ) : (
         isC && (
           <text className="key__octave" x={centre} y={height - 16} textAnchor="middle">
-            C{Math.floor(shape.midi / 12) - 1}
+            C{octaveOf(shape.midi)}
           </text>
         )
       )}
@@ -74,7 +73,7 @@ function PianoKey({ shape, tone }: { shape: KeyShape; tone: KeyboardTone | undef
 }
 
 interface PianoProps {
-  /** Keys to highlight. Keys outside C4–B5 are not shown. */
+  /** Keys to highlight. */
   tones: readonly KeyboardTone[];
   /** What is shown, e.g. "C major" or "C major scale". */
   name: string;
@@ -82,8 +81,16 @@ interface PianoProps {
   legend: { root: string; tone: string };
 }
 
-/** Two octaves (C4–B5) with `tones` highlighted. */
+/** A keyboard from C4 to at least B5, wide enough for all of `tones`, with `tones` highlighted. */
 export function Piano({ tones, name, legend }: PianoProps) {
+  const midis = tones.map((tone) => tone.midi);
+  const keys = keyboard(
+    Math.min(MIN_OCTAVE, ...midis.map(octaveOf)),
+    Math.max(MAX_OCTAVE, ...midis.map(octaveOf)),
+  );
+  const whiteKeys = keys.filter((k) => !k.black);
+  const blackKeys = keys.filter((k) => k.black);
+  const width = whiteKeys.length * WHITE_WIDTH;
   const toneAt = new Map(tones.map((tone) => [tone.midi, tone]));
   const description = `Piano keyboard showing ${name}: ${tones.map((tone) => formatNote(tone.note)).join(', ')}`;
 
@@ -93,13 +100,13 @@ export function Piano({ tones, name, legend }: PianoProps) {
         className="piano__svg"
         role="img"
         aria-label={description}
-        viewBox={`-1 -1 ${WIDTH + 2} ${WHITE_HEIGHT + 2}`}
+        viewBox={`-1 -1 ${width + 2} ${WHITE_HEIGHT + 2}`}
       >
         <title>{description}</title>
-        {WHITE_KEYS.map((shape) => (
+        {whiteKeys.map((shape) => (
           <PianoKey key={shape.midi} shape={shape} tone={toneAt.get(shape.midi)} />
         ))}
-        {BLACK_KEYS.map((shape) => (
+        {blackKeys.map((shape) => (
           <PianoKey key={shape.midi} shape={shape} tone={toneAt.get(shape.midi)} />
         ))}
       </svg>

@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ChordInfo } from './ChordInfo';
+import { ChordQualityPicker } from './ChordQualityPicker';
 import { Fretboard } from './Fretboard';
 import { OptionPicker, type PickerOption } from './OptionPicker';
 import { Piano } from './Piano';
 import { RootPicker } from './RootPicker';
 import { ScaleInfo } from './ScaleInfo';
 import {
+  CHORD_QUALITIES,
   type ChordQualityId,
   type HighlightTone,
   type KeyboardTone,
@@ -29,11 +31,6 @@ const VIEW_OPTIONS: readonly PickerOption<View>[] = [
   { value: 'scale', label: 'Scale' },
 ];
 
-const QUALITY_OPTIONS: readonly PickerOption<ChordQualityId>[] = [
-  { value: 'major', label: 'Major' },
-  { value: 'minor', label: 'Minor' },
-];
-
 const SCALE_OPTIONS: readonly PickerOption<ScaleId>[] = [
   { value: 'major', label: 'Major' },
   { value: 'naturalMinor', label: 'Natural minor' },
@@ -44,12 +41,8 @@ const INSTRUMENT_OPTIONS: readonly PickerOption<Instrument>[] = [
   { value: 'guitar', label: 'Guitar' },
 ];
 
-/**
- * The chord quality and the scale share one major/minor choice, so switching
- * between "A minor" and "the A natural minor scale" keeps the selection.
- */
-const SCALE_FOR_QUALITY: Record<ChordQualityId, ScaleId> = { major: 'major', minor: 'naturalMinor' };
-const QUALITY_FOR_SCALE: Record<ScaleId, ChordQualityId> = { major: 'major', naturalMinor: 'minor' };
+/** A scale choice that matches no chord picks the plain triad of that scale. */
+const TRIAD_FOR_SCALE: Record<ScaleId, ChordQualityId> = { major: 'major', naturalMinor: 'minor' };
 
 const CHORD_LEGEND = { root: 'Root', tone: 'Chord tone' };
 const SCALE_LEGEND = { root: 'Tonic', tone: 'Scale tone' };
@@ -59,7 +52,29 @@ export function Lookup() {
   const [view, setView] = useState<View>('chord');
   const [rootPitchClass, setRootPitchClass] = useState(0);
   const [quality, setQuality] = useState<ChordQualityId>('major');
+  const [scaleId, setScaleId] = useState<ScaleId>('major');
   const [instrument, setInstrument] = useState<Instrument>('piano');
+
+  // Chord and scale follow each other, so "A minor seventh" turns into the A
+  // natural minor scale, and back again to the same chord.
+  const chooseQuality = (id: ChordQualityId) => {
+    setQuality(id);
+    setScaleId(CHORD_QUALITIES[id].keyScale.id);
+  };
+  const chooseScale = (id: ScaleId) => {
+    setScaleId(id);
+    if (CHORD_QUALITIES[quality].keyScale.id !== id) setQuality(TRIAD_FOR_SCALE[id]);
+  };
+
+  const instrumentPicker = (
+    <OptionPicker
+      legend="Show on"
+      name="instrument"
+      options={INSTRUMENT_OPTIONS}
+      value={instrument}
+      onChange={setInstrument}
+    />
+  );
 
   return (
     <>
@@ -70,38 +85,29 @@ export function Lookup() {
           value={rootPitchClass}
           onChange={setRootPitchClass}
         />
-        <div className="controls__row">
-          {view === 'chord' ? (
-            <OptionPicker
-              legend="Quality"
-              name="quality"
-              options={QUALITY_OPTIONS}
-              value={quality}
-              onChange={setQuality}
-            />
-          ) : (
+        {view === 'chord' ? (
+          <>
+            <ChordQualityPicker rootPitchClass={rootPitchClass} value={quality} onChange={chooseQuality} />
+            {instrumentPicker}
+          </>
+        ) : (
+          <div className="controls__row">
             <OptionPicker
               legend="Scale"
               name="scale"
               options={SCALE_OPTIONS}
-              value={SCALE_FOR_QUALITY[quality]}
-              onChange={(scaleId) => setQuality(QUALITY_FOR_SCALE[scaleId])}
+              value={scaleId}
+              onChange={chooseScale}
             />
-          )}
-          <OptionPicker
-            legend="Show on"
-            name="instrument"
-            options={INSTRUMENT_OPTIONS}
-            value={instrument}
-            onChange={setInstrument}
-          />
-        </div>
+            {instrumentPicker}
+          </div>
+        )}
       </section>
 
       {view === 'chord' ? (
         <ChordView pc={rootPitchClass} quality={quality} instrument={instrument} />
       ) : (
-        <ScaleView pc={rootPitchClass} scaleId={SCALE_FOR_QUALITY[quality]} instrument={instrument} />
+        <ScaleView pc={rootPitchClass} scaleId={scaleId} instrument={instrument} />
       )}
     </>
   );
@@ -128,8 +134,9 @@ function InstrumentView({ instrument, name, legend, tones, keys, neck }: Instrum
 }
 
 function ChordView({ pc, quality, instrument }: { pc: number; quality: ChordQualityId; instrument: Instrument }) {
-  const chord = chordOnPitchClass(pc, quality);
-  const tones = chordHighlights(chord);
+  const chord = useMemo(() => chordOnPitchClass(pc, quality), [pc, quality]);
+  const tones = useMemo(() => chordHighlights(chord), [chord]);
+  const shapes = useMemo(() => chordShapes(tones), [tones]);
   return (
     <>
       <ChordInfo chord={chord} />
@@ -139,7 +146,7 @@ function ChordView({ pc, quality, instrument }: { pc: number; quality: ChordQual
         legend={CHORD_LEGEND}
         tones={tones}
         keys={chordOnKeyboard(chord)}
-        neck={{ kind: 'shape', views: chordShapes(tones) }}
+        neck={{ kind: 'shape', views: shapes }}
       />
     </>
   );
