@@ -61,9 +61,8 @@ Resultat:
 
 ## X – Tvärgående förbättringar ⏳
 
-- Delbara länkar som sparar valet i URL:en (`#/Db/major`).
-- Svenskt gränssnitt och valbar H/B-notation (svensk tradition: H = B, B = B♭).
-- Låta användaren välja enharmonisk stavning själv (C♯-dur i stället för D♭-dur).
+- ✅ Delbara länkar som sparar valet i URL:en (`#/Db/major`), med instrumentet kom ihåg (X-01, X-08).
+- ✅ Valbar enharmonisk stavning (C♯-dur i stället för D♭-dur) (X-04) och pianot beskuret på mobil (X-06).
 - CI: GitHub Actions som kör Docker-bygget (typkontroll och tester).
 - Lint och formattering (ESLint och Prettier).
 - ✅ Visning på gitarrhals som alternativ till pianot (X-07), fyra band i taget med spelbara ackordgrepp och skallägen (G-01). Fler stämningar och fingersättning ligger i backloggen (G-02–G-04).

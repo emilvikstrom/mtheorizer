@@ -1,12 +1,9 @@
-import { useState } from 'react';
-import { type Key, key, note } from '../theory';
+import type { Key } from '../theory';
 import { CircleOfFifths } from './CircleOfFifths';
 import { KeyDetails } from './KeyDetails';
 
 /** Pick a key on the circle and see its signature, scale and chords. */
-export function CircleOfFifthsView() {
-  const [selected, setSelected] = useState<Key>(key(note('C'), 'major'));
-
+export function CircleOfFifthsView({ value: selected, onChange: setSelected }: { value: Key; onChange: (key: Key) => void }) {
   return (
     <div className="circle-view">
       <figure className="circle-view__figure">

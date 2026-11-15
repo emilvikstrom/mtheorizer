@@ -17,19 +17,14 @@ _Inget just nu._
 
 ## Nästa
 
-- [ ] **X-01** Delbar länk till valt ackord
-  - Acceptans: Valet syns i URL:en (`#/Db/major`), och sidan öppnas med det valet när länken laddas. Bakåt/framåt i webbläsaren fungerar. Ogiltiga länkar faller tillbaka till C-dur. Vald flik, och vald tonart på kvintcirkeln, ska också gå att länka till.
+_Inget just nu._
 
 ## Senare
 
 - [ ] **X-02** CI med GitHub Actions som kör `docker build`
 - [ ] **X-03** ESLint och Prettier, körs i Docker-bygget
-- [ ] **X-04** Välj enharmonisk stavning själv (C♯ eller D♭)
-- [ ] **X-05** Svenskt gränssnitt och H/B-notation
-- [ ] **X-06** Bättre pianovisning på mobil: etiketterna på svarta tangenter blir små vid 375 px bredd (större text eller bara den del av tangentbordet som behövs)
 - [ ] **M4-01** Spela upp ackordet med Web Audio
 - [ ] **M5-04** Klicka på ett diatoniskt ackord i kvintcirkelfliken för att öppna det i ackordfliken (förminskade ackord finns nu, M2-01)
-- [ ] **X-08** Kom ihåg valet piano/gitarr (i URL:en tillsammans med X-01, eller i localStorage)
 - [ ] **G-02** Andra stämningar (Drop D, DADGAD) och vänsterhänt hals
 - [ ] **G-03** Fingersättning i greppen (vilket finger på vilken ton, barré markerad)
 - [ ] **G-04** Fler varianter av samma grepp (t.ex. x13331 och x10331 för B♭), i dag visas bara det bästa i varje läge
@@ -39,6 +34,10 @@ _Inget just nu._
 
 ## Klart
 
+- [x] **X-01** Delbar länk till valt ackord: valet syns i URL:en (`#/Db/major?on=piano`, skala `#/A/scale/naturalMinor`, kvintcirkel `#/circle/Eb/major`; `s` är kors och `b` är b) och sidan öppnas med det valet. Bakåt/framåt fungerar, ogiltiga länkar faller tillbaka till C-dur, och flik, tonart och omvändning går att länka till _(2026-11-15)_
+- [x] **X-04** Välj enharmonisk stavning själv: för svarta tangenter visas en väljare (C♯ eller D♭) för både ackord och skalor. Ett eget val behålls när man byter ackordtyp, och en automatisk stavning följer ackordet som förut _(2026-11-15)_
+- [x] **X-06** Bättre pianovisning på mobil: på skärmar smalare än 600 px visas bara delen av tangentbordet kring tonerna (minst åtta vita tangenter), så etiketterna blir ungefär dubbelt så stora _(2026-11-15)_
+- [x] **X-08** Kom ihåg valet piano/gitarr: instrumentet ligger i länken (`on=guitar`) och sparas i localStorage för länkar som inte anger något _(2026-11-15)_
 - [x] **M2-04** Omvändningar: grundläge samt 1:a, 2:a och 3:e omvändning (treklanger har två, fyrklanger och större tre). Pianot visar rätt läge och basen har en svart ram och förklaras i teckenförklaringen. Bara toner inom oktaven kan ligga i basen, så en nona eller tredecima blir kvar där den är. Väljaren visas bara för piano, och valet kläms till vad ackordet har när man byter ackord _(2026-11-15)_
 - [x] **M1-01** Projektskelett: Vite, React, TypeScript, Dockerfile och docker compose (app + dev) _(2026-11-15)_
 - [x] **M1-02** Teorimodul: stavade toner, intervall, skalor, dur- och mollackord med tabelltest för alla 24 _(2026-11-15)_

@@ -1,6 +1,6 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 
 const notesIn = (listName: string) =>
@@ -309,5 +309,224 @@ describe('App', () => {
       expect(lowE()).toEqual(['3:G', '5:A']);
     });
   });
-});
 
+  describe('links', () => {
+    const open = (hash: string) => {
+      window.history.replaceState(null, '', hash);
+    };
+
+    it('shows the chord in the URL and opens a link on the same chord', async () => {
+      const user = userEvent.setup();
+      const { unmount } = render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'C♯/D♭' }));
+      await user.click(screen.getByRole('radio', { name: 'Minor seventh' }));
+      expect(window.location.hash).toBe('#/Cs/minor7?on=piano');
+      unmount();
+
+      render(<App />);
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('C♯ minor seventh');
+      expect(screen.getByRole('radio', { name: 'Minor seventh' })).toBeChecked();
+    });
+
+    it('opens a link to D♭ major', () => {
+      open('#/Db/major');
+      render(<App />);
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('D♭ major');
+      expect(chordNotes()).toEqual(['D♭', 'F', 'A♭']);
+    });
+
+    it('falls back to C major for a broken link', () => {
+      open('#/H/whatever');
+      render(<App />);
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('C major');
+    });
+
+    it('goes back and forward through the choices', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'D' }));
+      await user.click(screen.getByRole('radio', { name: 'Minor' }));
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('D minor');
+
+      window.history.back();
+      await waitFor(() => expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('D major'));
+      window.history.back();
+      await waitFor(() => expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('C major'));
+      window.history.forward();
+      await waitFor(() => expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('D major'));
+    });
+
+    it('follows a link that is opened while the app is running', async () => {
+      render(<App />);
+      act(() => {
+        window.location.hash = '#/A/scale/naturalMinor?on=guitar';
+      });
+      await waitFor(() => expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('A natural minor scale'));
+      expect(screen.getByRole('radio', { name: 'Guitar' })).toBeChecked();
+    });
+
+    it('links to a scale and an inversion', async () => {
+      const user = userEvent.setup();
+      const { container, unmount } = render(<App />);
+      await user.click(screen.getByRole('radio', { name: '1st inversion' }));
+      expect(window.location.hash).toBe('#/C/major?on=piano&inv=1');
+      unmount();
+
+      render(<App />);
+      expect(screen.getByRole('radio', { name: '1st inversion' })).toBeChecked();
+      await userEvent.click(screen.getByRole('radio', { name: 'Scale' }));
+      expect(window.location.hash).toBe('#/C/scale/major?on=piano');
+      expect(container).toBeTruthy();
+    });
+
+    it('links to a key on the circle of fifths, and to the tab', async () => {
+      const user = userEvent.setup();
+      const { unmount } = render(<App />);
+      await user.click(screen.getByRole('tab', { name: 'Circle of fifths' }));
+      expect(window.location.hash).toBe('#/circle/C/major');
+      await user.click(screen.getByRole('radio', { name: 'E♭ major' }));
+      expect(window.location.hash).toBe('#/circle/Eb/major');
+      unmount();
+
+      render(<App />);
+      expect(screen.getByRole('tab', { name: 'Circle of fifths' })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('E♭ major');
+    });
+
+    it('keeps each tab\'s choice when switching between the tabs', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'A' }));
+      await user.click(screen.getByRole('tab', { name: 'Circle of fifths' }));
+      await user.click(screen.getByRole('radio', { name: 'D major' }));
+      await user.click(screen.getByRole('tab', { name: 'Chords & scales' }));
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('A major');
+      await user.click(screen.getByRole('tab', { name: 'Circle of fifths' }));
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('D major');
+    });
+  });
+
+  describe('instrument memory', () => {
+    it('puts the instrument in the link', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'Guitar' }));
+      expect(window.location.hash).toBe('#/C/major?on=guitar');
+    });
+
+    it('remembers the instrument for links that do not name one', async () => {
+      const user = userEvent.setup();
+      const { unmount } = render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'Guitar' }));
+      unmount();
+
+      window.history.replaceState(null, '', '#/D/major');
+      render(<App />);
+      expect(screen.getByRole('radio', { name: 'Guitar' })).toBeChecked();
+    });
+
+    it('lets a link override the remembered instrument', async () => {
+      const user = userEvent.setup();
+      const { unmount } = render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'Guitar' }));
+      unmount();
+
+      window.history.replaceState(null, '', '#/D/major?on=piano');
+      render(<App />);
+      expect(screen.getByRole('radio', { name: 'Piano' })).toBeChecked();
+    });
+  });
+
+  describe('enharmonic spelling', () => {
+    const spelling = () => within(screen.getByRole('group', { name: 'Spelling' }));
+
+    it('only offers a choice for black keys', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      expect(screen.queryByRole('group', { name: 'Spelling' })).not.toBeInTheDocument();
+      await user.click(screen.getByRole('radio', { name: 'C♯/D♭' }));
+      expect(spelling().getAllByRole('radio').map((r) => r.closest('label')?.textContent)).toEqual(['C♯', 'D♭']);
+      expect(spelling().getByRole('radio', { name: 'D♭' })).toBeChecked();
+    });
+
+    it('spells C♯ major instead of D♭ major', async () => {
+      const user = userEvent.setup();
+      const { container } = render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'C♯/D♭' }));
+      await user.click(spelling().getByRole('radio', { name: 'C♯' }));
+
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('C♯ major');
+      expect(chordNotes()).toEqual(['C♯', 'E♯', 'G♯']);
+      expect(highlightedKeys(container)).toEqual(['61:root', '65:third', '68:fifth']);
+      expect(window.location.hash).toBe('#/Cs/major?on=piano');
+    });
+
+    it('keeps the chosen spelling when the quality changes, and shows it on every symbol', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'C♯/D♭' }));
+      await user.click(spelling().getByRole('radio', { name: 'C♯' }));
+      await user.click(screen.getByRole('radio', { name: 'Dominant seventh' }));
+      expect(chordNotes()[0]).toBe('C♯');
+      expect(screen.getByRole('radio', { name: 'Major' }).closest('label')?.textContent).toBe('C♯');
+    });
+
+    it('goes back to the automatic spelling when another root is picked', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'C♯/D♭' }));
+      await user.click(spelling().getByRole('radio', { name: 'C♯' }));
+      await user.click(screen.getByRole('radio', { name: 'D♯/E♭' }));
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('E♭ major');
+    });
+
+    it('spells scales and keeps the spelling when switching to the scale', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'F♯/G♭' }));
+      await user.click(spelling().getByRole('radio', { name: 'G♭' }));
+      await user.click(screen.getByRole('radio', { name: 'Scale' }));
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('G♭ major scale');
+      expect(scaleNotes()).toEqual(['G♭', 'A♭', 'B♭', 'C♭', 'D♭', 'E♭', 'F']);
+    });
+  });
+
+  describe('piano on a narrow screen', () => {
+    const viewBox = (container: HTMLElement) => container.querySelector('svg')?.getAttribute('viewBox');
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    const narrow = (matches: boolean) =>
+      vi.stubGlobal('matchMedia', () => ({
+        matches,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }));
+
+    it('shows the whole keyboard on a wide screen', () => {
+      narrow(false);
+      const { container } = render(<App />);
+      expect(viewBox(container)).toBe('-1 -1 562 162');
+    });
+
+    it('shows only the part around the chord on a narrow screen', () => {
+      narrow(true);
+      const { container } = render(<App />);
+      // C–E–G plus a key to spare on each side, at least 8 white keys wide, clamped to the left end.
+      expect(viewBox(container)).toBe('-1 -1 322 162');
+      expect(container.querySelectorAll('[data-highlighted="true"]')).toHaveLength(3);
+    });
+
+    it('stays inside the keyboard for a chord near the end', async () => {
+      narrow(true);
+      const user = userEvent.setup();
+      const { container } = render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'B' }));
+      const [x, , width] = (viewBox(container) ?? '').split(' ').map(Number);
+      expect(x).toBeGreaterThanOrEqual(-1);
+      expect((x ?? 0) + (width ?? 0)).toBeLessThanOrEqual(562);
+    });
+  });
+});
