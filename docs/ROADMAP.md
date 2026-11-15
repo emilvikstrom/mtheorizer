@@ -30,7 +30,7 @@ Mål: Alla vanliga treklanger och fyrklanger, och möjlighet att se ackordet i o
 - Omvändningar (första, andra och tredje) på pianot.
 
 Resultat (M2-01–M2-05):
-- 42 ackordtyper i sju grupper: treklanger (dur, moll, °, +, sus2, sus4), sextackord (6, m6, 6/9, m6/9), septimackord (maj7, 7, m7, m(maj7), m7♭5, °7, 7♯5, maj7♯5, 7♭5, 7sus4), nonackord (maj9, 9, m9, m(maj9), 7♭9, 7♯9, 7♯5♯9, 9sus4), undecimackord (11, m11, 7♯11, maj7♯11), tredecimackord (13, maj13, m13, 7♭13, 13sus4) och tillagda toner (add2, add4, add9, m(add9), add11).
+- 43 ackordtyper i sju grupper: treklanger (dur, moll, °, +, sus2, sus4, 5), sextackord (6, m6, 6/9, m6/9), septimackord (maj7, 7, m7, m(maj7), m7♭5, °7, 7♯5, maj7♯5, 7♭5, 7sus4), nonackord (maj9, 9, m9, m(maj9), 7♭9, 7♯9, 7♯5♯9, 9sus4), undecimackord (11, m11, 7♯11, maj7♯11), tredecimackord (13, maj13, m13, 7♭13, 13sus4) och tillagda toner (add2, add4, add9, m(add9), add11).
 - Varje ton har en roll (grundton, sekund, ters … tredecima) och kan märkas som valfri. Gitarrgreppen får då utelämna den, som kvinten i öppet C7 (x32310).
 - Omvändningar på pianot: grundläge samt 1:a–3:e omvändning, med basen markerad och skriven som snedackord (C/E).
 
@@ -69,4 +69,4 @@ Resultat:
 - ✅ Valbar enharmonisk stavning (C♯-dur i stället för D♭-dur) (X-04) och pianot beskuret på mobil (X-06).
 - ✅ CI: GitHub Actions som kör Docker-bygget (X-02).
 - ✅ Lint och formattering med ESLint och Prettier, i Docker-bygget (X-03).
-- ✅ Visning på gitarrhals som alternativ till pianot (X-07), fyra band i taget med spelbara ackordgrepp och skallägen (G-01). Andra stämningar och vänsterhänt hals finns (G-02). Fingersättning ligger i backloggen (G-03–G-04).
+- ✅ Visning på gitarrhals som alternativ till pianot (X-07), fyra band i taget med spelbara ackordgrepp och skallägen (G-01). Andra stämningar och vänsterhänt hals finns (G-02). Fingersättning, varianter av grepp och kvintackord med dämpade strängar finns också (G-03–G-05).
