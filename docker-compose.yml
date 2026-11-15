@@ -1,0 +1,26 @@
+name: mtheorizer
+
+services:
+  # Production build served by nginx: http://localhost:8080
+  app:
+    build:
+      context: .
+      target: runtime
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  # Vite dev server with hot reload: http://localhost:5173
+  # Start with: docker compose --profile dev up dev
+  dev:
+    profiles: ["dev"]
+    build:
+      context: .
+      target: deps
+    command: npm run dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      # Keep the container's node_modules instead of the (absent) host one.
+      - /app/node_modules
