@@ -21,7 +21,6 @@ _Inget just nu._
 
 ## Senare
 
-- [ ] **M5-04** Klicka på ett diatoniskt ackord i kvintcirkelfliken för att öppna det i ackordfliken (förminskade ackord finns nu, M2-01)
 - [ ] **G-02** Andra stämningar (Drop D, DADGAD) och vänsterhänt hals
 - [ ] **G-03** Fingersättning i greppen (vilket finger på vilken ton, barré markerad)
 - [ ] **G-04** Fler varianter av samma grepp (t.ex. x13331 och x10331 för B♭), i dag visas bara det bästa i varje läge
@@ -31,6 +30,7 @@ _Inget just nu._
 
 ## Klart
 
+- [x] **M5-04** Diatoniska ackord i kvintcirkelfliken är knappar: ett klick öppnar ackordet i ackordfliken (stavat som i tonarten, t.ex. B° i A-moll), och länken uppdateras _(2026-11-15)_
 - [x] **M4-01** Spela upp ackord och skalor med Web Audio: knapparna "Play chord" (samklang) och "Play broken" (brutet, nerifrån och upp) för ackord i valt läge, och "Play scale" för skalor. Knapparna döljs om webbläsaren saknar Web Audio _(2026-11-15)_
 - [x] **X-01** Delbar länk till valt ackord: valet syns i URL:en (`#/Db/major?on=piano`, skala `#/A/scale/naturalMinor`, kvintcirkel `#/circle/Eb/major`; `s` är kors och `b` är b) och sidan öppnas med det valet. Bakåt/framåt fungerar, ogiltiga länkar faller tillbaka till C-dur, och flik, tonart och omvändning går att länka till _(2026-11-15)_
 - [x] **X-04** Välj enharmonisk stavning själv: för svarta tangenter visas en väljare (C♯ eller D♭) för både ackord och skalor. Ett eget val behålls när man byter ackordtyp, och en automatisk stavning följer ackordet som förut _(2026-11-15)_
