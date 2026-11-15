@@ -8,6 +8,7 @@ import {
   formatNote,
   formatShape,
   lastFret,
+  omittedTones,
 } from "../theory";
 import { ToneLegend } from "./ToneLegend";
 
@@ -310,8 +311,12 @@ export function Fretboard({ views, kind, tones, name, legend, tuning, left }: Fr
     kind === "shape"
       ? formatShape(view, tuning.strings.length)
       : tones.map((tone) => formatNote(tone.note)).join(", ");
+  const omitted = kind === "shape" ? omittedTones(view, tones) : [];
+  const without = omitted.length
+    ? `Without ${omitted.map((t) => `${t.role} (${formatNote(t.note)})`).join(", ")}`
+    : "";
   const fingers = view.fingering ? `, fingers ${formatFingering(view, tuning.strings.length)}` : "";
-  const description = `${left ? "Left-handed guitar" : "Guitar"} neck showing ${name}${tuning.id === "standard" ? "" : ` in ${tuning.label} tuning`}, ${status.toLowerCase()}, ${where.toLowerCase()}: ${detail}${fingers}`;
+  const description = `${left ? "Left-handed guitar" : "Guitar"} neck showing ${name}${tuning.id === "standard" ? "" : ` in ${tuning.label} tuning`}, ${status.toLowerCase()}, ${where.toLowerCase()}: ${detail}${fingers}${without ? `. ${without}` : ""}`;
   const step = (delta: number) => {
     const next = views[index + delta];
     if (next) setWanted({ fret: next.firstFret, key: viewKey(next) });
@@ -344,6 +349,7 @@ export function Fretboard({ views, kind, tones, name, legend, tuning, left }: Fr
         </button>
       </div>
       <NeckDiagram view={view} description={description} tuning={tuning} left={left} />
+      {without && <p className="fretboard__omitted">{without}</p>}
       <ToneLegend {...legend} />
     </figure>
   );

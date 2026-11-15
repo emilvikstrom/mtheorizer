@@ -810,6 +810,12 @@ body {
   font-weight: 600;
 }
 
+.fretboard__omitted {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
 .fretboard__status-where {
   font-size: 0.85rem;
   color: var(--muted);
