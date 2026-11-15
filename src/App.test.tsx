@@ -129,7 +129,7 @@ describe("App", () => {
     expect(screen.queryByRole("img", { name: /^Piano keyboard/ })).not.toBeInTheDocument();
     expect(
       screen.getByRole("img", {
-        name: "Guitar neck showing C major, shape 1 of 6, open position: x 3 2 0 1 0",
+        name: "Guitar neck showing C major, shape 1 of 6, open position: x 3 2 0 1 0, fingers x 3 2 – 1 –",
       }),
     ).toBeInTheDocument();
     // Only the open C chord is marked, with the low E string muted.
@@ -211,7 +211,7 @@ describe("App", () => {
     await user.click(screen.getByRole("radio", { name: "D" }));
     expect(
       screen.getByRole("img", {
-        name: "Guitar neck showing D major, shape 2 of 6, frets 2–5: x 5 4 2 3 2",
+        name: "Guitar neck showing D major, shape 2 of 6, frets 2–5: x 5 4 2 3 2, fingers x 4 3 1 2 1",
       }),
     ).toBeInTheDocument();
   });
@@ -225,7 +225,7 @@ describe("App", () => {
 
     expect(
       screen.getByRole("img", {
-        name: "Guitar neck showing E♭ minor, shape 1 of 3, frets 1–4: x x 1 3 4 2",
+        name: "Guitar neck showing E♭ minor, shape 1 of 3, frets 1–4: x x 1 3 4 2, fingers x x 1 3 4 2",
       }),
     ).toBeInTheDocument();
     const notes = [...container.querySelectorAll('[data-highlighted="true"]')].map(

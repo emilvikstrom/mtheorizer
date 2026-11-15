@@ -25,6 +25,23 @@ export interface NeckView {
   readonly positions: readonly NeckTone[];
   /** Strings that are not played (chord shapes only). */
   readonly muted: readonly number[];
+  /** Which finger frets what (chord shapes only). */
+  readonly fingering?: Fingering;
+}
+
+/** A barre: one finger flat across `fromString`..`toString` (string 1 is the highest). */
+export interface Barre {
+  readonly fret: number;
+  /** The lowest-pitched string under the barre. */
+  readonly fromString: number;
+  /** The highest-pitched string under the barre. */
+  readonly toString: number;
+}
+
+export interface Fingering {
+  /** Finger by string number: 1 = index … 4 = little finger. Open and muted strings have none. */
+  readonly fingerOn: ReadonlyMap<number, number>;
+  readonly barre?: Barre;
 }
 
 export function lastFret(view: NeckView): number {
@@ -41,10 +58,10 @@ const MAX_FINGERS = 4;
 /** Open chords keep the fretting hand by the nut; with open strings nothing is fretted above this. */
 const OPEN_CHORD_MAX_FRET = 3;
 
-/** Fingers needed to fret `frets` (string 1 first, 0 = open). One barre is allowed at the lowest fret. */
-function fingersNeeded(frets: readonly number[]): number {
+/** The barre `frets` (string 1 first, 0 = open) allow: one at the lowest fretted fret, if it covers two or more strings. */
+function barreOf(frets: readonly number[]): Barre | undefined {
   const fretted = frets.filter((f) => f > 0);
-  if (fretted.length === 0) return 0;
+  if (fretted.length === 0) return undefined;
   const lowest = Math.min(...fretted);
   // A barre lies across the lowest fret from the lowest string that uses it up to string 1,
   // so every string under it must be fretted at or above that fret.
@@ -52,7 +69,35 @@ function fingersNeeded(frets: readonly number[]): number {
   const underBarre = frets.slice(0, barreFrom + 1);
   const canBarre =
     underBarre.every((f) => f >= lowest) && fretted.filter((f) => f === lowest).length > 1;
-  return canBarre ? 1 + fretted.filter((f) => f > lowest).length : fretted.length;
+  return canBarre ? { fret: lowest, fromString: barreFrom + 1, toString: 1 } : undefined;
+}
+
+/**
+ * Which finger plays what: a barre is the index finger, and the remaining
+ * fretted notes take the next fingers from the lowest fret up (on the same
+ * fret, from the bass string up).
+ */
+export function fingeringFor(frets: readonly number[]): Fingering {
+  const barre = barreOf(frets);
+  const fingerOn = new Map<number, number>();
+  let next = 1;
+  if (barre) {
+    for (let string = barre.toString; string <= barre.fromString; string++) {
+      if (frets[string - 1] === barre.fret) fingerOn.set(string, next);
+    }
+    next++;
+  }
+  frets
+    .map((fret, i) => ({ fret, string: i + 1 }))
+    .filter((p) => p.fret > 0 && !fingerOn.has(p.string))
+    .sort((a, b) => a.fret - b.fret || b.string - a.string)
+    .forEach((p) => fingerOn.set(p.string, next++));
+  return barre ? { fingerOn, barre } : { fingerOn };
+}
+
+/** Fingers needed to fret `frets` (string 1 first, 0 = open). One barre is allowed at the lowest fret. */
+function fingersNeeded(frets: readonly number[]): number {
+  return new Set(fingeringFor(frets).fingerOn.values()).size;
 }
 
 /** Every way to pick one item from each list. */
@@ -116,6 +161,7 @@ function bestShapeInWindow(
         positions: [...positions],
         muted: Array.from({ length: stringCount - sounding }, (_, i) => sounding + i + 1),
         fingers,
+        fingering: fingeringFor(frets),
       };
       const shapeCost = cost(shape);
       if (!best || compareCost(shapeCost, best.cost) < 0) best = { ...shape, cost: shapeCost };
@@ -133,6 +179,16 @@ export function formatShape(view: NeckView, stringCount = STANDARD_TUNING.length
   return Array.from({ length: stringCount }, (_, i) => fretOn.get(stringCount - i) ?? "x").join(
     " ",
   );
+}
+
+/** "x 3 2 – 1 –": the finger on each string from the lowest string up, – for open, x for muted. */
+export function formatFingering(view: NeckView, stringCount = STANDARD_TUNING.length): string {
+  const fretOn = new Map(view.positions.map((p) => [p.string, p.fret]));
+  return Array.from({ length: stringCount }, (_, i) => {
+    const string = stringCount - i;
+    if (!fretOn.has(string)) return "x";
+    return view.fingering?.fingerOn.get(string) ?? "–";
+  }).join(" ");
 }
 
 /**

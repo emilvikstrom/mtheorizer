@@ -21,7 +21,6 @@ _Inget just nu._
 
 ## Senare
 
-- [ ] **G-03** Fingersättning i greppen (vilket finger på vilken ton, barré markerad)
 - [ ] **G-04** Fler varianter av samma grepp (t.ex. x13331 och x10331 för B♭), i dag visas bara det bästa i varje läge
 - [ ] **G-05** Kvintackord (C5, powerchord) och andra grepp där de ljusa strängarna är dämpade. Greppsökningen kräver i dag att alla strängar från basen upp till sträng 1 spelas
 - [ ] **M2-05** Fler ackord vid behov: 7♭13, 7♯5♯9, m(maj9), 13sus4, add4/add2 som egna namn, och snedackord (C/E)
@@ -29,6 +28,7 @@ _Inget just nu._
 
 ## Klart
 
+- [x] **G-03** Fingersättning i greppen: varje tryckt ton får en liten bricka med fingret (1 = pekfinger … 4 = lillfinger), barré markeras med ett band över strängarna och fingrarna ingår i diagrammets beskrivning (`fingers x 3 2 – 1 –`). Räknas i teorimodulen (`fingeringFor`), tabelltestat för alla ackord _(2026-11-15)_
 - [x] **G-02** Andra stämningar och vänsterhänt hals: väljare för stämning (Standard, Drop D, DADGAD) och hand (höger/vänster) när gitarren visas. Greppsökning och skallägen följer stämningen, vänsterhänt hals är spegelvänd, och valen ligger i länken (`&tuning=dropD&hand=left`) _(2026-11-15)_
 - [x] **M5-04** Diatoniska ackord i kvintcirkelfliken är knappar: ett klick öppnar ackordet i ackordfliken (stavat som i tonarten, t.ex. B° i A-moll), och länken uppdateras _(2026-11-15)_
 - [x] **M4-01** Spela upp ackord och skalor med Web Audio: knapparna "Play chord" (samklang) och "Play broken" (brutet, nerifrån och upp) för ackord i valt läge, och "Play scale" för skalor. Knapparna döljs om webbläsaren saknar Web Audio _(2026-11-15)_
