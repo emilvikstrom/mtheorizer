@@ -65,7 +65,7 @@ describe("App", () => {
     );
     expect(
       within(screen.getByRole("group", { name: "Quality" })).getAllByRole("radio"),
-    ).toHaveLength(37);
+    ).toHaveLength(43);
     expect(
       within(screen.getByRole("group", { name: "Triads" })).getAllByRole("radio"),
     ).toHaveLength(7);

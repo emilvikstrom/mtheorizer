@@ -21,12 +21,12 @@ _Inget just nu._
 
 ## Senare
 
-- [ ] **M2-05** Fler ackord vid behov: 7♭13, 7♯5♯9, m(maj9), 13sus4, add4/add2 som egna namn, och snedackord (C/E)
 - [ ] **M2-06** Ange vilka toner som utelämnas i greppen (t.ex. "utan kvint") i gitarrvyn
 
 ## Klart
 
 - [x] **G-05** Kvintackord (C5, "power chord") som ny ackordtyp i triadgruppen (grundton + kvint). Greppsökningen tillåter nu dämpade strängar även ovanför greppet: kvintackord spelas på två–tre av de lägsta strängarna (x355xx, 8 10 10 x x x, 0 2 2 x x x) med övriga dämpade. Övriga ackord spelar som förut alla strängar från basen upp till sträng 1. Barré korsar dämpade strängar _(2026-11-15)_
+- [x] **M2-05** Fler ackord: 7♭13, 7♯5♯9, m(maj9), 13sus4 samt add2 och add4 som egna namn (43 ackordtyper, tabelltestade på alla 12 grundtoner). Snedackord: omvändningar skrivs som C/E och visas i ackordrubriken (`inversionSymbol`) _(2026-11-15)_
 - [x] **G-04** Fler varianter av samma grepp: varje läge på halsen visar nu även varianter som spelar lika många strängar och toner som det bästa greppet och kräver högst ett finger till (B♭: x10331 och x13331, C: x32010 och x32013). Det lättaste kommer först, och stegningen med pilarna skiljer varianter i samma läge åt _(2026-11-15)_
 - [x] **G-03** Fingersättning i greppen: varje tryckt ton får en liten bricka med fingret (1 = pekfinger … 4 = lillfinger), barré markeras med ett band över strängarna och fingrarna ingår i diagrammets beskrivning (`fingers x 3 2 – 1 –`). Räknas i teorimodulen (`fingeringFor`), tabelltestat för alla ackord _(2026-11-15)_
 - [x] **G-02** Andra stämningar och vänsterhänt hals: väljare för stämning (Standard, Drop D, DADGAD) och hand (höger/vänster) när gitarren visas. Greppsökning och skallägen följer stämningen, vänsterhänt hals är spegelvänd, och valen ligger i länken (`&tuning=dropD&hand=left`) _(2026-11-15)_
