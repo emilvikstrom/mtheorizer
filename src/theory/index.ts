@@ -1,4 +1,5 @@
 export * from './chords';
+export * from './fretboard';
 export * from './intervals';
 export * from './notes';
 export * from './scales';

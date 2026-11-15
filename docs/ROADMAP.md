@@ -55,3 +55,4 @@ Mål: Förstå hur ackord hänger ihop.
 - Låta användaren välja enharmonisk stavning själv (C♯-dur i stället för D♭-dur).
 - CI: GitHub Actions som kör Docker-bygget (typkontroll och tester).
 - Lint och formattering (ESLint och Prettier).
+- ✅ Visning på gitarrhals som alternativ till pianot (X-07). Grepp och fler stämningar ligger i backloggen (G-01, G-02).

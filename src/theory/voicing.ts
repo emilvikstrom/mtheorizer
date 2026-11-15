@@ -21,14 +21,26 @@ export function rootPosition(chord: Chord, octave = 4): VoicedTone[] {
   return chord.tones.map((tone) => ({ ...tone, midi: rootMidi + tone.interval.semitones }));
 }
 
-/** A key to highlight on the keyboard, whatever is being shown. */
-export interface KeyboardTone {
+/** A tone to highlight on an instrument, whether it belongs to a chord or a scale. */
+export interface HighlightTone {
   readonly note: Note;
-  readonly midi: number;
   /** The root of a chord or the tonic of a scale. */
   readonly isRoot: boolean;
   /** What the tone is, e.g. "third" in a chord or "degree-3" in a scale. */
   readonly role: string;
+}
+
+/** A key to highlight on the keyboard. */
+export interface KeyboardTone extends HighlightTone {
+  readonly midi: number;
+}
+
+export function chordHighlights(chord: Chord): HighlightTone[] {
+  return chord.tones.map(({ note, role }) => ({ note, isRoot: role === 'root', role }));
+}
+
+export function scaleHighlights(scale: SpelledScale): HighlightTone[] {
+  return scale.tones.map(({ note, degree }) => ({ note, isRoot: degree === 1, role: `degree-${degree}` }));
 }
 
 export function chordOnKeyboard(chord: Chord, octave = 4): KeyboardTone[] {
