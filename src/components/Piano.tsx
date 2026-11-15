@@ -45,6 +45,7 @@ function PianoKey({ shape, tone }: { shape: KeyShape; tone: KeyboardTone | undef
     "key",
     shape.black ? "key--black" : "key--white",
     tone && (tone.isRoot ? "key--root" : "key--tone"),
+    tone?.isBass && "key--bass",
   ]
     .filter(Boolean)
     .join(" ");
@@ -55,6 +56,7 @@ function PianoKey({ shape, tone }: { shape: KeyShape; tone: KeyboardTone | undef
       data-midi={shape.midi}
       data-highlighted={tone ? "true" : undefined}
       data-role={tone?.role}
+      data-bass={tone?.isBass ? "true" : undefined}
     >
       <rect x={shape.x} y={0} width={width} height={height} rx={shape.black ? 3 : 4} />
       {tone ? (
@@ -115,7 +117,7 @@ export function Piano({ tones, name, legend }: PianoProps) {
           <PianoKey key={shape.midi} shape={shape} tone={toneAt.get(shape.midi)} />
         ))}
       </svg>
-      <ToneLegend {...legend} />
+      <ToneLegend {...legend} bass={tones.some((tone) => tone.isBass)} />
     </figure>
   );
 }
