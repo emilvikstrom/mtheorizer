@@ -21,6 +21,45 @@ export const STANDARD_TUNING: readonly OpenString[] = [
   { note: note("E"), octave: 2 },
 ];
 
+export type TuningId = "standard" | "dropD" | "dadgad";
+
+export interface Tuning {
+  readonly id: TuningId;
+  readonly label: string;
+  /** From string 1 (highest) to the lowest string. */
+  readonly strings: readonly OpenString[];
+}
+
+export const TUNINGS: Readonly<Record<TuningId, Tuning>> = {
+  standard: { id: "standard", label: "Standard", strings: STANDARD_TUNING },
+  dropD: {
+    id: "dropD",
+    label: "Drop D",
+    strings: [
+      { note: note("E"), octave: 4 },
+      { note: note("B"), octave: 3 },
+      { note: note("G"), octave: 3 },
+      { note: note("D"), octave: 3 },
+      { note: note("A"), octave: 2 },
+      { note: note("D"), octave: 2 },
+    ],
+  },
+  dadgad: {
+    id: "dadgad",
+    label: "DADGAD",
+    strings: [
+      { note: note("D"), octave: 4 },
+      { note: note("A"), octave: 3 },
+      { note: note("G"), octave: 3 },
+      { note: note("D"), octave: 3 },
+      { note: note("A"), octave: 2 },
+      { note: note("D"), octave: 2 },
+    ],
+  },
+};
+
+export const TUNING_IDS = Object.keys(TUNINGS) as TuningId[];
+
 /** Where on the neck a tone is played. */
 export interface NeckPlace {
   /** 1 = the highest-sounding string (high E in standard tuning). */

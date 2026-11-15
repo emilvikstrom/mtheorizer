@@ -6,7 +6,13 @@ import { OptionPicker, type PickerOption } from "./OptionPicker";
 import { Piano } from "./Piano";
 import { PlayButtons } from "./PlayButtons";
 import { RootPicker } from "./RootPicker";
-import { type ChordRoute, type Instrument, type LookupRoute, type ScaleRoute } from "../route";
+import {
+  type ChordRoute,
+  guitarOptions,
+  type Instrument,
+  type LookupRoute,
+  type ScaleRoute,
+} from "../route";
 import { ScaleInfo } from "./ScaleInfo";
 import {
   CHORD_QUALITIES,
@@ -16,8 +22,12 @@ import {
   type KeyboardTone,
   type NeckView,
   type Note,
+  type Tuning,
   SCALES,
   type ScaleId,
+  TUNINGS,
+  TUNING_IDS,
+  type TuningId,
   buildChord,
   chordHighlights,
   inversionCount,
@@ -51,6 +61,11 @@ const SCALE_OPTIONS: readonly PickerOption<ScaleId>[] = [
 const INSTRUMENT_OPTIONS: readonly PickerOption<Instrument>[] = [
   { value: "piano", label: "Piano" },
   { value: "guitar", label: "Guitar" },
+];
+
+const HAND_OPTIONS: readonly PickerOption<"right" | "left">[] = [
+  { value: "right", label: "Right-handed" },
+  { value: "left", label: "Left-handed" },
 ];
 
 /** A scale choice that matches no chord picks the plain triad of that scale. */
@@ -101,6 +116,7 @@ export function Lookup({ route, onChange }: LookupProps) {
           root,
           scaleId: CHORD_QUALITIES[route.quality].keyScale.id,
           instrument,
+          ...guitarOptions(route),
         }),
       );
       return;
@@ -108,13 +124,14 @@ export function Lookup({ route, onChange }: LookupProps) {
     const before = lastChord.current;
     const chord: ChordRoute =
       before && CHORD_QUALITIES[before.quality].keyScale.id === route.scaleId
-        ? { ...before, root, instrument }
+        ? { ...before, root, instrument, ...guitarOptions(route) }
         : {
             page: "chord",
             root,
             quality: TRIAD_FOR_SCALE[route.scaleId],
             inversion: 0,
             instrument,
+            ...guitarOptions(route),
           };
     onChange(follow(route, chord));
   };
@@ -139,6 +156,34 @@ export function Lookup({ route, onChange }: LookupProps) {
           }}
         />
       )}
+    </>
+  );
+
+  const tuningId: TuningId = route.tuning ?? "standard";
+  // Standard tuning and the right hand are left out of the route (and so of the link).
+  const withGuitar = (change: { tuning?: TuningId; left?: boolean }): LookupRoute => {
+    const options = guitarOptions({ ...route, ...change });
+    const rest = { ...route };
+    delete rest.tuning;
+    delete rest.left;
+    return { ...rest, ...options };
+  };
+  const guitarPickers = instrument === "guitar" && (
+    <>
+      <OptionPicker
+        legend="Tuning"
+        name="tuning"
+        options={TUNING_IDS.map((id) => ({ value: id, label: TUNINGS[id].label }))}
+        value={tuningId}
+        onChange={(tuning) => onChange(withGuitar({ tuning }))}
+      />
+      <OptionPicker
+        legend="Hand"
+        name="hand"
+        options={HAND_OPTIONS}
+        value={route.left ? "left" : "right"}
+        onChange={(hand) => onChange(withGuitar({ left: hand === "left" }))}
+      />
     </>
   );
 
@@ -174,6 +219,7 @@ export function Lookup({ route, onChange }: LookupProps) {
               onChange={(quality) => onChange(follow(route, { ...route, quality }))}
             />
             {instrumentPicker}
+            {guitarPickers}
             {instrument === "piano" && (
               <InversionPicker
                 chord={buildChord(root, route.quality)}
@@ -192,6 +238,7 @@ export function Lookup({ route, onChange }: LookupProps) {
               onChange={(scaleId) => onChange(follow(route, { ...route, scaleId }))}
             />
             {instrumentPicker}
+            {guitarPickers}
           </div>
         )}
       </section>
@@ -211,13 +258,32 @@ interface InstrumentViewProps {
   keys: readonly KeyboardTone[];
   /** Chord shapes or scale positions on the guitar neck. */
   neck: { kind: "shape" | "position"; views: readonly NeckView[] };
+  tuning: Tuning;
+  left: boolean;
 }
 
-function InstrumentView({ instrument, name, legend, tones, keys, neck }: InstrumentViewProps) {
+function InstrumentView({
+  instrument,
+  name,
+  legend,
+  tones,
+  keys,
+  neck,
+  tuning,
+  left,
+}: InstrumentViewProps) {
   return instrument === "piano" ? (
     <Piano tones={keys} name={name} legend={legend} />
   ) : (
-    <Fretboard views={neck.views} kind={neck.kind} tones={tones} name={name} legend={legend} />
+    <Fretboard
+      views={neck.views}
+      kind={neck.kind}
+      tones={tones}
+      name={name}
+      legend={legend}
+      tuning={tuning}
+      left={left}
+    />
   );
 }
 
@@ -250,7 +316,8 @@ function ChordView({ route }: { route: ChordRoute }) {
   const { root, quality, instrument } = route;
   const chord = useMemo(() => buildChord(root, quality), [root, quality]);
   const tones = useMemo(() => chordHighlights(chord), [chord]);
-  const shapes = useMemo(() => chordShapes(tones), [tones]);
+  const tuning = TUNINGS[route.tuning ?? "standard"];
+  const shapes = useMemo(() => chordShapes(tones, tuning.strings), [tones, tuning]);
   // The inversion is clamped to what this chord has: a triad has no third inversion.
   const inversion = Math.min(route.inversion, inversionCount(chord));
   const keys = chordOnKeyboard(chord, 4, inversion);
@@ -265,6 +332,8 @@ function ChordView({ route }: { route: ChordRoute }) {
         tones={tones}
         keys={keys}
         neck={{ kind: "shape", views: shapes }}
+        tuning={tuning}
+        left={route.left === true}
       />
     </>
   );
@@ -274,6 +343,7 @@ function ScaleView({ route }: { route: ScaleRoute }) {
   const scale = spellScale(route.root, route.scaleId);
   const tones = scaleHighlights(scale);
   const keys = scaleOnKeyboard(scale);
+  const tuning = TUNINGS[route.tuning ?? "standard"];
   return (
     <>
       <ScaleInfo scale={scale} />
@@ -284,7 +354,9 @@ function ScaleView({ route }: { route: ScaleRoute }) {
         legend={SCALE_LEGEND}
         tones={tones}
         keys={keys}
-        neck={{ kind: "position", views: scalePositions(tones) }}
+        neck={{ kind: "position", views: scalePositions(tones, tuning.strings) }}
+        tuning={tuning}
+        left={route.left === true}
       />
     </>
   );
