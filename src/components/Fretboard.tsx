@@ -32,12 +32,34 @@ const DOUBLE_INLAY = 12;
 const stringY = (string: number) => BOARD_PADDING + (string - 1) * STRING_GAP;
 const midY = (a: number, b: number) => (stringY(a) + stringY(b)) / 2;
 
-/** Nearest view to `fret`, so a new chord or scale opens where the hand already is. */
-function nearestIndex(views: readonly NeckView[], fret: number): number {
+/** Where the player is on the neck: a fret, and which of the views starting there. */
+interface Wanted {
+  readonly fret: number;
+  /** Tells apart views with the same first fret (variants of one grip). */
+  readonly key: string;
+}
+
+const viewKey = (view: NeckView) => formatShape(view);
+
+/**
+ * Nearest view to the wanted fret, so a new chord or scale opens where the hand
+ * already is. Among views at the same distance the one with the wanted key wins.
+ */
+function nearestIndex(views: readonly NeckView[], wanted: Wanted): number {
   let best = 0;
   views.forEach((view, i) => {
     const bestView = views[best];
-    if (bestView && Math.abs(view.firstFret - fret) < Math.abs(bestView.firstFret - fret)) best = i;
+    if (!bestView) return;
+    const distance = Math.abs(view.firstFret - wanted.fret);
+    const bestDistance = Math.abs(bestView.firstFret - wanted.fret);
+    if (
+      distance < bestDistance ||
+      (distance === bestDistance &&
+        viewKey(view) === wanted.key &&
+        viewKey(bestView) !== wanted.key)
+    ) {
+      best = i;
+    }
   });
   return best;
 }
@@ -273,8 +295,8 @@ interface FretboardProps {
 export function Fretboard({ views, kind, tones, name, legend, tuning, left }: FretboardProps) {
   // Remember where on the neck the player is rather than an index, so changing
   // the chord keeps the hand in the same area.
-  const [wantedFret, setWantedFret] = useState(1);
-  const index = nearestIndex(views, wantedFret);
+  const [wanted, setWanted] = useState<Wanted>({ fret: 1, key: "" });
+  const index = nearestIndex(views, wanted);
   const view = views[index];
   const noun = kind === "shape" ? "Shape" : "Position";
 
@@ -292,7 +314,7 @@ export function Fretboard({ views, kind, tones, name, legend, tuning, left }: Fr
   const description = `${left ? "Left-handed guitar" : "Guitar"} neck showing ${name}${tuning.id === "standard" ? "" : ` in ${tuning.label} tuning`}, ${status.toLowerCase()}, ${where.toLowerCase()}: ${detail}${fingers}`;
   const step = (delta: number) => {
     const next = views[index + delta];
-    if (next) setWantedFret(next.firstFret);
+    if (next) setWanted({ fret: next.firstFret, key: viewKey(next) });
   };
 
   return (

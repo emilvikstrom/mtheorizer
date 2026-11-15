@@ -129,13 +129,20 @@ function compareCost(a: number[], b: number[]): number {
   return 0;
 }
 
-/** The best playable shape within frets `first`..`first + VIEW_FRETS - 1`, if any. */
-function bestShapeInWindow(
+/** Extra fingers a variant may need compared with the easiest shape of its window. */
+const VARIANT_EXTRA_FINGERS = 1;
+
+/**
+ * The best playable shape within frets `first`..`first + VIEW_FRETS - 1`, if any,
+ * followed by its variants: shapes that play as many strings and chord tones as
+ * the best one without being much harder. Best first.
+ */
+function shapesInWindow(
   tones: readonly HighlightTone[],
   onNeck: readonly NeckTone[],
   stringCount: number,
   first: number,
-): Omit<ChordShape, "firstFret" | "frets"> | undefined {
+): Omit<ChordShape, "firstFret" | "frets">[] {
   const last = first + VIEW_FRETS - 1;
   const reachable = (p: NeckTone) =>
     (p.fret >= first && p.fret <= last) || (first === 1 && p.fret === 0);
@@ -144,7 +151,7 @@ function bestShapeInWindow(
   );
   const required = tones.filter((t) => !t.optional).map((t) => pitchClass(t.note));
 
-  let best: (Omit<ChordShape, "firstFret" | "frets"> & { cost: number[] }) | undefined;
+  const found: (Omit<ChordShape, "firstFret" | "frets"> & { cost: number[] })[] = [];
   // Strings 1..sounding are played; the bass strings below them are muted.
   for (let sounding = stringCount; sounding >= MIN_STRINGS; sounding--) {
     const bassChoices = (candidates[sounding - 1] ?? []).filter((p) => p.isRoot);
@@ -163,14 +170,26 @@ function bestShapeInWindow(
         fingers,
         fingering: fingeringFor(frets),
       };
-      const shapeCost = cost(shape);
-      if (!best || compareCost(shapeCost, best.cost) < 0) best = { ...shape, cost: shapeCost };
+      found.push({ ...shape, cost: cost(shape) });
     }
   }
-  if (!best) return undefined;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- drop the search-only cost
-  const { cost: _cost, ...shape } = best;
-  return shape;
+  found.sort((a, b) => compareCost(a.cost, b.cost));
+  const best = found[0];
+  if (!best) return [];
+  return found
+    .filter(
+      (f) =>
+        // Same number of strings and chord tones as the best shape, and no big step up in fingers.
+        f.cost[0] === best.cost[0] &&
+        f.cost[1] === best.cost[1] &&
+        f.fingers <= best.fingers + VARIANT_EXTRA_FINGERS,
+    )
+    .map((f) => ({
+      positions: f.positions,
+      muted: f.muted,
+      fingers: f.fingers,
+      fingering: f.fingering,
+    }));
 }
 
 /** "x 3 2 0 1 0": the fret on each string from the lowest string up, x for muted. */
@@ -194,7 +213,9 @@ export function formatFingering(view: NeckView, stringCount = STANDARD_TUNING.le
 /**
  * Playable shapes of a chord along the neck, lowest first.
  *
- * Each four-fret stretch gets its best root-position shape: the lowest string
+ * Each four-fret stretch gets its best root-position shape, plus variants of it
+ * (such as x13331 and x10331 for B♭) that play as many strings and tones and
+ * need at most one more finger. The easiest comes first. The lowest string
  * played is the root, every chord tone sounds (optional tones such as the
  * fifth of a seventh chord may be left out), the strings from the bass up to
  * string 1 are all played, and at most four fingers are needed (a barre counts
@@ -209,16 +230,17 @@ export function chordShapes(
   const onNeck = positionsOnNeck(tones, tuning, NECK_FRETS);
   const shapes = new Map<string, ChordShape>();
   for (let first = 1; first + VIEW_FRETS - 1 <= NECK_FRETS; first++) {
-    const found = bestShapeInWindow(tones, onNeck, tuning.length, first);
-    if (!found) continue;
-    const fretted = found.positions.map((p) => p.fret).filter((f) => f > 0);
-    const usesOpen = found.positions.some((p) => p.fret === 0);
-    // Show the shape from its lowest fretted fret, the way chord diagrams do.
-    const firstFret = usesOpen || fretted.length === 0 ? 1 : Math.min(...fretted);
-    const shape: ChordShape = { ...found, firstFret, frets: VIEW_FRETS };
-    const key = formatShape(shape, tuning.length);
-    if (!shapes.has(key)) shapes.set(key, shape);
+    for (const found of shapesInWindow(tones, onNeck, tuning.length, first)) {
+      const fretted = found.positions.map((p) => p.fret).filter((f) => f > 0);
+      const usesOpen = found.positions.some((p) => p.fret === 0);
+      // Show the shape from its lowest fretted fret, the way chord diagrams do.
+      const firstFret = usesOpen || fretted.length === 0 ? 1 : Math.min(...fretted);
+      const shape: ChordShape = { ...found, firstFret, frets: VIEW_FRETS };
+      const key = formatShape(shape, tuning.length);
+      if (!shapes.has(key)) shapes.set(key, shape);
+    }
   }
+  // Stable sort: within a position the easiest variant comes first.
   return [...shapes.values()].sort((a, b) => a.firstFret - b.firstFret);
 }
 

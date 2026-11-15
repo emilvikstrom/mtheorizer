@@ -22,16 +22,21 @@ const formatted = (pc: number, quality: ChordQualityId) =>
   shapesOf(pc, quality).map((s) => formatShape(s));
 
 describe("chordShapes", () => {
-  it("finds the CAGED shapes of C major, lowest first", () => {
+  it("finds the CAGED shapes of C major, lowest first, with variants", () => {
     expect(formatted(0, "major")).toEqual([
       "x 3 2 0 1 0",
+      "x 3 2 0 1 3",
       "x 3 5 5 5 3",
       "8 7 5 5 5 8",
       "8 10 10 9 8 8",
       "x x 10 12 13 12",
       "x 15 14 12 13 12",
     ]);
-    expect(shapesOf(0, "major").map((s) => s.firstFret)).toEqual([1, 3, 5, 8, 10, 12]);
+    expect(shapesOf(0, "major").map((s) => s.firstFret)).toEqual([1, 1, 3, 5, 8, 10, 12]);
+  });
+
+  it("offers more than one grip of B♭ major in the first position", () => {
+    expect(formatted(10, "major").slice(0, 2)).toEqual(["x 1 0 3 3 1", "x 1 3 3 3 1"]);
   });
 
   it.each([
