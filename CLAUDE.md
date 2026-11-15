@@ -8,8 +8,8 @@ Node finns inte på värddatorn, så allt körs i Docker. Om `docker` inte hitta
 
 | Vad | Kommando |
 |-----|----------|
-| Starta appen (http://localhost:8080) | `docker compose up --build -d` |
-| Stoppa | `docker compose down` |
+| Starta appen (http://localhost:8080) | `make up` (kör `docker compose up --build -d`) |
+| Stoppa | `make down` (kör `docker compose down`) |
 | Dev-server med hot reload (http://localhost:5173) | `docker compose --profile dev up dev` |
 | Kör testerna | `docker compose run --rm dev npm test` |
 | Typkontroll | `docker compose run --rm dev npm run typecheck` |
@@ -18,6 +18,8 @@ Node finns inte på värddatorn, så allt körs i Docker. Om `docker` inte hitta
 Om `package.json` har ändrats och dev-servern körs med gamla `node_modules`: `docker compose --profile dev up dev --build --renew-anon-volumes`.
 
 `docker compose build` kör typkontroll och alla tester. Om något fallerar byggs ingen image.
+
+`make up` bygger alltid om, så den startade appen har med de senaste ändringarna. `Makefile` hittar `docker` även när det bara finns i `~/.docker/bin`. Kör `make` för att se alla kommandon.
 
 ## Struktur
 
