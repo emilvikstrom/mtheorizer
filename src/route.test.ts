@@ -137,3 +137,22 @@ describe("parseRoute", () => {
     for (const route of routes) expectSame(parseRoute(formatRoute(route)), route);
   });
 });
+
+describe("guitar options", () => {
+  it("writes tuning and hand to the link only for the guitar, and only when not default", () => {
+    const guitar = { ...defaultChordRoute("guitar"), tuning: "dropD", left: true } as const;
+    expect(formatRoute(guitar)).toBe("#/C/major?on=guitar&tuning=dropD&hand=left");
+    expect(formatRoute({ ...guitar, tuning: "standard", left: false })).toBe("#/C/major?on=guitar");
+    expect(formatRoute({ ...guitar, instrument: "piano" })).toBe("#/C/major?on=piano");
+  });
+
+  it("reads them back, ignoring unknown tunings", () => {
+    expect(parseRoute("#/D/major?on=guitar&tuning=dadgad&hand=left")).toMatchObject({
+      tuning: "dadgad",
+      left: true,
+    });
+    const bad = parseRoute("#/D/scale/major?on=guitar&tuning=banjo");
+    expect(bad).not.toHaveProperty("tuning");
+    expect(parseRoute("#/D/major?on=piano&tuning=dropD")).not.toHaveProperty("tuning");
+  });
+});

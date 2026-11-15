@@ -69,4 +69,4 @@ Resultat:
 - ✅ Valbar enharmonisk stavning (C♯-dur i stället för D♭-dur) (X-04) och pianot beskuret på mobil (X-06).
 - ✅ CI: GitHub Actions som kör Docker-bygget (X-02).
 - ✅ Lint och formattering med ESLint och Prettier, i Docker-bygget (X-03).
-- ✅ Visning på gitarrhals som alternativ till pianot (X-07), fyra band i taget med spelbara ackordgrepp och skallägen (G-01). Fler stämningar och fingersättning ligger i backloggen (G-02–G-04).
+- ✅ Visning på gitarrhals som alternativ till pianot (X-07), fyra band i taget med spelbara ackordgrepp och skallägen (G-01). Andra stämningar och vänsterhänt hals finns (G-02). Fingersättning ligger i backloggen (G-03–G-04).

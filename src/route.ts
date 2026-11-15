@@ -9,6 +9,8 @@ import {
   type Note,
   SCALES,
   type ScaleId,
+  TUNING_IDS,
+  type TuningId,
   circlePosition,
   key,
   keyEquals,
@@ -29,7 +31,13 @@ import {
 
 export type Instrument = "piano" | "guitar";
 
-export interface ChordRoute {
+/** How the guitar is shown. Left out of the route when it is the default (standard tuning, right-handed). */
+export interface GuitarOptions {
+  readonly tuning?: TuningId;
+  readonly left?: boolean;
+}
+
+export interface ChordRoute extends GuitarOptions {
   readonly page: "chord";
   readonly root: Note;
   readonly quality: ChordQualityId;
@@ -37,7 +45,7 @@ export interface ChordRoute {
   readonly instrument: Instrument;
 }
 
-export interface ScaleRoute {
+export interface ScaleRoute extends GuitarOptions {
   readonly page: "scale";
   readonly root: Note;
   readonly scaleId: ScaleId;
@@ -80,6 +88,14 @@ function rememberInstrument(instrument: Instrument) {
   }
 }
 
+/** The guitar options of `route`, for carrying them over to another route. */
+export function guitarOptions(route: LookupRoute): GuitarOptions {
+  return {
+    ...(route.tuning && route.tuning !== "standard" ? { tuning: route.tuning } : {}),
+    ...(route.left ? { left: true } : {}),
+  };
+}
+
 // --- Defaults ---------------------------------------------------------------
 
 export const defaultChordRoute = (instrument: Instrument = "piano"): ChordRoute => ({
@@ -102,15 +118,21 @@ export function formatRouteNote(n: Note): string {
   return `${n.letter}${accidental}`;
 }
 
+function formatGuitarOptions(route: LookupRoute): string {
+  if (route.instrument !== "guitar") return "";
+  const { tuning, left } = guitarOptions(route);
+  return `${tuning ? `&tuning=${tuning}` : ""}${left ? "&hand=left" : ""}`;
+}
+
 export function formatRoute(route: Route): string {
   switch (route.page) {
     case "chord": {
       const inversion =
         route.inversion > 0 && route.instrument === "piano" ? `&inv=${route.inversion}` : "";
-      return `#/${formatRouteNote(route.root)}/${route.quality}?on=${route.instrument}${inversion}`;
+      return `#/${formatRouteNote(route.root)}/${route.quality}?on=${route.instrument}${inversion}${formatGuitarOptions(route)}`;
     }
     case "scale":
-      return `#/${formatRouteNote(route.root)}/scale/${route.scaleId}?on=${route.instrument}`;
+      return `#/${formatRouteNote(route.root)}/scale/${route.scaleId}?on=${route.instrument}${formatGuitarOptions(route)}`;
     case "circle":
       return `#/circle/${formatRouteNote(route.key.tonic)}/${route.key.mode}`;
   }
@@ -169,6 +191,16 @@ export function parseRoute(hash: string, fallbackInstrument: Instrument = "piano
 
   const onParam = query.get("on");
   const instrument = isInstrument(onParam) ? onParam : fallbackInstrument;
+  const tuningParam = query.get("tuning");
+  const options: GuitarOptions = {
+    ...(instrument === "guitar" &&
+    tuningParam !== null &&
+    tuningParam !== "standard" &&
+    (TUNING_IDS as string[]).includes(tuningParam)
+      ? { tuning: tuningParam as TuningId }
+      : {}),
+    ...(instrument === "guitar" && query.get("hand") === "left" ? { left: true } : {}),
+  };
   const fallback = defaultChordRoute(instrument);
   const root = parseRouteNote(parts[0]);
   if (!root) return fallback;
@@ -176,7 +208,7 @@ export function parseRoute(hash: string, fallbackInstrument: Instrument = "piano
   if (parts[1] === "scale") {
     const scaleId = parts[2];
     return scaleId !== undefined && has(SCALES, scaleId)
-      ? { page: "scale", root, scaleId: scaleId as ScaleId, instrument }
+      ? { page: "scale", root, scaleId: scaleId as ScaleId, instrument, ...options }
       : fallback;
   }
 
@@ -190,6 +222,7 @@ export function parseRoute(hash: string, fallbackInstrument: Instrument = "piano
     inversion:
       Number.isInteger(inversion) && inversion >= 0 && inversion <= MAX_INVERSION ? inversion : 0,
     instrument,
+    ...options,
   };
 }
 

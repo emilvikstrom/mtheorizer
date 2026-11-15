@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CHORD_QUALITY_IDS, type ChordQualityId, chordOnPitchClass } from "./chords";
+import { TUNING_IDS, TUNINGS } from "./fretboard";
 import {
   chordShapes,
   fingeringFor,
@@ -183,6 +184,45 @@ describe("scalePositions", () => {
               : p.fret >= view.firstFret && p.fret <= lastFret(view),
           ).toBe(true);
         }
+      }
+    });
+  });
+});
+
+describe("other tunings", () => {
+  it("finds the open D major shape in Drop D", () => {
+    const tones = chordHighlights(chordOnPitchClass(2, "major"));
+    expect(formatShape(chordShapes(tones, TUNINGS.dropD.strings)[0]!)).toBe("0 0 0 2 3 2");
+  });
+
+  it("finds the open strings of DADGAD as D suspended fourth", () => {
+    const tones = chordHighlights(chordOnPitchClass(2, "sus4"));
+    expect(formatShape(chordShapes(tones, TUNINGS.dadgad.strings)[0]!)).toBe("0 0 0 0 0 0");
+  });
+
+  describe.each(TUNING_IDS)("%s", (id) => {
+    const strings = TUNINGS[id].strings;
+    it.each(PITCH_CLASSES)(
+      "gives every chord of pitch class %i a shape that sounds its tones",
+      (pc) => {
+        for (const quality of CHORD_QUALITY_IDS) {
+          const tones = chordHighlights(chordOnPitchClass(pc, quality));
+          const required = tones.filter((t) => !t.optional).map((t) => pitchClass(t.note));
+          for (const shape of chordShapes(tones, strings)) {
+            const sounded = new Set(shape.positions.map((p) => pitchClass(p.note)));
+            expect(required.every((r) => sounded.has(r))).toBe(true);
+          }
+        }
+      },
+    );
+
+    it.each(PITCH_CLASSES)("covers the whole scale of pitch class %i along the neck", (pc) => {
+      for (const scaleId of SCALE_IDS) {
+        const tones = scaleHighlights(scaleOnPitchClass(pc, scaleId));
+        const views = scalePositions(tones, strings);
+        expect(views.length).toBeGreaterThan(0);
+        const shown = new Set(views.flatMap((v) => v.positions.map((p) => pitchClass(p.note))));
+        expect(shown.size).toBe(tones.length);
       }
     });
   });

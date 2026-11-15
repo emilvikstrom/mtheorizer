@@ -3,7 +3,7 @@ import {
   type HighlightTone,
   type NeckTone,
   type NeckView,
-  STANDARD_TUNING,
+  type Tuning,
   formatFingering,
   formatNote,
   formatShape,
@@ -21,7 +21,7 @@ const NUT_WIDTH = 5;
 
 const NECK_START = NAME_COLUMN + OPEN_COLUMN;
 const OPEN_X = NAME_COLUMN + OPEN_COLUMN / 2;
-const STRING_COUNT = STANDARD_TUNING.length;
+const STRING_COUNT = 6;
 const BOARD_HEIGHT = (STRING_COUNT - 1) * STRING_GAP + 2 * BOARD_PADDING;
 const FRET_NUMBER_Y = BOARD_HEIGHT + 18;
 const HEIGHT = FRET_NUMBER_Y + 6;
@@ -87,11 +87,23 @@ function ToneDot({ position, x, finger }: { position: NeckTone; x: number; finge
   );
 }
 
-function NeckDiagram({ view, description }: { view: NeckView; description: string }) {
+function NeckDiagram({
+  view,
+  description,
+  tuning,
+  left,
+}: {
+  view: NeckView;
+  description: string;
+  tuning: Tuning;
+  left: boolean;
+}) {
   const frets = Array.from({ length: view.frets }, (_, i) => view.firstFret + i);
   const neckEnd = NECK_START + view.frets * FRET_WIDTH;
+  // A left-handed neck is the mirror image: the nut on the right, frets counting leftwards.
+  const mx = (x: number) => (left ? neckEnd - x : x);
   const fretCentreX = (fret: number) =>
-    fret === 0 ? OPEN_X : NECK_START + (fret - view.firstFret + 0.5) * FRET_WIDTH;
+    mx(fret === 0 ? OPEN_X : NECK_START + (fret - view.firstFret + 0.5) * FRET_WIDTH);
   const muted = new Set(view.muted);
 
   return (
@@ -104,7 +116,7 @@ function NeckDiagram({ view, description }: { view: NeckView; description: strin
       <title>{description}</title>
       <rect
         className="fretboard__board"
-        x={NECK_START}
+        x={left ? 0 : NECK_START}
         y={0}
         width={neckEnd - NECK_START}
         height={BOARD_HEIGHT}
@@ -139,7 +151,7 @@ function NeckDiagram({ view, description }: { view: NeckView; description: strin
       )}
 
       {frets.map((fret, i) => {
-        const x = NECK_START + (i + 1) * FRET_WIDTH;
+        const x = mx(NECK_START + (i + 1) * FRET_WIDTH);
         return (
           <line key={fret} className="fretboard__fret" x1={x} y1={0} x2={x} y2={BOARD_HEIGHT} />
         );
@@ -147,7 +159,7 @@ function NeckDiagram({ view, description }: { view: NeckView; description: strin
       {view.firstFret === 1 ? (
         <rect
           className="fretboard__nut"
-          x={NECK_START - NUT_WIDTH / 2}
+          x={mx(NECK_START) - NUT_WIDTH / 2}
           y={0}
           width={NUT_WIDTH}
           height={BOARD_HEIGHT}
@@ -155,30 +167,30 @@ function NeckDiagram({ view, description }: { view: NeckView; description: strin
       ) : (
         <line
           className="fretboard__fret"
-          x1={NECK_START}
+          x1={mx(NECK_START)}
           y1={0}
-          x2={NECK_START}
+          x2={mx(NECK_START)}
           y2={BOARD_HEIGHT}
         />
       )}
 
-      {STANDARD_TUNING.map((open, index) => {
+      {tuning.strings.map((open, index) => {
         const string = index + 1;
         const y = stringY(string);
         return (
           <g key={string}>
             <line
               className="fretboard__string"
-              x1={NECK_START}
+              x1={mx(NECK_START)}
               y1={y}
-              x2={neckEnd}
+              x2={mx(neckEnd)}
               y2={y}
               // Lower strings are thicker.
               strokeWidth={1 + index * 0.35}
             />
             <text
               className="fretboard__string-name"
-              x={NAME_COLUMN / 2}
+              x={mx(NAME_COLUMN / 2)}
               y={y}
               textAnchor="middle"
               dominantBaseline="central"
@@ -189,7 +201,7 @@ function NeckDiagram({ view, description }: { view: NeckView; description: strin
               <text
                 className="fretboard__muted"
                 data-muted={string}
-                x={OPEN_X}
+                x={mx(OPEN_X)}
                 y={y}
                 textAnchor="middle"
                 dominantBaseline="central"
@@ -252,10 +264,13 @@ interface FretboardProps {
   name: string;
   /** Legend for the marked positions: root/tonic, and the others. */
   legend: { root: string; tone: string };
+  tuning: Tuning;
+  /** Mirror the neck for a left-handed player. */
+  left: boolean;
 }
 
 /** A few frets of a guitar neck at a time, with arrows to step along it. */
-export function Fretboard({ views, kind, tones, name, legend }: FretboardProps) {
+export function Fretboard({ views, kind, tones, name, legend, tuning, left }: FretboardProps) {
   // Remember where on the neck the player is rather than an index, so changing
   // the chord keeps the hand in the same area.
   const [wantedFret, setWantedFret] = useState(1);
@@ -270,9 +285,11 @@ export function Fretboard({ views, kind, tones, name, legend }: FretboardProps) 
   const where = whereOnNeck(view);
   const status = `${noun} ${index + 1} of ${views.length}`;
   const detail =
-    kind === "shape" ? formatShape(view) : tones.map((tone) => formatNote(tone.note)).join(", ");
-  const fingers = view.fingering ? `, fingers ${formatFingering(view)}` : "";
-  const description = `Guitar neck showing ${name}, ${status.toLowerCase()}, ${where.toLowerCase()}: ${detail}${fingers}`;
+    kind === "shape"
+      ? formatShape(view, tuning.strings.length)
+      : tones.map((tone) => formatNote(tone.note)).join(", ");
+  const fingers = view.fingering ? `, fingers ${formatFingering(view, tuning.strings.length)}` : "";
+  const description = `${left ? "Left-handed guitar" : "Guitar"} neck showing ${name}${tuning.id === "standard" ? "" : ` in ${tuning.label} tuning`}, ${status.toLowerCase()}, ${where.toLowerCase()}: ${detail}${fingers}`;
   const step = (delta: number) => {
     const next = views[index + delta];
     if (next) setWantedFret(next.firstFret);
@@ -304,7 +321,7 @@ export function Fretboard({ views, kind, tones, name, legend }: FretboardProps) 
           →
         </button>
       </div>
-      <NeckDiagram view={view} description={description} />
+      <NeckDiagram view={view} description={description} tuning={tuning} left={left} />
       <ToneLegend {...legend} />
     </figure>
   );

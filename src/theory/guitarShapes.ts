@@ -224,9 +224,10 @@ export function chordShapes(
 
 /**
  * Four-fret positions for a scale: the first position (with the open strings),
- * then one starting on each scale tone of the lowest string. Every four-fret
- * stretch of a guitar in standard tuning holds all twelve pitch classes, so
- * each position contains the whole scale.
+ * then one starting on each scale tone of the lowest string. In standard tuning
+ * every four-fret stretch holds all twelve pitch classes, so each position
+ * contains the whole scale; in tunings with repeated intervals (DADGAD) a
+ * position can miss a tone.
  */
 export function scalePositions(
   tones: readonly HighlightTone[],

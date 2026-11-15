@@ -147,6 +147,29 @@ describe("App", () => {
     expect(highlightedKeys(container)).toEqual(["60:root", "64:third", "67:fifth"]);
   });
 
+  it("shows the guitar in another tuning and for the left hand", async () => {
+    const user = userEvent.setup();
+    window.location.hash = "#/D/major?on=guitar";
+    render(<App />);
+    expect(screen.getByRole("radio", { name: "Standard" })).toBeChecked();
+
+    await user.click(screen.getByRole("radio", { name: "Drop D" }));
+    expect(
+      screen.getByRole("img", {
+        name: /^Guitar neck showing D major in Drop D tuning, shape 1 of/,
+      }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toBe("#/D/major?on=guitar&tuning=dropD");
+
+    await user.click(screen.getByRole("radio", { name: "Left-handed" }));
+    expect(screen.getByRole("img", { name: /^Left-handed guitar neck/ })).toBeInTheDocument();
+    expect(window.location.hash).toBe("#/D/major?on=guitar&tuning=dropD&hand=left");
+
+    // The choice follows a switch to a scale.
+    await user.click(screen.getByRole("radio", { name: "Scale" }));
+    expect(window.location.hash).toBe("#/D/scale/major?on=guitar&tuning=dropD&hand=left");
+  });
+
   it("steps through the chord shapes with the arrows", async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);
