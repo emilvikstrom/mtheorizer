@@ -16,7 +16,7 @@ export function QualityPicker({ value, onChange }: QualityPickerProps) {
   return (
     <fieldset className="picker">
       <legend className="picker__legend">Quality</legend>
-      <div className="picker__options picker__options--qualities">
+      <div className="picker__options picker__options--pair">
         {QUALITY_IDS.map((id) => (
           <label key={id} className="picker__option">
             <input

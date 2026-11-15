@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { ChordInfo } from './components/ChordInfo';
+import { Fretboard } from './components/Fretboard';
+import { type Instrument, InstrumentPicker } from './components/InstrumentPicker';
 import { Piano } from './components/Piano';
 import { QualityPicker } from './components/QualityPicker';
 import { RootPicker } from './components/RootPicker';
@@ -8,6 +10,7 @@ import { type ChordQualityId, chordOnPitchClass } from './theory';
 export function App() {
   const [rootPitchClass, setRootPitchClass] = useState(0);
   const [quality, setQuality] = useState<ChordQualityId>('major');
+  const [instrument, setInstrument] = useState<Instrument>('piano');
   const chord = chordOnPitchClass(rootPitchClass, quality);
 
   return (
@@ -19,11 +22,14 @@ export function App() {
 
       <section className="controls" aria-label="Choose a chord">
         <RootPicker value={rootPitchClass} onChange={setRootPitchClass} />
-        <QualityPicker value={quality} onChange={setQuality} />
+        <div className="controls__row">
+          <QualityPicker value={quality} onChange={setQuality} />
+          <InstrumentPicker value={instrument} onChange={setInstrument} />
+        </div>
       </section>
 
       <ChordInfo chord={chord} />
-      <Piano chord={chord} />
+      {instrument === 'piano' ? <Piano chord={chord} /> : <Fretboard chord={chord} />}
     </main>
   );
 }
