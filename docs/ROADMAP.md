@@ -7,7 +7,7 @@ Status: ✅ klar · 🚧 pågår · ⏳ planerad · 💡 idé
 | ID | Milstolpe | Status |
 |----|-----------|--------|
 | M1 | Ackorduppslag med pianovisning | ✅ |
-| M2 | Fler ackordtyper och omvändningar | ⏳ |
+| M2 | Fler ackordtyper och omvändningar | 🚧 |
 | M3 | Skalor och modi | 🚧 |
 | M4 | Lyssna på ackord och skalor | 💡 |
 | M5 | Tonarter och harmoniska samband | ✅ |
@@ -22,12 +22,17 @@ Resultat:
 - För svarta tangenter väljs automatiskt den stavning vars tonart har färst förtecken: D♭-dur men C♯-moll.
 - Pianot visar två oktaver (C4–B5) med ackordet i grundläge.
 
-## M2 – Fler ackordtyper och omvändningar ⏳
+## M2 – Fler ackordtyper och omvändningar 🚧
 
 Mål: Alla vanliga treklanger och fyrklanger, och möjlighet att se ackordet i omvändning.
 - Förminskade och överstigande treklanger, sus2 och sus4.
 - Septimackord: maj7, 7, m7, m7♭5 och dim7.
 - Omvändningar (första, andra och tredje) på pianot.
+
+Klart hittills (M2-01–M2-03):
+- 36 ackordtyper i sju grupper: treklanger (dur, moll, °, +, sus2, sus4), sextackord (6, m6, 6/9, m6/9), septimackord (maj7, 7, m7, m(maj7), m7♭5, °7, 7♯5, maj7♯5, 7♭5, 7sus4), nonackord (maj9, 9, m9, 7♭9, 7♯9, 9sus4), undecimackord (11, m11, 7♯11, maj7♯11), tredecimackord (13, maj13, m13) och tillagda toner (add9, m(add9), add11).
+- Varje ton har en roll (grundton, sekund, ters … tredecima) och kan märkas som valfri. Gitarrgreppen får då utelämna den, som kvinten i öppet C7 (x32310).
+- Kvar: omvändningar (M2-04).
 
 ## M3 – Skalor och modi 🚧
 

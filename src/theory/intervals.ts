@@ -32,6 +32,20 @@ export const MAJOR_SIXTH = interval('Major sixth', 'M6', 5, 9);
 export const MINOR_SEVENTH = interval('Minor seventh', 'm7', 6, 10);
 export const MAJOR_SEVENTH = interval('Major seventh', 'M7', 6, 11);
 
+// Altered fifths and sevenths, used in diminished and augmented chords.
+export const DIMINISHED_FIFTH = interval('Diminished fifth', 'd5', 4, 6);
+export const AUGMENTED_FIFTH = interval('Augmented fifth', 'A5', 4, 8);
+export const DIMINISHED_SEVENTH = interval('Diminished seventh', 'd7', 6, 9);
+
+// Compound intervals (beyond the octave), used for chord extensions.
+export const MINOR_NINTH = interval('Minor ninth', 'm9', 8, 13);
+export const MAJOR_NINTH = interval('Major ninth', 'M9', 8, 14);
+export const AUGMENTED_NINTH = interval('Augmented ninth', 'A9', 8, 15);
+export const PERFECT_ELEVENTH = interval('Perfect eleventh', 'P11', 10, 17);
+export const AUGMENTED_ELEVENTH = interval('Augmented eleventh', 'A11', 10, 18);
+export const MINOR_THIRTEENTH = interval('Minor thirteenth', 'm13', 12, 20);
+export const MAJOR_THIRTEENTH = interval('Major thirteenth', 'M13', 12, 21);
+
 /**
  * The note `interval` above `from`, spelled correctly: the letter moves by
  * `interval.steps`, and the accidental is whatever makes the pitch right.

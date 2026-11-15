@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { type ChordQualityId, chordOnPitchClass } from './chords';
+import { CHORD_QUALITY_IDS, chordOnPitchClass } from './chords';
 import { STANDARD_TUNING, fretboardPositions, openStringMidi } from './fretboard';
 import { formatNote, pitchClass } from './notes';
 
-const QUALITIES: ChordQualityId[] = ['major', 'minor'];
 
 /** Positions on one string as "fret:note:role". */
 const onString = (positions: ReturnType<typeof fretboardPositions>, string: number) =>
@@ -33,7 +32,7 @@ describe('fretboard', () => {
     expect(onString(positions, 6)).toEqual(['0:E:third', '3:G:fifth']);
   });
 
-  describe.each(QUALITIES)('every %s chord', (quality) => {
+  describe.each(CHORD_QUALITY_IDS)('every %s chord', (quality) => {
     it.each(Array.from({ length: 12 }, (_, pc) => pc))('on pitch class %i fits the neck', (pc) => {
       const chord = chordOnPitchClass(pc, quality);
       const positions = fretboardPositions(chord);
@@ -51,7 +50,7 @@ describe('fretboard', () => {
           expect(string.filter((p) => p.fret < 12 && p.role === tone.role)).toHaveLength(1);
         }
         const openIsChordTone = chord.tones.some((t) => pitchClass(t.note) === pitchClass(open.note));
-        expect(string).toHaveLength(3 + (openIsChordTone ? 1 : 0));
+        expect(string).toHaveLength(chord.tones.length + (openIsChordTone ? 1 : 0));
       });
     });
   });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chordOnPitchClass } from './chords';
+import { CHORD_QUALITIES, CHORD_QUALITY_IDS, chordOnPitchClass, qualitiesInGroup } from './chords';
 import { scaleOnPitchClass } from './scales';
 import { chordOnKeyboard, midiOf, rootPosition, scaleOnKeyboard } from './voicing';
 
@@ -14,13 +14,31 @@ describe('voicing', () => {
     expect(rootPosition(chordOnPitchClass(11, 'major')).map((t) => t.midi)).toEqual([71, 75, 78]);
   });
 
-  it('fits every triad on a two-octave keyboard from C4', () => {
+  it('fits every triad and seventh chord on a two-octave keyboard from C4', () => {
+    const qualities = [...qualitiesInGroup('triads'), ...qualitiesInGroup('sixths'), ...qualitiesInGroup('sevenths')]
+      // A six-nine reaches past the octave.
+      .filter((q) => q.tones.every((t) => t.interval.semitones < 12))
+      .map((q) => q.id);
+    expect(qualities).toContain('diminished7');
     for (let pc = 0; pc < 12; pc++) {
-      for (const quality of ['major', 'minor'] as const) {
+      for (const quality of qualities) {
         for (const { midi } of rootPosition(chordOnPitchClass(pc, quality))) {
           expect(midi).toBeGreaterThanOrEqual(60);
           expect(midi).toBeLessThanOrEqual(83);
         }
+      }
+    }
+  });
+
+  it('stacks extensions above the octave, within C4–G♯6', () => {
+    expect(rootPosition(chordOnPitchClass(0, 'dominant13')).map((t) => t.midi)).toEqual([60, 64, 67, 70, 74, 81]);
+    for (let pc = 0; pc < 12; pc++) {
+      for (const quality of CHORD_QUALITY_IDS) {
+        const midis = rootPosition(chordOnPitchClass(pc, quality)).map((t) => t.midi);
+        expect(Math.min(...midis)).toBe(60 + pc);
+        expect(Math.max(...midis)).toBeLessThanOrEqual(midiOf(8, 6));
+        expect(midis).toEqual([...midis].sort((a, b) => a - b));
+        expect(midis.length).toBe(CHORD_QUALITIES[quality].tones.length);
       }
     }
   });

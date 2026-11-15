@@ -14,7 +14,9 @@ export function midiOf(pc: number, octave: number): number {
 
 /**
  * The chord in root position, with the root in `octave` and the other tones
- * stacked above it. With octave 4 every major or minor triad fits in C4–B5.
+ * stacked above it in thirds, extensions above the octave. With octave 4
+ * every triad and seventh chord fits in C4–B5; a thirteenth chord on B
+ * reaches G♯6.
  */
 export function rootPosition(chord: Chord, octave = 4): VoicedTone[] {
   const rootMidi = midiOf(pitchClass(chord.root), octave);
@@ -28,6 +30,8 @@ export interface HighlightTone {
   readonly isRoot: boolean;
   /** What the tone is, e.g. "third" in a chord or "degree-3" in a scale. */
   readonly role: string;
+  /** A chord tone that may be left out when the chord is played (often the fifth). */
+  readonly optional?: boolean;
 }
 
 /** A key to highlight on the keyboard. */
@@ -36,7 +40,7 @@ export interface KeyboardTone extends HighlightTone {
 }
 
 export function chordHighlights(chord: Chord): HighlightTone[] {
-  return chord.tones.map(({ note, role }) => ({ note, isRoot: role === 'root', role }));
+  return chord.tones.map(({ note, role, optional }) => ({ note, isRoot: role === 'root', role, optional }));
 }
 
 export function scaleHighlights(scale: SpelledScale): HighlightTone[] {
@@ -44,11 +48,12 @@ export function scaleHighlights(scale: SpelledScale): HighlightTone[] {
 }
 
 export function chordOnKeyboard(chord: Chord, octave = 4): KeyboardTone[] {
-  return rootPosition(chord, octave).map(({ note, midi, role }) => ({
+  return rootPosition(chord, octave).map(({ note, midi, role, optional }) => ({
     note,
     midi,
     isRoot: role === 'root',
     role,
+    optional,
   }));
 }
 

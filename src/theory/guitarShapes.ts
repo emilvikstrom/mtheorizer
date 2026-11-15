@@ -63,12 +63,16 @@ function* combinations<T>(lists: readonly (readonly T[])[], prefix: T[] = []): G
   for (const item of lists[prefix.length] ?? []) yield* combinations(lists, [...prefix, item]);
 }
 
-/** Lower is better: more strings first, then fewer fingers, then a smaller stretch, then lower on the neck. */
+/**
+ * Lower is better: more strings first, then more of the chord's tones, then
+ * fewer fingers, then a smaller stretch, then lower on the neck.
+ */
 function cost(shape: { positions: readonly NeckTone[]; fingers: number }): number[] {
   const fretted = shape.positions.map((p) => p.fret).filter((f) => f > 0);
   const stretch = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
   const height = fretted.reduce((sum, f) => sum + f, 0);
-  return [-shape.positions.length, shape.fingers, stretch, height];
+  const distinct = new Set(shape.positions.map((p) => pitchClass(p.note))).size;
+  return [-shape.positions.length, -distinct, shape.fingers, stretch, height];
 }
 
 function compareCost(a: number[], b: number[]): number {
@@ -91,7 +95,7 @@ function bestShapeInWindow(
   const candidates = Array.from({ length: stringCount }, (_, i) =>
     onNeck.filter((p) => p.string === i + 1 && reachable(p)),
   );
-  const pitchClasses = new Set(tones.map((t) => pitchClass(t.note)));
+  const required = tones.filter((t) => !t.optional).map((t) => pitchClass(t.note));
 
   let best: (Omit<ChordShape, 'firstFret' | 'frets'> & { cost: number[] }) | undefined;
   // Strings 1..sounding are played; the bass strings below them are muted.
@@ -101,7 +105,7 @@ function bestShapeInWindow(
     const lists = [...candidates.slice(0, sounding - 1), bassChoices];
     for (const positions of combinations(lists)) {
       const covered = new Set(positions.map((p) => pitchClass(p.note)));
-      if (covered.size !== pitchClasses.size) continue;
+      if (!required.every((pc) => covered.has(pc))) continue;
       const frets = positions.map((p) => p.fret);
       if (frets.includes(0) && Math.max(...frets) > OPEN_CHORD_MAX_FRET) continue;
       const fingers = fingersNeeded(frets);
@@ -130,7 +134,8 @@ export function formatShape(view: NeckView, stringCount = STANDARD_TUNING.length
  * Playable shapes of a chord along the neck, lowest first.
  *
  * Each four-fret stretch gets its best root-position shape: the lowest string
- * played is the root, every chord tone sounds, the strings from the bass up to
+ * played is the root, every chord tone sounds (optional tones such as the
+ * fifth of a seventh chord may be left out), the strings from the bass up to
  * string 1 are all played, and at most four fingers are needed (a barre counts
  * as one). Open strings are only used in open chords, with nothing fretted
  * above the third fret. For a major or

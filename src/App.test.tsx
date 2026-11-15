@@ -32,10 +32,57 @@ describe('App', () => {
     expect(highlightedKeys(container)).toEqual(['60:root', '64:third', '67:fifth']);
   });
 
-  it('offers all 12 roots and both qualities', () => {
+  it('offers all 12 roots and every chord quality, grouped by family', () => {
     render(<App />);
     expect(within(screen.getByRole('group', { name: 'Root' })).getAllByRole('radio')).toHaveLength(12);
-    expect(within(screen.getByRole('group', { name: 'Quality' })).getAllByRole('radio')).toHaveLength(2);
+    expect(within(screen.getByRole('group', { name: 'Quality' })).getAllByRole('radio')).toHaveLength(36);
+    expect(within(screen.getByRole('group', { name: 'Triads' })).getAllByRole('radio')).toHaveLength(6);
+    expect(within(screen.getByRole('group', { name: 'Sevenths' })).getAllByRole('radio')).toHaveLength(10);
+  });
+
+  it('shows each quality as a chord symbol on the chosen root', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const symbolOf = (name: string) => screen.getByRole('radio', { name }).closest('label')?.textContent;
+    expect(symbolOf('Major')).toBe('C');
+    expect(symbolOf('Half-diminished seventh')).toBe('Cm7♭5');
+
+    // Each chord gets its own root spelling: D♭ major but C♯ minor and C♯°.
+    await user.click(screen.getByRole('radio', { name: 'C♯/D♭' }));
+    expect(symbolOf('Major')).toBe('D♭');
+    expect(symbolOf('Minor')).toBe('C♯m');
+    expect(symbolOf('Diminished')).toBe('C♯°');
+  });
+
+  it('shows a seventh chord with four tones', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    await user.click(screen.getByRole('radio', { name: 'A♯/B♭' }));
+    await user.click(screen.getByRole('radio', { name: 'Dominant seventh' }));
+
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('B♭ dominant seventh');
+    expect(chordNotes()).toEqual(['B♭', 'D', 'F', 'A♭']);
+    expect(highlightedKeys(container)).toEqual(['70:root', '74:third', '77:fifth', '80:seventh']);
+    expect(screen.getByText('Often left out')).toBeInTheDocument();
+  });
+
+  it('widens the keyboard for chords that reach past B5', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    expect(container.querySelectorAll('[data-midi]')).toHaveLength(24);
+
+    await user.click(screen.getByRole('radio', { name: 'B' }));
+    await user.click(screen.getByRole('radio', { name: 'Dominant thirteenth' }));
+    expect(chordNotes()).toEqual(['B', 'D♯', 'F♯', 'A', 'C♯', 'G♯']);
+    expect(container.querySelectorAll('[data-midi]')).toHaveLength(36);
+    expect(highlightedKeys(container)).toEqual([
+      '71:root',
+      '75:third',
+      '78:fifth',
+      '81:seventh',
+      '85:ninth',
+      '92:thirteenth',
+    ]);
   });
 
   it('switches between the piano and the guitar neck', async () => {
@@ -190,6 +237,17 @@ describe('App', () => {
 
       expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('E♭ natural minor scale');
       expect(scaleNotes()).toEqual(['E♭', 'F', 'G♭', 'A♭', 'B♭', 'C♭', 'D♭']);
+    });
+
+    it('comes back to the same seventh chord after looking at its scale', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'Minor seventh' }));
+      await user.click(screen.getByRole('radio', { name: 'Scale' }));
+      expect(screen.getByRole('radio', { name: 'Natural minor' })).toBeChecked();
+
+      await user.click(screen.getByRole('radio', { name: 'Chord' }));
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('C minor seventh');
     });
 
     it('keeps root and major/minor when switching between chord and scale', async () => {
