@@ -59,3 +59,9 @@ Arbetsflöde för varje uppgift:
 5. Nya idéer och upptäckter läggs under **Senare**, eller som en ny milstolpe i ROADMAP, i stället för att byggas direkt.
 
 När en milstolpe ska påbörjas bryts den först ner i uppgifter under **Nästa**.
+
+## Pull requests
+
+- **Aktivera alltid Auto-fix på varje PR du skapar.** Så fort en PR är öppnad: bind den (`get_status`, och `bind_pr` om den inte redan visas) och slå på Auto-fix, så att CI-fel, mergekonflikter och granskningskommentarer åtgärdas automatiskt.
+- Polla eller schemalägg inte CI-kontroller själv. Auto-fix väcker sessionen vid behov.
+- Aktivera inte auto-merge om det inte uttryckligen efterfrågas.
