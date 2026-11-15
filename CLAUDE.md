@@ -27,6 +27,7 @@ Om `package.json` har ändrats och dev-servern körs med gamla `node_modules`: `
   - `scales.ts`: skalor och antal förtecken i tonartens förtecken.
   - `chords.ts`: ackordkvaliteter, `buildChord` och `preferredRootSpelling`.
   - `voicing.ts`: placering på tangentbordet (MIDI-nummer).
+  - `fretboard.ts`: gitarrstämning och var ackordets toner ligger på halsen (sträng + band).
 - `src/components/` innehåller React-komponenter som bara presenterar det teorimodulen räknar fram.
 - `docs/` innehåller planeringen (se nedan).
 

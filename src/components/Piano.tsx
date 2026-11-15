@@ -1,4 +1,5 @@
 import { type Chord, type VoicedTone, formatNote, midiOf, rootPosition } from '../theory';
+import { ToneLegend } from './ToneLegend';
 
 const LOWEST_OCTAVE = 4;
 const OCTAVES = 2;
@@ -100,10 +101,7 @@ export function Piano({ chord }: PianoProps) {
           <PianoKey key={shape.midi} shape={shape} tone={toneAt.get(shape.midi)} />
         ))}
       </svg>
-      <figcaption className="piano__legend">
-        <span className="legend legend--root">Root</span>
-        <span className="legend legend--tone">Chord tone</span>
-      </figcaption>
+      <ToneLegend />
     </figure>
   );
 }
