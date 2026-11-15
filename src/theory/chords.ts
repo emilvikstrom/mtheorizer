@@ -109,6 +109,7 @@ const DEFINITIONS = {
   augmented: { group: "triads", name: "augmented", symbol: "+", tones: [ROOT, MAJ3, AUG5] },
   sus2: { group: "triads", name: "suspended second", symbol: "sus2", tones: [ROOT, MAJ2, P5] },
   sus4: { group: "triads", name: "suspended fourth", symbol: "sus4", tones: [ROOT, P4, P5] },
+  power: { group: "triads", name: "power chord", symbol: "5", tones: [ROOT, P5] },
 
   // Sixths
   major6: {
