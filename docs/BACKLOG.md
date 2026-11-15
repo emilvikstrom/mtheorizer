@@ -35,17 +35,21 @@ _Inget just nu._
 - [ ] **X-04** Välj enharmonisk stavning själv (C♯ eller D♭)
 - [ ] **X-05** Svenskt gränssnitt och H/B-notation
 - [ ] **X-06** Bättre pianovisning på mobil: etiketterna på svarta tangenter blir små vid 375 px bredd (större text eller bara den del av tangentbordet som behövs)
-- [ ] **M3-01** Skalvy: dur och naturlig moll på pianot (bygger på `buildScale`)
 - [ ] **M4-01** Spela upp ackordet med Web Audio
 - [ ] **M5-04** Klicka på ett diatoniskt ackord i kvintcirkelfliken för att öppna det i ackordfliken (kräver förminskade ackord från M2-01)
+- [ ] **X-08** Kom ihåg valet piano/gitarr (i URL:en tillsammans med X-01, eller i localStorage)
+- [ ] **G-01** Ackordgrepp på gitarrhalsen: visa ett spelbart grepp (t.ex. CAGED-formerna) i stället för alla positioner
+- [ ] **G-02** Andra stämningar (Drop D, DADGAD) och vänsterhänt hals
 
 ## Klart
 
-- [x] **M5-01** Flikar i appen (Chords / Circle of fifths) med tangentbordsnavigering _(2026-11-15)_
-- [x] **M5-02** Teorimodul för tonarter: förtecken, kvintcirkelns positioner med enharmoniska stavningar, relativ-, parallell-, dominant- och subdominanttonart samt diatoniska treklanger med steg och funktion, tabelltestat för alla positioner _(2026-11-15)_
-- [x] **M5-03** Kvintcirkeln i SVG med tonartspanel: välj med klick eller piltangenter, välj stavning, hoppa till närliggande tonarter _(2026-11-15)_
 - [x] **M1-01** Projektskelett: Vite, React, TypeScript, Dockerfile och docker compose (app + dev) _(2026-11-15)_
 - [x] **M1-02** Teorimodul: stavade toner, intervall, skalor, dur- och mollackord med tabelltest för alla 24 _(2026-11-15)_
 - [x] **M1-03** UI för att välja grundton (12) och dur/moll, och visa ackordets toner med intervallnamn _(2026-11-15)_
 - [x] **M1-04** Pianovisualisering i SVG (C4–B5) med grundton och ackordtoner markerade _(2026-11-15)_
 - [x] **M1-05** Planeringsdokument (ROADMAP, BACKLOG, CLAUDE.md) och README _(2026-11-15)_
+- [x] **X-07** Växla mellan piano och gitarrhals: standardstämning, band 0–12, alla ackordtoner markerade och rätt stavade, tabelltest för alla 24 ackord. Halsen scrollar i sidled på smala skärmar _(2026-11-15)_
+- [x] **M3-01** Skalvy: välj Ackord eller Skala, dur och naturlig moll på pianot från grundton till grundton, med stegnummer och intervallnamn. Tabelltest för alla 24 skalor _(2026-11-15)_
+- [x] **M5-01** Flikar i appen (Chords & scales / Circle of fifths) med tangentbordsnavigering _(2026-11-15)_
+- [x] **M5-02** Teorimodul för tonarter: förtecken, kvintcirkelns positioner med enharmoniska stavningar, relativ-, parallell-, dominant- och subdominanttonart samt diatoniska treklanger med steg och funktion, tabelltestat för alla positioner _(2026-11-15)_
+- [x] **M5-03** Kvintcirkeln i SVG med tonartspanel: välj med klick eller piltangenter, välj stavning, hoppa till närliggande tonarter _(2026-11-15)_

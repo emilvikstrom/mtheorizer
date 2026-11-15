@@ -14,6 +14,11 @@
   --key-black: #22201e;
   --key-stroke: #3a3632;
   --key-octave: #8a847e;
+  --neck-board: #eadfce;
+  --neck-fret: #a9a097;
+  --neck-string: #6b6560;
+  --neck-nut: #3a3632;
+  --neck-inlay: #d3c6b3;
 
   color-scheme: light dark;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -31,6 +36,11 @@
     --black-button-text: #f2efeb;
     --focus: #74c0fc;
     --key-stroke: #000000;
+    --neck-board: #2e2924;
+    --neck-fret: #6e665e;
+    --neck-string: #a39d96;
+    --neck-nut: #d9d4ce;
+    --neck-inlay: #45403a;
   }
 }
 
@@ -98,8 +108,16 @@ body {
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
-.picker__options--qualities {
-  grid-template-columns: repeat(2, minmax(0, 8rem));
+.controls__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 40px;
+}
+
+.picker__options--segmented {
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 8rem);
+  justify-content: start;
 }
 
 .picker__option {
@@ -212,6 +230,23 @@ body {
   border-left-color: var(--accent-root);
 }
 
+.chord-info__tones--scale {
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+}
+
+.chord-info__tones--scale .tone {
+  padding: 10px 12px;
+}
+
+.tone__degree {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .tone__note {
   font-size: 2rem;
   font-weight: 700;
@@ -285,7 +320,7 @@ body {
   fill: var(--key-octave);
 }
 
-.piano__legend {
+.tone-legend {
   display: flex;
   gap: 16px;
   margin-top: 10px;
@@ -644,4 +679,74 @@ body {
 
 .related__name {
   font-weight: 700;
+}
+/* Guitar neck */
+
+.fretboard {
+  margin: 0;
+  /* Let the grid shrink this below the SVG's min-width so only the neck scrolls. */
+  min-width: 0;
+}
+
+/* On narrow screens the neck scrolls sideways instead of shrinking past legibility. */
+.fretboard__scroll {
+  overflow-x: auto;
+}
+
+.fretboard__svg {
+  display: block;
+  width: 100%;
+  min-width: 600px;
+  height: auto;
+}
+
+.fretboard__board {
+  fill: var(--neck-board);
+}
+
+.fretboard__inlay {
+  fill: var(--neck-inlay);
+}
+
+.fretboard__fret {
+  stroke: var(--neck-fret);
+  stroke-width: 2;
+}
+
+.fretboard__nut {
+  fill: var(--neck-nut);
+}
+
+.fretboard__string {
+  stroke: var(--neck-string);
+}
+
+.fretboard__string-name {
+  font-size: 13px;
+  font-weight: 600;
+  fill: var(--muted);
+}
+
+.fretboard__fret-number {
+  font-size: 12px;
+  fill: var(--muted);
+}
+
+.fret-dot circle {
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+
+.fret-dot--root circle {
+  fill: var(--accent-root);
+}
+
+.fret-dot--tone circle {
+  fill: var(--accent-tone);
+}
+
+.fret-dot__label {
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--on-accent);
 }

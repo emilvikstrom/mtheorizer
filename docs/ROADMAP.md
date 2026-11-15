@@ -8,7 +8,7 @@ Status: ✅ klar · 🚧 pågår · ⏳ planerad · 💡 idé
 |----|-----------|--------|
 | M1 | Ackorduppslag med pianovisning | ✅ |
 | M2 | Fler ackordtyper och omvändningar | ⏳ |
-| M3 | Skalor och modi | 💡 |
+| M3 | Skalor och modi | 🚧 |
 | M4 | Lyssna på ackord och skalor | 💡 |
 | M5 | Tonarter och harmoniska samband | ✅ |
 | X  | Tvärgående förbättringar (delbara länkar, språk, CI) | ⏳ |
@@ -29,13 +29,13 @@ Mål: Alla vanliga treklanger och fyrklanger, och möjlighet att se ackordet i o
 - Septimackord: maj7, 7, m7, m7♭5 och dim7.
 - Omvändningar (första, andra och tredje) på pianot.
 
-## M3 – Skalor och modi 💡
+## M3 – Skalor och modi 🚧
 
 Mål: Slå upp en skala eller modus på valfri grundton och se den på pianot.
 - Dur, naturlig, harmonisk och melodisk moll.
 - Kyrkotonarterna (jonisk till lokrisk).
 - Pentatonik och blues.
-- Teorimodulen har redan `buildScale` för dur och naturlig moll.
+- Klart: dur och naturlig moll, med en växel mellan ackord och skala (M3-01).
 
 ## M4 – Lyssna 💡
 
@@ -49,7 +49,7 @@ Mål: Förstå hur ackord hänger ihop.
 - Parallell- och relativtonart.
 
 Resultat:
-- Appen har flikar: **Chords** (ackorduppslaget från M1) och **Circle of fifths**.
+- Appen har flikar: **Chords & scales** (ackord- och skaluppslaget från M1 och M3) och **Circle of fifths**.
 - Kvintcirkeln visar durtonarter ytterst, relativa molltonarter innerst och antal förtecken utanför. Positionerna med två namn (B/C♭, F♯/G♭, D♭/C♯) visar båda, och man kan välja stavning.
 - Vald tonart visar förtecken, skala, de sju diatoniska treklangerna med steg och funktion (T/S/D), dominanten i harmonisk moll samt relativ-, parallell-, dominant- och subdominanttonart.
 - `src/theory/keys.ts` härleder allt ur stavade toner, med tabelltester för alla positioner på cirkeln.
@@ -61,3 +61,4 @@ Resultat:
 - Låta användaren välja enharmonisk stavning själv (C♯-dur i stället för D♭-dur).
 - CI: GitHub Actions som kör Docker-bygget (typkontroll och tester).
 - Lint och formattering (ESLint och Prettier).
+- ✅ Visning på gitarrhals som alternativ till pianot (X-07). Grepp och fler stämningar ligger i backloggen (G-01, G-02).
