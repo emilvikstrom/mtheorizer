@@ -1,6 +1,6 @@
-import type { Chord, ChordTone } from './chords';
-import { type Note, pitchClass } from './notes';
-import type { SpelledScale } from './scales';
+import type { Chord, ChordTone } from "./chords";
+import { type Note, pitchClass } from "./notes";
+import type { SpelledScale } from "./scales";
 
 export interface VoicedTone extends ChordTone {
   /** MIDI note number; middle C (C4) is 60. */
@@ -40,18 +40,27 @@ export interface KeyboardTone extends HighlightTone {
 }
 
 export function chordHighlights(chord: Chord): HighlightTone[] {
-  return chord.tones.map(({ note, role, optional }) => ({ note, isRoot: role === 'root', role, optional }));
+  return chord.tones.map(({ note, role, optional }) => ({
+    note,
+    isRoot: role === "root",
+    role,
+    optional,
+  }));
 }
 
 export function scaleHighlights(scale: SpelledScale): HighlightTone[] {
-  return scale.tones.map(({ note, degree }) => ({ note, isRoot: degree === 1, role: `degree-${degree}` }));
+  return scale.tones.map(({ note, degree }) => ({
+    note,
+    isRoot: degree === 1,
+    role: `degree-${degree}`,
+  }));
 }
 
 export function chordOnKeyboard(chord: Chord, octave = 4): KeyboardTone[] {
   return rootPosition(chord, octave).map(({ note, midi, role, optional }) => ({
     note,
     midi,
-    isRoot: role === 'root',
+    isRoot: role === "root",
     role,
     optional,
   }));
@@ -69,6 +78,6 @@ export function scaleOnKeyboard(scale: SpelledScale, octave = 4): KeyboardTone[]
     isRoot: degree === 1,
     role: `degree-${degree}`,
   }));
-  tones.push({ note: scale.tonic, midi: tonicMidi + 12, isRoot: true, role: 'degree-8' });
+  tones.push({ note: scale.tonic, midi: tonicMidi + 12, isRoot: true, role: "degree-8" });
   return tones;
 }

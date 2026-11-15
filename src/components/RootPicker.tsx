@@ -1,4 +1,4 @@
-import { isNatural, pitchClassLabel, spellingsOf } from '../theory';
+import { isNatural, pitchClassLabel, spellingsOf } from "../theory";
 
 const PITCH_CLASSES = Array.from({ length: 12 }, (_, pc) => pc);
 
@@ -12,13 +12,16 @@ interface RootPickerProps {
   onChange: (pitchClass: number) => void;
 }
 
-export function RootPicker({ legend = 'Root', value, onChange }: RootPickerProps) {
+export function RootPicker({ legend = "Root", value, onChange }: RootPickerProps) {
   return (
     <fieldset className="picker">
       <legend className="picker__legend">{legend}</legend>
       <div className="picker__options picker__options--roots">
         {PITCH_CLASSES.map((pc) => (
-          <label key={pc} className={`picker__option${isBlackKey(pc) ? ' picker__option--black' : ''}`}>
+          <label
+            key={pc}
+            className={`picker__option${isBlackKey(pc) ? " picker__option--black" : ""}`}
+          >
             <input
               type="radio"
               name="root"

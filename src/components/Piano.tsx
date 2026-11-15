@@ -1,5 +1,5 @@
-import { type KeyboardTone, formatNote, midiOf } from '../theory';
-import { ToneLegend } from './ToneLegend';
+import { type KeyboardTone, formatNote, midiOf } from "../theory";
+import { ToneLegend } from "./ToneLegend";
 
 /** The keyboard always shows at least C4–B5; it grows by whole octaves for wider chords. */
 const MIN_OCTAVE = 4;
@@ -42,23 +42,28 @@ function PianoKey({ shape, tone }: { shape: KeyShape; tone: KeyboardTone | undef
   const centre = shape.x + width / 2;
   const isC = shape.midi % 12 === 0;
   const classes = [
-    'key',
-    shape.black ? 'key--black' : 'key--white',
-    tone && (tone.isRoot ? 'key--root' : 'key--tone'),
+    "key",
+    shape.black ? "key--black" : "key--white",
+    tone && (tone.isRoot ? "key--root" : "key--tone"),
   ]
     .filter(Boolean)
-    .join(' ');
+    .join(" ");
 
   return (
     <g
       className={classes}
       data-midi={shape.midi}
-      data-highlighted={tone ? 'true' : undefined}
+      data-highlighted={tone ? "true" : undefined}
       data-role={tone?.role}
     >
       <rect x={shape.x} y={0} width={width} height={height} rx={shape.black ? 3 : 4} />
       {tone ? (
-        <text className="key__label" x={centre} y={height - (shape.black ? 12 : 16)} textAnchor="middle">
+        <text
+          className="key__label"
+          x={centre}
+          y={height - (shape.black ? 12 : 16)}
+          textAnchor="middle"
+        >
           {formatNote(tone.note)}
         </text>
       ) : (
@@ -92,7 +97,7 @@ export function Piano({ tones, name, legend }: PianoProps) {
   const blackKeys = keys.filter((k) => k.black);
   const width = whiteKeys.length * WHITE_WIDTH;
   const toneAt = new Map(tones.map((tone) => [tone.midi, tone]));
-  const description = `Piano keyboard showing ${name}: ${tones.map((tone) => formatNote(tone.note)).join(', ')}`;
+  const description = `Piano keyboard showing ${name}: ${tones.map((tone) => formatNote(tone.note)).join(", ")}`;
 
   return (
     <figure className="piano">

@@ -13,11 +13,12 @@ Node finns inte på värddatorn, så allt körs i Docker. Om `docker` inte hitta
 | Dev-server med hot reload (http://localhost:5173) | `docker compose --profile dev up dev` |
 | Kör testerna | `docker compose run --rm dev npm test` |
 | Typkontroll | `docker compose run --rm dev npm run typecheck` |
+| Lint / formattering | `docker compose run --rm dev npm run lint`, `npm run format` (skriver om) och `npm run format:check` |
 | Lägga till ett paket | `docker compose run --rm dev npm install <paket>` och sedan `docker compose build dev` |
 
 Om `package.json` har ändrats och dev-servern körs med gamla `node_modules`: `docker compose --profile dev up dev --build --renew-anon-volumes`.
 
-`docker compose build` kör typkontroll och alla tester. Om något fallerar byggs ingen image.
+`docker compose build` kör lint, formatteringskontroll, typkontroll och alla tester. Samma bygge körs i CI (`.github/workflows/ci.yml`). Lint-verktygen ligger i `tools/lint/` med eget `package.json` (typescript-eslint stöder inte TS 7); efter ändringar där: `docker compose build dev`. Om något fallerar byggs ingen image.
 
 `make up` bygger alltid om, så den startade appen har med de senaste ändringarna. `Makefile` hittar `docker` även när det bara finns i `~/.docker/bin`. Kör `make` för att se alla kommandon.
 

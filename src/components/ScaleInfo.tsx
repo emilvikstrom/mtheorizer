@@ -1,4 +1,4 @@
-import { type SpelledScale, formatNote, scaleToneLabel } from '../theory';
+import { type SpelledScale, formatNote, scaleToneLabel } from "../theory";
 
 interface ScaleInfoProps {
   scale: SpelledScale;
@@ -12,7 +12,7 @@ export function ScaleInfo({ scale }: ScaleInfoProps) {
       </h2>
       <ol className="chord-info__tones chord-info__tones--scale" aria-label="Notes in the scale">
         {scale.tones.map((tone) => (
-          <li key={tone.degree} className={`tone${tone.degree === 1 ? ' tone--root' : ''}`}>
+          <li key={tone.degree} className={`tone${tone.degree === 1 ? " tone--root" : ""}`}>
             <span className="tone__degree">Degree {tone.degree}</span>
             <span className="tone__note">{formatNote(tone.note)}</span>
             <span className="tone__label">{scaleToneLabel(tone)}</span>

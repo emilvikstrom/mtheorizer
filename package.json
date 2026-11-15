@@ -9,6 +9,9 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc --noEmit",
+    "lint": "tools/lint/node_modules/.bin/eslint -c tools/lint/eslint.config.js .",
+    "format": "tools/lint/node_modules/.bin/prettier --write .",
+    "format:check": "tools/lint/node_modules/.bin/prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest"
   },

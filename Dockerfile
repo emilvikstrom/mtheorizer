@@ -4,10 +4,14 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Stage 2: typecheck, test and build. The image build fails if any test fails.
+# Lint toolchain lives in its own package (see tools/lint/package.json).
+COPY tools/lint/package.json tools/lint/package-lock.json tools/lint/
+RUN npm ci --prefix tools/lint
+
+# Stage 2: lint, check formatting, typecheck, test and build. The image build fails if any test fails.
 FROM deps AS build
 COPY . .
-RUN npm run typecheck && npm test && npm run build
+RUN npm run lint && npm run format:check && npm run typecheck && npm test && npm run build
 
 # Stage 3: serve the static build with nginx.
 FROM nginx:1.30.6-alpine3.24 AS runtime

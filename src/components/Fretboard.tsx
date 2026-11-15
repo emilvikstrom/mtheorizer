@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   type HighlightTone,
   type NeckTone,
@@ -7,8 +7,8 @@ import {
   formatNote,
   formatShape,
   lastFret,
-} from '../theory';
-import { ToneLegend } from './ToneLegend';
+} from "../theory";
+import { ToneLegend } from "./ToneLegend";
 
 const NAME_COLUMN = 24; // string names
 const OPEN_COLUMN = 36; // open strings and muted-string marks, left of the nut
@@ -43,7 +43,7 @@ function nearestIndex(views: readonly NeckView[], fret: number): number {
 
 function whereOnNeck(view: NeckView): string {
   return view.positions.some((p) => p.fret === 0)
-    ? 'Open position'
+    ? "Open position"
     : `Frets ${view.firstFret}–${lastFret(view)}`;
 }
 
@@ -51,7 +51,7 @@ function ToneDot({ position, x }: { position: NeckTone; x: number }) {
   const y = stringY(position.string);
   return (
     <g
-      className={`fret-dot ${position.isRoot ? 'fret-dot--root' : 'fret-dot--tone'}`}
+      className={`fret-dot ${position.isRoot ? "fret-dot--root" : "fret-dot--tone"}`}
       data-highlighted="true"
       data-string={position.string}
       data-fret={position.fret}
@@ -73,28 +73,71 @@ function NeckDiagram({ view, description }: { view: NeckView; description: strin
   const muted = new Set(view.muted);
 
   return (
-    <svg className="fretboard__svg" role="img" aria-label={description} viewBox={`0 0 ${neckEnd + 4} ${HEIGHT}`}>
+    <svg
+      className="fretboard__svg"
+      role="img"
+      aria-label={description}
+      viewBox={`0 0 ${neckEnd + 4} ${HEIGHT}`}
+    >
       <title>{description}</title>
-      <rect className="fretboard__board" x={NECK_START} y={0} width={neckEnd - NECK_START} height={BOARD_HEIGHT} />
+      <rect
+        className="fretboard__board"
+        x={NECK_START}
+        y={0}
+        width={neckEnd - NECK_START}
+        height={BOARD_HEIGHT}
+      />
 
-      {frets.filter((f) => SINGLE_INLAYS.has(f)).map((fret) => (
-        <circle key={fret} className="fretboard__inlay" cx={fretCentreX(fret)} cy={midY(3, 4)} r={6} />
-      ))}
+      {frets
+        .filter((f) => SINGLE_INLAYS.has(f))
+        .map((fret) => (
+          <circle
+            key={fret}
+            className="fretboard__inlay"
+            cx={fretCentreX(fret)}
+            cy={midY(3, 4)}
+            r={6}
+          />
+        ))}
       {frets.includes(DOUBLE_INLAY) && (
         <>
-          <circle className="fretboard__inlay" cx={fretCentreX(DOUBLE_INLAY)} cy={midY(2, 3)} r={6} />
-          <circle className="fretboard__inlay" cx={fretCentreX(DOUBLE_INLAY)} cy={midY(4, 5)} r={6} />
+          <circle
+            className="fretboard__inlay"
+            cx={fretCentreX(DOUBLE_INLAY)}
+            cy={midY(2, 3)}
+            r={6}
+          />
+          <circle
+            className="fretboard__inlay"
+            cx={fretCentreX(DOUBLE_INLAY)}
+            cy={midY(4, 5)}
+            r={6}
+          />
         </>
       )}
 
       {frets.map((fret, i) => {
         const x = NECK_START + (i + 1) * FRET_WIDTH;
-        return <line key={fret} className="fretboard__fret" x1={x} y1={0} x2={x} y2={BOARD_HEIGHT} />;
+        return (
+          <line key={fret} className="fretboard__fret" x1={x} y1={0} x2={x} y2={BOARD_HEIGHT} />
+        );
       })}
       {view.firstFret === 1 ? (
-        <rect className="fretboard__nut" x={NECK_START - NUT_WIDTH / 2} y={0} width={NUT_WIDTH} height={BOARD_HEIGHT} />
+        <rect
+          className="fretboard__nut"
+          x={NECK_START - NUT_WIDTH / 2}
+          y={0}
+          width={NUT_WIDTH}
+          height={BOARD_HEIGHT}
+        />
       ) : (
-        <line className="fretboard__fret" x1={NECK_START} y1={0} x2={NECK_START} y2={BOARD_HEIGHT} />
+        <line
+          className="fretboard__fret"
+          x1={NECK_START}
+          y1={0}
+          x2={NECK_START}
+          y2={BOARD_HEIGHT}
+        />
       )}
 
       {STANDARD_TUNING.map((open, index) => {
@@ -137,13 +180,23 @@ function NeckDiagram({ view, description }: { view: NeckView; description: strin
       })}
 
       {frets.map((fret) => (
-        <text key={fret} className="fretboard__fret-number" x={fretCentreX(fret)} y={FRET_NUMBER_Y} textAnchor="middle">
+        <text
+          key={fret}
+          className="fretboard__fret-number"
+          x={fretCentreX(fret)}
+          y={FRET_NUMBER_Y}
+          textAnchor="middle"
+        >
           {fret}
         </text>
       ))}
 
       {view.positions.map((position) => (
-        <ToneDot key={`${position.string}-${position.fret}`} position={position} x={fretCentreX(position.fret)} />
+        <ToneDot
+          key={`${position.string}-${position.fret}`}
+          position={position}
+          x={fretCentreX(position.fret)}
+        />
       ))}
     </svg>
   );
@@ -153,7 +206,7 @@ interface FretboardProps {
   /** The stretches of the neck to step through, lowest first. */
   views: readonly NeckView[];
   /** Chord shapes are described fret by fret; scale positions by their notes. */
-  kind: 'shape' | 'position';
+  kind: "shape" | "position";
   /** The tones shown, each once, for the description. */
   tones: readonly HighlightTone[];
   /** What is shown, e.g. "C major" or "C major scale". */
@@ -169,7 +222,7 @@ export function Fretboard({ views, kind, tones, name, legend }: FretboardProps) 
   const [wantedFret, setWantedFret] = useState(1);
   const index = nearestIndex(views, wantedFret);
   const view = views[index];
-  const noun = kind === 'shape' ? 'Shape' : 'Position';
+  const noun = kind === "shape" ? "Shape" : "Position";
 
   if (!view) {
     return <p className="fretboard__empty">No playable {noun.toLowerCase()} found.</p>;
@@ -177,7 +230,8 @@ export function Fretboard({ views, kind, tones, name, legend }: FretboardProps) 
 
   const where = whereOnNeck(view);
   const status = `${noun} ${index + 1} of ${views.length}`;
-  const detail = kind === 'shape' ? formatShape(view) : tones.map((tone) => formatNote(tone.note)).join(', ');
+  const detail =
+    kind === "shape" ? formatShape(view) : tones.map((tone) => formatNote(tone.note)).join(", ");
   const description = `Guitar neck showing ${name}, ${status.toLowerCase()}, ${where.toLowerCase()}: ${detail}`;
   const step = (delta: number) => {
     const next = views[index + delta];

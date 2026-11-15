@@ -24,8 +24,6 @@ _Inget just nu._
 
 ## Senare
 
-- [ ] **X-02** CI med GitHub Actions som kör `docker build`
-- [ ] **X-03** ESLint och Prettier, körs i Docker-bygget
 - [ ] **X-04** Välj enharmonisk stavning själv (C♯ eller D♭)
 - [ ] **X-05** Svenskt gränssnitt och H/B-notation
 - [ ] **X-06** Bättre pianovisning på mobil: etiketterna på svarta tangenter blir små vid 375 px bredd (större text eller bara den del av tangentbordet som behövs)
@@ -41,6 +39,8 @@ _Inget just nu._
 
 ## Klart
 
+- [x] **X-02** CI med GitHub Actions (`.github/workflows/ci.yml`) som kör `docker build` vid push till main och i pull requests _(2026-11-15)_
+- [x] **X-03** ESLint och Prettier, körs i Docker-bygget före typkontrollen. Lint-verktygen ligger i `tools/lint/` med eget `package.json` eftersom typescript-eslint kräver TypeScripts JS-API (TS 6) medan appen typkontrolleras med TS 7. Hela koden är formatterad med Prettier _(2026-11-15)_
 - [x] **M1-01** Projektskelett: Vite, React, TypeScript, Dockerfile och docker compose (app + dev) _(2026-11-15)_
 - [x] **M1-02** Teorimodul: stavade toner, intervall, skalor, dur- och mollackord med tabelltest för alla 24 _(2026-11-15)_
 - [x] **M1-03** UI för att välja grundton (12) och dur/moll, och visa ackordets toner med intervallnamn _(2026-11-15)_

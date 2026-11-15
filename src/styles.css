@@ -21,7 +21,12 @@
   --neck-inlay: #d3c6b3;
 
   color-scheme: light dark;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   line-height: 1.4;
 }
 
@@ -382,7 +387,7 @@ body {
 }
 
 .legend::before {
-  content: '';
+  content: "";
   display: inline-block;
   width: 12px;
   height: 12px;
@@ -429,7 +434,7 @@ body {
   color: var(--text);
 }
 
-.tabs__tab[aria-selected='true'] {
+.tabs__tab[aria-selected="true"] {
   color: var(--text);
   border-bottom-color: var(--accent-root);
 }
@@ -609,7 +614,7 @@ body {
   cursor: pointer;
 }
 
-.toggle[aria-pressed='true'] {
+.toggle[aria-pressed="true"] {
   border-color: var(--accent-root);
   color: var(--accent-root);
   font-weight: 700;
@@ -680,7 +685,7 @@ body {
 }
 
 .triad__roman {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 0.85rem;
   color: var(--muted);
 }
