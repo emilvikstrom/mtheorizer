@@ -129,7 +129,7 @@ describe("App", () => {
     expect(screen.queryByRole("img", { name: /^Piano keyboard/ })).not.toBeInTheDocument();
     expect(
       screen.getByRole("img", {
-        name: "Guitar neck showing C major, shape 1 of 7, open position: x 3 2 0 1 0",
+        name: "Guitar neck showing C major, shape 1 of 7, open position: x 3 2 0 1 0, fingers x 3 2 – 1 –",
       }),
     ).toBeInTheDocument();
     // Only the open C chord is marked, with the low E string muted.
@@ -145,6 +145,29 @@ describe("App", () => {
     await user.click(screen.getByRole("radio", { name: "Piano" }));
     expect(screen.queryByRole("img", { name: /^Guitar neck/ })).not.toBeInTheDocument();
     expect(highlightedKeys(container)).toEqual(["60:root", "64:third", "67:fifth"]);
+  });
+
+  it("shows the guitar in another tuning and for the left hand", async () => {
+    const user = userEvent.setup();
+    window.location.hash = "#/D/major?on=guitar";
+    render(<App />);
+    expect(screen.getByRole("radio", { name: "Standard" })).toBeChecked();
+
+    await user.click(screen.getByRole("radio", { name: "Drop D" }));
+    expect(
+      screen.getByRole("img", {
+        name: /^Guitar neck showing D major in Drop D tuning, shape 1 of/,
+      }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toBe("#/D/major?on=guitar&tuning=dropD");
+
+    await user.click(screen.getByRole("radio", { name: "Left-handed" }));
+    expect(screen.getByRole("img", { name: /^Left-handed guitar neck/ })).toBeInTheDocument();
+    expect(window.location.hash).toBe("#/D/major?on=guitar&tuning=dropD&hand=left");
+
+    // The choice follows a switch to a scale.
+    await user.click(screen.getByRole("radio", { name: "Scale" }));
+    expect(window.location.hash).toBe("#/D/scale/major?on=guitar&tuning=dropD&hand=left");
   });
 
   it("steps through the chord shapes with the arrows", async () => {
@@ -201,7 +224,7 @@ describe("App", () => {
     await user.click(screen.getByRole("radio", { name: "D" }));
     expect(
       screen.getByRole("img", {
-        name: "Guitar neck showing D major, shape 2 of 6, frets 2–5: x 5 4 2 3 2",
+        name: "Guitar neck showing D major, shape 2 of 6, frets 2–5: x 5 4 2 3 2, fingers x 4 3 1 2 1",
       }),
     ).toBeInTheDocument();
   });
@@ -215,7 +238,7 @@ describe("App", () => {
 
     expect(
       screen.getByRole("img", {
-        name: "Guitar neck showing E♭ minor, shape 1 of 4, frets 1–4: x x 1 3 4 2",
+        name: "Guitar neck showing E♭ minor, shape 1 of 4, frets 1–4: x x 1 3 4 2, fingers x x 1 3 4 2",
       }),
     ).toBeInTheDocument();
     const notes = [...container.querySelectorAll('[data-highlighted="true"]')].map(

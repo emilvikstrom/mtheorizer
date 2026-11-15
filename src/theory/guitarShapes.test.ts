@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { CHORD_QUALITY_IDS, type ChordQualityId, chordOnPitchClass } from "./chords";
-import { chordShapes, formatShape, lastFret, scalePositions } from "./guitarShapes";
+import { TUNING_IDS, TUNINGS } from "./fretboard";
+import {
+  chordShapes,
+  fingeringFor,
+  formatFingering,
+  formatShape,
+  lastFret,
+  scalePositions,
+} from "./guitarShapes";
 import { pitchClass } from "./notes";
 import { type ScaleId, scaleOnPitchClass } from "./scales";
 import { chordHighlights, scaleHighlights } from "./voicing";
@@ -81,6 +89,37 @@ describe("chordShapes", () => {
     expect(formatted(0, "dominant13")[0]).toBe("x 3 5 3 5 5");
   });
 
+  it.each([
+    [0, "major", "x 3 2 – 1 –"],
+    [9, "major", "x – 1 2 3 –"],
+    [4, "minor", "– 1 2 – – –"],
+    [5, "major", "1 3 4 2 1 1"],
+    [11, "minor", "x 1 3 4 2 1"],
+  ] as const)("fingers pitch class %i %s as %s", (pc, quality, text) => {
+    const [shape] = shapesOf(pc, quality);
+    expect(shape && formatFingering(shape)).toBe(text);
+  });
+
+  it("marks the barre of F major across all six strings", () => {
+    const [f] = shapesOf(5, "major");
+    expect(f?.fingering?.barre).toEqual({ fret: 1, fromString: 6, toString: 1 });
+    expect(shapesOf(0, "major")[0]?.fingering?.barre).toBeUndefined();
+  });
+
+  describe("fingeringFor", () => {
+    it("gives the barre to the index finger and the rest in fret order", () => {
+      const f = fingeringFor([1, 1, 2, 3, 3, 1]);
+      expect([...f.fingerOn]).toEqual([
+        [1, 1],
+        [2, 1],
+        [6, 1],
+        [3, 2],
+        [5, 3],
+        [4, 4],
+      ]);
+    });
+  });
+
   describe.each(CHORD_QUALITY_IDS)("every %s chord", (quality) => {
     it.each(PITCH_CLASSES)("on pitch class %i has playable root-position shapes", (pc) => {
       const chord = chordOnPitchClass(pc, quality);
@@ -97,6 +136,10 @@ describe("chordShapes", () => {
         const strings = shape.positions.map((p) => p.string);
         // Strings 1 up to the bass are all played, once each; the rest are muted.
         expect(strings).toEqual(Array.from({ length: strings.length }, (_, i) => i + 1));
+        // Every fretted note has a finger, open strings have none, and at most four are used.
+        const fingerOn = shape.fingering?.fingerOn;
+        for (const p of shape.positions) expect(fingerOn?.has(p.string)).toBe(p.fret > 0);
+        expect(Math.max(0, ...(fingerOn?.values() ?? []))).toBeLessThanOrEqual(4);
         expect(strings.length).toBeGreaterThanOrEqual(4);
         expect(shape.muted).toEqual(
           Array.from({ length: 6 - strings.length }, (_, i) => strings.length + i + 1),
@@ -146,6 +189,45 @@ describe("scalePositions", () => {
               : p.fret >= view.firstFret && p.fret <= lastFret(view),
           ).toBe(true);
         }
+      }
+    });
+  });
+});
+
+describe("other tunings", () => {
+  it("finds the open D major shape in Drop D", () => {
+    const tones = chordHighlights(chordOnPitchClass(2, "major"));
+    expect(formatShape(chordShapes(tones, TUNINGS.dropD.strings)[0]!)).toBe("0 0 0 2 3 2");
+  });
+
+  it("finds the open strings of DADGAD as D suspended fourth", () => {
+    const tones = chordHighlights(chordOnPitchClass(2, "sus4"));
+    expect(formatShape(chordShapes(tones, TUNINGS.dadgad.strings)[0]!)).toBe("0 0 0 0 0 0");
+  });
+
+  describe.each(TUNING_IDS)("%s", (id) => {
+    const strings = TUNINGS[id].strings;
+    it.each(PITCH_CLASSES)(
+      "gives every chord of pitch class %i a shape that sounds its tones",
+      (pc) => {
+        for (const quality of CHORD_QUALITY_IDS) {
+          const tones = chordHighlights(chordOnPitchClass(pc, quality));
+          const required = tones.filter((t) => !t.optional).map((t) => pitchClass(t.note));
+          for (const shape of chordShapes(tones, strings)) {
+            const sounded = new Set(shape.positions.map((p) => pitchClass(p.note)));
+            expect(required.every((r) => sounded.has(r))).toBe(true);
+          }
+        }
+      },
+    );
+
+    it.each(PITCH_CLASSES)("covers the whole scale of pitch class %i along the neck", (pc) => {
+      for (const scaleId of SCALE_IDS) {
+        const tones = scaleHighlights(scaleOnPitchClass(pc, scaleId));
+        const views = scalePositions(tones, strings);
+        expect(views.length).toBeGreaterThan(0);
+        const shown = new Set(views.flatMap((v) => v.positions.map((p) => pitchClass(p.note))));
+        expect(shown.size).toBe(tones.length);
       }
     });
   });
