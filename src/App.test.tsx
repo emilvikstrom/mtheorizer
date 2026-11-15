@@ -50,6 +50,22 @@ describe('App', () => {
     expect(chordNotes()).toEqual(['C♯', 'E', 'G♯']);
   });
 
+  it('switches between the chord and circle of fifths tabs', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    expect(screen.getByRole('tab', { name: 'Chords' })).toHaveAttribute('aria-selected', 'true');
+
+    await user.click(screen.getByRole('tab', { name: 'Circle of fifths' }));
+    expect(screen.getByRole('tab', { name: 'Circle of fifths' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Circle of fifths');
+    expect(screen.getByRole('radiogroup', { name: /Circle of fifths/ })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Root' })).not.toBeInTheDocument();
+
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.getByRole('tab', { name: 'Chords' })).toHaveFocus();
+    expect(screen.getByRole('group', { name: 'Root' })).toBeInTheDocument();
+  });
+
   it('shows B major across the octave break', async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);

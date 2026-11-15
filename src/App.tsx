@@ -1,29 +1,30 @@
 import { useState } from 'react';
-import { ChordInfo } from './components/ChordInfo';
-import { Piano } from './components/Piano';
-import { QualityPicker } from './components/QualityPicker';
-import { RootPicker } from './components/RootPicker';
-import { type ChordQualityId, chordOnPitchClass } from './theory';
+import { ChordLookup } from './components/ChordLookup';
+import { CircleOfFifthsView } from './components/CircleOfFifthsView';
+import { type TabItem, Tabs, panelId, tabId } from './components/Tabs';
+
+type View = 'chords' | 'circle-of-fifths';
+
+const VIEWS: readonly TabItem<View>[] = [
+  { id: 'chords', label: 'Chords' },
+  { id: 'circle-of-fifths', label: 'Circle of fifths' },
+];
 
 export function App() {
-  const [rootPitchClass, setRootPitchClass] = useState(0);
-  const [quality, setQuality] = useState<ChordQualityId>('major');
-  const chord = chordOnPitchClass(rootPitchClass, quality);
+  const [view, setView] = useState<View>('chords');
 
   return (
     <main className="app">
       <header className="app__header">
         <h1 className="app__title">mtheorizer</h1>
-        <p className="app__tagline">Pick a root and a quality to see the chord.</p>
+        <p className="app__tagline">Look up chords and keys.</p>
       </header>
 
-      <section className="controls" aria-label="Choose a chord">
-        <RootPicker value={rootPitchClass} onChange={setRootPitchClass} />
-        <QualityPicker value={quality} onChange={setQuality} />
-      </section>
+      <Tabs label="Views" tabs={VIEWS} value={view} onChange={setView} />
 
-      <ChordInfo chord={chord} />
-      <Piano chord={chord} />
+      <div className="app__panel" role="tabpanel" id={panelId(view)} aria-labelledby={tabId(view)}>
+        {view === 'chords' ? <ChordLookup /> : <CircleOfFifthsView />}
+      </div>
     </main>
   );
 }

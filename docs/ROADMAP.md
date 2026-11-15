@@ -10,7 +10,7 @@ Status: ✅ klar · 🚧 pågår · ⏳ planerad · 💡 idé
 | M2 | Fler ackordtyper och omvändningar | ⏳ |
 | M3 | Skalor och modi | 💡 |
 | M4 | Lyssna på ackord och skalor | 💡 |
-| M5 | Tonarter och harmoniska samband | 💡 |
+| M5 | Tonarter och harmoniska samband | ✅ |
 | X  | Tvärgående förbättringar (delbara länkar, språk, CI) | ⏳ |
 
 ## M1 – Ackorduppslag med pianovisning ✅
@@ -41,12 +41,18 @@ Mål: Slå upp en skala eller modus på valfri grundton och se den på pianot.
 
 Mål: Spela upp ackord och skalor i webbläsaren (Web Audio), både som brutet ackord och som samklang.
 
-## M5 – Tonarter och harmoniska samband 💡
+## M5 – Tonarter och harmoniska samband ✅
 
 Mål: Förstå hur ackord hänger ihop.
 - Kvintcirkel.
 - Diatoniska ackord i en tonart med stegnummer (I–ii–iii…) och funktion.
 - Parallell- och relativtonart.
+
+Resultat:
+- Appen har flikar: **Chords** (ackorduppslaget från M1) och **Circle of fifths**.
+- Kvintcirkeln visar durtonarter ytterst, relativa molltonarter innerst och antal förtecken utanför. Positionerna med två namn (B/C♭, F♯/G♭, D♭/C♯) visar båda, och man kan välja stavning.
+- Vald tonart visar förtecken, skala, de sju diatoniska treklangerna med steg och funktion (T/S/D), dominanten i harmonisk moll samt relativ-, parallell-, dominant- och subdominanttonart.
+- `src/theory/keys.ts` härleder allt ur stavade toner, med tabelltester för alla positioner på cirkeln.
 
 ## X – Tvärgående förbättringar ⏳
 

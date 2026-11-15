@@ -2,6 +2,8 @@
 
 En webapp för att slå upp musikteori. Välj en grundton (C, C♯/D♭, D …) och dur eller moll. Appen visar ackordets toner, korrekt stavade, och markerar dem på ett pianotangentbord.
 
+Fliken **Circle of fifths** visar kvintcirkeln. Välj en tonart för att se dess förtecken, skala, diatoniska ackord och närliggande tonarter.
+
 ## Kom igång
 
 Det enda som krävs är Docker (till exempel Docker Desktop).
