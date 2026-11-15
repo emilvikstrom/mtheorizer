@@ -28,6 +28,7 @@ Om `package.json` har ändrats och dev-servern körs med gamla `node_modules`: `
   - `chords.ts`: ackordkvaliteter, `buildChord` och `preferredRootSpelling`.
   - `voicing.ts`: placering på tangentbordet (MIDI-nummer). `chordOnKeyboard`/`scaleOnKeyboard` ger `KeyboardTone[]` som `Piano` visar.
   - `fretboard.ts`: gitarrstämning och var tonerna ligger på halsen (sträng + band). `positionsOnNeck` fungerar för både ackord och skalor.
+  - `keys.ts`: tonarter, förtecken, kvintcirkeln, närliggande tonarter och diatoniska treklanger.
 - `src/components/` innehåller React-komponenter som bara presenterar det teorimodulen räknar fram.
 - `docs/` innehåller planeringen (se nedan).
 
