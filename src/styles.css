@@ -358,6 +358,11 @@ body {
   fill: var(--accent-tone);
 }
 
+.key--bass rect {
+  stroke: var(--text, #111);
+  stroke-width: 4;
+}
+
 .key__label {
   font-size: 16px;
   font-weight: 700;
@@ -393,6 +398,12 @@ body {
 
 .legend--root::before {
   background: var(--accent-root);
+}
+
+.legend--bass::before {
+  background: transparent;
+  border: 3px solid var(--text, #111);
+  box-sizing: border-box;
 }
 
 .legend--tone::before {
