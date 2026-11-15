@@ -12,6 +12,7 @@ import {
   MAJOR_THIRD,
   MAJOR_THIRTEENTH,
   MINOR_NINTH,
+  MINOR_THIRTEENTH,
   MINOR_SEVENTH,
   MINOR_THIRD,
   PERFECT_ELEVENTH,
@@ -72,6 +73,7 @@ const AUG9 = spec("ninth", AUGMENTED_NINTH);
 const P11 = spec("eleventh", PERFECT_ELEVENTH);
 const P11_OPTIONAL = spec("eleventh", PERFECT_ELEVENTH, true);
 const AUG11 = spec("eleventh", AUGMENTED_ELEVENTH);
+const MIN13 = spec("thirteenth", MINOR_THIRTEENTH);
 const MAJ13 = spec("thirteenth", MAJOR_THIRTEENTH);
 
 /** Families of chords, in the order the chord picker shows them. */
@@ -230,6 +232,18 @@ const DEFINITIONS = {
     symbol: "7♯9",
     tones: [ROOT, MAJ3, P5_OPTIONAL, MIN7, AUG9],
   },
+  minorMajor9: {
+    group: "ninths",
+    name: "minor major ninth",
+    symbol: "m(maj9)",
+    tones: [ROOT, MIN3, P5_OPTIONAL, MAJ7, MAJ9],
+  },
+  dominant7Sharp5Sharp9: {
+    group: "ninths",
+    name: "dominant seventh sharp five sharp nine",
+    symbol: "7♯5♯9",
+    tones: [ROOT, MAJ3, AUG5, MIN7, AUG9],
+  },
   dominant9Sus4: {
     group: "ninths",
     name: "dominant ninth suspended fourth",
@@ -282,8 +296,32 @@ const DEFINITIONS = {
     symbol: "m13",
     tones: [ROOT, MIN3, P5_OPTIONAL, MIN7, MAJ9_OPTIONAL, P11_OPTIONAL, MAJ13],
   },
+  dominant7Flat13: {
+    group: "thirteenths",
+    name: "dominant seventh flat thirteen",
+    symbol: "7♭13",
+    tones: [ROOT, MAJ3, P5_OPTIONAL, MIN7, MIN13],
+  },
+  dominant13Sus4: {
+    group: "thirteenths",
+    name: "dominant thirteenth suspended fourth",
+    symbol: "13sus4",
+    tones: [ROOT, P4, P5_OPTIONAL, MIN7, MAJ9_OPTIONAL, MAJ13],
+  },
 
   // Added tones: a triad plus one tone, without a seventh
+  add2: {
+    group: "added",
+    name: "added second",
+    symbol: "add2",
+    tones: [ROOT, MAJ2, MAJ3, P5_OPTIONAL],
+  },
+  add4: {
+    group: "added",
+    name: "added fourth",
+    symbol: "add4",
+    tones: [ROOT, MAJ3, P4, P5_OPTIONAL],
+  },
   add9: {
     group: "added",
     name: "added ninth",

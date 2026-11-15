@@ -5,6 +5,7 @@ import {
   chordOnKeyboard,
   inversionCount,
   inversionName,
+  inversionSymbol,
   midiOf,
   rootPosition,
   scaleOnKeyboard,
@@ -105,6 +106,19 @@ describe("voicing", () => {
       "1st inversion",
       "2nd inversion",
       "3rd inversion",
+    ]);
+  });
+
+  it("writes inversions as slash chords", () => {
+    const c = chordOnPitchClass(0, "major");
+    expect([0, 1, 2].map((i) => inversionSymbol(c, i))).toEqual(["C", "C/E", "C/G"]);
+    expect(inversionSymbol(c, 9)).toBe("C/G");
+    const bFlat7 = chordOnPitchClass(10, "dominant7");
+    expect([0, 1, 2, 3].map((i) => inversionSymbol(bFlat7, i))).toEqual([
+      "B♭7",
+      "B♭7/D",
+      "B♭7/F",
+      "B♭7/A♭",
     ]);
   });
 
