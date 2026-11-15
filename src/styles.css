@@ -684,20 +684,71 @@ body {
 
 .fretboard {
   margin: 0;
-  /* Let the grid shrink this below the SVG's min-width so only the neck scrolls. */
-  min-width: 0;
+  max-width: 560px;
 }
 
-/* On narrow screens the neck scrolls sideways instead of shrinking past legibility. */
-.fretboard__scroll {
-  overflow-x: auto;
+.fretboard__nav {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.fretboard__arrow {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 120ms,
+    border-color 120ms;
+}
+
+.fretboard__arrow:hover:not(:disabled) {
+  border-color: var(--muted);
+}
+
+.fretboard__arrow:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.fretboard__arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.fretboard__status {
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  line-height: 1.25;
+}
+
+.fretboard__status-count {
+  font-weight: 600;
+}
+
+.fretboard__status-where {
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
 .fretboard__svg {
   display: block;
   width: 100%;
-  min-width: 600px;
   height: auto;
+}
+
+.fretboard__empty {
+  color: var(--muted);
 }
 
 .fretboard__board {
@@ -723,6 +774,12 @@ body {
 
 .fretboard__string-name {
   font-size: 13px;
+  font-weight: 600;
+  fill: var(--muted);
+}
+
+.fretboard__muted {
+  font-size: 18px;
   font-weight: 600;
   fill: var(--muted);
 }

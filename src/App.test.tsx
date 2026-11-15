@@ -45,27 +45,68 @@ describe('App', () => {
 
     await user.click(screen.getByRole('radio', { name: 'Guitar' }));
     expect(screen.queryByRole('img', { name: /^Piano keyboard/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Guitar neck showing C major: C, E, G' })).toBeInTheDocument();
-    // The open C chord shape is among the marked positions.
-    expect(highlightedFrets(container)).toEqual(
-      expect.arrayContaining(['1/0:third', '2/1:root', '3/0:fifth', '4/2:third', '5/3:root']),
-    );
+    expect(
+      screen.getByRole('img', { name: 'Guitar neck showing C major, shape 1 of 6, open position: x 3 2 0 1 0' }),
+    ).toBeInTheDocument();
+    // Only the open C chord is marked, with the low E string muted.
+    expect(highlightedFrets(container)).toEqual(['1/0:third', '2/1:root', '3/0:fifth', '4/2:third', '5/3:root']);
+    expect(container.querySelector('[data-muted="6"]')).toBeInTheDocument();
 
     await user.click(screen.getByRole('radio', { name: 'Piano' }));
     expect(screen.queryByRole('img', { name: /^Guitar neck/ })).not.toBeInTheDocument();
     expect(highlightedKeys(container)).toEqual(['60:root', '64:third', '67:fifth']);
   });
 
-  it('keeps the guitar neck when the chord changes', async () => {
+  it('steps through the chord shapes with the arrows', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    await user.click(screen.getByRole('radio', { name: 'Guitar' }));
+    const previous = screen.getByRole('button', { name: 'Previous shape' });
+    const next = screen.getByRole('button', { name: 'Next shape' });
+    expect(previous).toBeDisabled();
+    expect(screen.getByText('Shape 1 of 6')).toBeInTheDocument();
+    expect(screen.getByText('Open position')).toBeInTheDocument();
+
+    await user.click(next);
+    expect(screen.getByText('Shape 2 of 6')).toBeInTheDocument();
+    expect(screen.getByText('Frets 3–6')).toBeInTheDocument();
+    expect(highlightedFrets(container)).toEqual(['1/3:fifth', '2/5:third', '3/5:root', '4/5:fifth', '5/3:root']);
+    expect(previous).toBeEnabled();
+
+    for (let i = 0; i < 4; i++) await user.click(next);
+    expect(screen.getByText('Shape 6 of 6')).toBeInTheDocument();
+    expect(next).toBeDisabled();
+
+    await user.click(previous);
+    expect(screen.getByText('Shape 5 of 6')).toBeInTheDocument();
+  });
+
+  it('stays in the same area of the neck when the chord changes', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('radio', { name: 'Guitar' }));
+    await user.click(screen.getByRole('button', { name: 'Next shape' }));
+    expect(screen.getByText('Frets 3–6')).toBeInTheDocument();
+
+    // D major has shapes at frets 1, 2, 5, 7, 10 and 12; fret 2 is closest to 3.
+    await user.click(screen.getByRole('radio', { name: 'D' }));
+    expect(
+      screen.getByRole('img', { name: 'Guitar neck showing D major, shape 2 of 6, frets 2–5: x 5 4 2 3 2' }),
+    ).toBeInTheDocument();
+  });
+
+  it('spells E♭ minor with flats on the guitar neck', async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);
     await user.click(screen.getByRole('radio', { name: 'Guitar' }));
     await user.click(screen.getByRole('radio', { name: 'D♯/E♭' }));
     await user.click(screen.getByRole('radio', { name: 'Minor' }));
 
-    expect(screen.getByRole('img', { name: 'Guitar neck showing E♭ minor: E♭, G♭, B♭' })).toBeInTheDocument();
-    const gString = [...container.querySelectorAll('[data-string="3"]')].map((dot) => dot.textContent);
-    expect(gString).toEqual(['B♭', 'E♭', 'G♭']);
+    expect(
+      screen.getByRole('img', { name: 'Guitar neck showing E♭ minor, shape 1 of 3, frets 1–4: x x 1 3 4 2' }),
+    ).toBeInTheDocument();
+    const notes = [...container.querySelectorAll('[data-highlighted="true"]')].map((dot) => dot.textContent);
+    expect(notes).toEqual(['G♭', 'E♭', 'B♭', 'E♭']);
   });
 
   it('spells E♭ minor with flats', async () => {
@@ -174,14 +215,21 @@ describe('App', () => {
       await user.click(screen.getByRole('radio', { name: 'Guitar' }));
 
       expect(
-        screen.getByRole('img', { name: 'Guitar neck showing C major scale: C, D, E, F, G, A, B' }),
+        screen.getByRole('img', {
+          name: 'Guitar neck showing C major scale, position 1 of 7, open position: C, D, E, F, G, A, B',
+        }),
       ).toBeInTheDocument();
-      // The low E string, frets 0–5: E F G A, skipping F♯ and G♯ at frets 2 and 4.
-      const lowE = [...container.querySelectorAll('[data-string="6"]')]
-        .filter((dot) => Number(dot.getAttribute('data-fret')) <= 5)
-        .map((dot) => `${dot.getAttribute('data-fret')}:${dot.textContent}`);
-      expect(lowE).toEqual(['0:E', '1:F', '3:G', '5:A']);
+      // The low E string in the open position: E F G, skipping F♯ and G♯ at frets 2 and 4.
+      const lowE = () =>
+        [...container.querySelectorAll('[data-string="6"]')].map(
+          (dot) => `${dot.getAttribute('data-fret')}:${dot.textContent}`,
+        );
+      expect(lowE()).toEqual(['0:E', '1:F', '3:G']);
       expect(container.querySelector('[data-string="5"][data-fret="3"]')).toHaveAttribute('data-role', 'degree-1');
+
+      await user.click(screen.getByRole('button', { name: 'Next position' }));
+      expect(screen.getByText('Frets 3–6')).toBeInTheDocument();
+      expect(lowE()).toEqual(['3:G', '5:A']);
     });
   });
 });

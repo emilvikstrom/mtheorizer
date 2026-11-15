@@ -9,13 +9,16 @@ import {
   type ChordQualityId,
   type HighlightTone,
   type KeyboardTone,
+  type NeckView,
   type ScaleId,
   chordHighlights,
   chordOnKeyboard,
   chordOnPitchClass,
+  chordShapes,
   scaleHighlights,
   scaleOnKeyboard,
   scaleOnPitchClass,
+  scalePositions,
 } from '../theory';
 
 type View = 'chord' | 'scale';
@@ -108,22 +111,25 @@ interface InstrumentViewProps {
   instrument: Instrument;
   name: string;
   legend: { root: string; tone: string };
-  /** Each tone once, for the guitar neck. */
+  /** Each tone once. */
   tones: readonly HighlightTone[];
   /** The tones voiced on the keyboard. */
   keys: readonly KeyboardTone[];
+  /** Chord shapes or scale positions on the guitar neck. */
+  neck: { kind: 'shape' | 'position'; views: readonly NeckView[] };
 }
 
-function InstrumentView({ instrument, name, legend, tones, keys }: InstrumentViewProps) {
+function InstrumentView({ instrument, name, legend, tones, keys, neck }: InstrumentViewProps) {
   return instrument === 'piano' ? (
     <Piano tones={keys} name={name} legend={legend} />
   ) : (
-    <Fretboard tones={tones} name={name} legend={legend} />
+    <Fretboard views={neck.views} kind={neck.kind} tones={tones} name={name} legend={legend} />
   );
 }
 
 function ChordView({ pc, quality, instrument }: { pc: number; quality: ChordQualityId; instrument: Instrument }) {
   const chord = chordOnPitchClass(pc, quality);
+  const tones = chordHighlights(chord);
   return (
     <>
       <ChordInfo chord={chord} />
@@ -131,8 +137,9 @@ function ChordView({ pc, quality, instrument }: { pc: number; quality: ChordQual
         instrument={instrument}
         name={chord.name}
         legend={CHORD_LEGEND}
-        tones={chordHighlights(chord)}
+        tones={tones}
         keys={chordOnKeyboard(chord)}
+        neck={{ kind: 'shape', views: chordShapes(tones) }}
       />
     </>
   );
@@ -140,6 +147,7 @@ function ChordView({ pc, quality, instrument }: { pc: number; quality: ChordQual
 
 function ScaleView({ pc, scaleId, instrument }: { pc: number; scaleId: ScaleId; instrument: Instrument }) {
   const scale = scaleOnPitchClass(pc, scaleId);
+  const tones = scaleHighlights(scale);
   return (
     <>
       <ScaleInfo scale={scale} />
@@ -147,8 +155,9 @@ function ScaleView({ pc, scaleId, instrument }: { pc: number; scaleId: ScaleId; 
         instrument={instrument}
         name={scale.name}
         legend={SCALE_LEGEND}
-        tones={scaleHighlights(scale)}
+        tones={tones}
         keys={scaleOnKeyboard(scale)}
+        neck={{ kind: 'position', views: scalePositions(tones) }}
       />
     </>
   );
