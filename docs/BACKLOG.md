@@ -18,7 +18,7 @@ _Inget just nu._
 ## Nästa
 
 - [ ] **X-01** Delbar länk till valt ackord
-  - Acceptans: Valet syns i URL:en (`#/Db/major`), och sidan öppnas med det valet när länken laddas. Bakåt/framåt i webbläsaren fungerar. Ogiltiga länkar faller tillbaka till C-dur.
+  - Acceptans: Valet syns i URL:en (`#/Db/major`), och sidan öppnas med det valet när länken laddas. Bakåt/framåt i webbläsaren fungerar. Ogiltiga länkar faller tillbaka till C-dur. Vald flik, och vald tonart på kvintcirkeln, ska också gå att länka till.
 - [ ] **M2-01** Förminskade och överstigande treklanger
   - Acceptans: Kvalitetsväljaren har Diminished och Augmented. Stavningen är korrekt, till exempel B° = B–D–F och C+ = C–E–G♯, och alla 12 grundtoner × 2 nya kvaliteter är tabelltestade.
 - [ ] **M2-02** Sus2 och sus4
@@ -36,6 +36,7 @@ _Inget just nu._
 - [ ] **X-05** Svenskt gränssnitt och H/B-notation
 - [ ] **X-06** Bättre pianovisning på mobil: etiketterna på svarta tangenter blir små vid 375 px bredd (större text eller bara den del av tangentbordet som behövs)
 - [ ] **M4-01** Spela upp ackordet med Web Audio
+- [ ] **M5-04** Klicka på ett diatoniskt ackord i kvintcirkelfliken för att öppna det i ackordfliken (kräver förminskade ackord från M2-01)
 - [ ] **X-08** Kom ihåg valet piano/gitarr (i URL:en tillsammans med X-01, eller i localStorage)
 - [ ] **G-02** Andra stämningar (Drop D, DADGAD) och vänsterhänt hals
 - [ ] **G-03** Fingersättning i greppen (vilket finger på vilken ton, barré markerad)
@@ -51,3 +52,6 @@ _Inget just nu._
 - [x] **X-07** Växla mellan piano och gitarrhals: standardstämning, band 0–12, alla ackordtoner markerade och rätt stavade, tabelltest för alla 24 ackord. Halsen scrollar i sidled på smala skärmar _(2026-11-15)_
 - [x] **M3-01** Skalvy: välj Ackord eller Skala, dur och naturlig moll på pianot från grundton till grundton, med stegnummer och intervallnamn. Tabelltest för alla 24 skalor _(2026-11-15)_
 - [x] **G-01** Gitarrhalsen visar fyra band i taget med pilar ←/→. Ackord visas som spelbara grepp i grundläge (CAGED-formerna hittas automatiskt: basen är grundtonen, alla ackordtoner klingar, högst fyra fingrar med barré som ett). Skalor visas som lägen med hela skalan inom fyra band. Vid byte av ackord behålls läget på halsen _(2026-11-15)_
+- [x] **M5-01** Flikar i appen (Chords & scales / Circle of fifths) med tangentbordsnavigering _(2026-11-15)_
+- [x] **M5-02** Teorimodul för tonarter: förtecken, kvintcirkelns positioner med enharmoniska stavningar, relativ-, parallell-, dominant- och subdominanttonart samt diatoniska treklanger med steg och funktion, tabelltestat för alla positioner _(2026-11-15)_
+- [x] **M5-03** Kvintcirkeln i SVG med tonartspanel: välj med klick eller piltangenter, välj stavning, hoppa till närliggande tonarter _(2026-11-15)_
