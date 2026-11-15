@@ -876,6 +876,23 @@ body {
   fill: var(--accent-tone);
 }
 
+.fret-dot__finger circle {
+  fill: var(--surface);
+  stroke: var(--text);
+  stroke-width: 1;
+}
+
+.fret-dot__finger text {
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--text);
+}
+
+.fretboard__barre {
+  fill: var(--accent-tone);
+  opacity: 0.45;
+}
+
 .fret-dot__label {
   font-size: 12px;
   font-weight: 700;

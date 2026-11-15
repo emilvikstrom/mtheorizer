@@ -4,6 +4,7 @@ import {
   type NeckTone,
   type NeckView,
   STANDARD_TUNING,
+  formatFingering,
   formatNote,
   formatShape,
   lastFret,
@@ -47,21 +48,42 @@ function whereOnNeck(view: NeckView): string {
     : `Frets ${view.firstFret}–${lastFret(view)}`;
 }
 
-function ToneDot({ position, x }: { position: NeckTone; x: number }) {
+function ToneDot({ position, x, finger }: { position: NeckTone; x: number; finger?: number }) {
   const y = stringY(position.string);
   return (
-    <g
-      className={`fret-dot ${position.isRoot ? "fret-dot--root" : "fret-dot--tone"}`}
-      data-highlighted="true"
-      data-string={position.string}
-      data-fret={position.fret}
-      data-role={position.role}
-    >
-      <circle cx={x} cy={y} r={DOT_RADIUS} />
-      <text className="fret-dot__label" x={x} y={y} textAnchor="middle" dominantBaseline="central">
-        {formatNote(position.note)}
-      </text>
-    </g>
+    <>
+      <g
+        className={`fret-dot ${position.isRoot ? "fret-dot--root" : "fret-dot--tone"}`}
+        data-highlighted="true"
+        data-string={position.string}
+        data-fret={position.fret}
+        data-role={position.role}
+      >
+        <circle cx={x} cy={y} r={DOT_RADIUS} />
+        <text
+          className="fret-dot__label"
+          x={x}
+          y={y}
+          textAnchor="middle"
+          dominantBaseline="central"
+        >
+          {formatNote(position.note)}
+        </text>
+      </g>
+      {finger !== undefined && (
+        <g className="fret-dot__finger" aria-hidden="true" data-finger={finger}>
+          <circle cx={x + DOT_RADIUS - 2} cy={y + DOT_RADIUS - 2} r={7} />
+          <text
+            x={x + DOT_RADIUS - 2}
+            y={y + DOT_RADIUS - 2}
+            textAnchor="middle"
+            dominantBaseline="central"
+          >
+            {finger}
+          </text>
+        </g>
+      )}
+    </>
   );
 }
 
@@ -191,10 +213,27 @@ function NeckDiagram({ view, description }: { view: NeckView; description: strin
         </text>
       ))}
 
+      {view.fingering?.barre && (
+        <rect
+          className="fretboard__barre"
+          data-barre-fret={view.fingering.barre.fret}
+          x={fretCentreX(view.fingering.barre.fret) - DOT_RADIUS}
+          y={stringY(view.fingering.barre.toString) - DOT_RADIUS}
+          width={2 * DOT_RADIUS}
+          height={
+            stringY(view.fingering.barre.fromString) -
+            stringY(view.fingering.barre.toString) +
+            2 * DOT_RADIUS
+          }
+          rx={DOT_RADIUS}
+        />
+      )}
+
       {view.positions.map((position) => (
         <ToneDot
           key={`${position.string}-${position.fret}`}
           position={position}
+          finger={view.fingering?.fingerOn.get(position.string)}
           x={fretCentreX(position.fret)}
         />
       ))}
@@ -232,7 +271,8 @@ export function Fretboard({ views, kind, tones, name, legend }: FretboardProps) 
   const status = `${noun} ${index + 1} of ${views.length}`;
   const detail =
     kind === "shape" ? formatShape(view) : tones.map((tone) => formatNote(tone.note)).join(", ");
-  const description = `Guitar neck showing ${name}, ${status.toLowerCase()}, ${where.toLowerCase()}: ${detail}`;
+  const fingers = view.fingering ? `, fingers ${formatFingering(view)}` : "";
+  const description = `Guitar neck showing ${name}, ${status.toLowerCase()}, ${where.toLowerCase()}: ${detail}${fingers}`;
   const step = (delta: number) => {
     const next = views[index + delta];
     if (next) setWantedFret(next.firstFret);

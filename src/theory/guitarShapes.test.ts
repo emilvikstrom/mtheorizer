@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { CHORD_QUALITY_IDS, type ChordQualityId, chordOnPitchClass } from "./chords";
-import { chordShapes, formatShape, lastFret, scalePositions } from "./guitarShapes";
+import {
+  chordShapes,
+  fingeringFor,
+  formatFingering,
+  formatShape,
+  lastFret,
+  scalePositions,
+} from "./guitarShapes";
 import { pitchClass } from "./notes";
 import { type ScaleId, scaleOnPitchClass } from "./scales";
 import { chordHighlights, scaleHighlights } from "./voicing";
@@ -76,6 +83,37 @@ describe("chordShapes", () => {
     expect(formatted(0, "dominant13")[0]).toBe("x 3 5 3 5 5");
   });
 
+  it.each([
+    [0, "major", "x 3 2 – 1 –"],
+    [9, "major", "x – 1 2 3 –"],
+    [4, "minor", "– 1 2 – – –"],
+    [5, "major", "1 3 4 2 1 1"],
+    [11, "minor", "x 1 3 4 2 1"],
+  ] as const)("fingers pitch class %i %s as %s", (pc, quality, text) => {
+    const [shape] = shapesOf(pc, quality);
+    expect(shape && formatFingering(shape)).toBe(text);
+  });
+
+  it("marks the barre of F major across all six strings", () => {
+    const [f] = shapesOf(5, "major");
+    expect(f?.fingering?.barre).toEqual({ fret: 1, fromString: 6, toString: 1 });
+    expect(shapesOf(0, "major")[0]?.fingering?.barre).toBeUndefined();
+  });
+
+  describe("fingeringFor", () => {
+    it("gives the barre to the index finger and the rest in fret order", () => {
+      const f = fingeringFor([1, 1, 2, 3, 3, 1]);
+      expect([...f.fingerOn]).toEqual([
+        [1, 1],
+        [2, 1],
+        [6, 1],
+        [3, 2],
+        [5, 3],
+        [4, 4],
+      ]);
+    });
+  });
+
   describe.each(CHORD_QUALITY_IDS)("every %s chord", (quality) => {
     it.each(PITCH_CLASSES)("on pitch class %i has playable root-position shapes", (pc) => {
       const chord = chordOnPitchClass(pc, quality);
@@ -92,6 +130,10 @@ describe("chordShapes", () => {
         const strings = shape.positions.map((p) => p.string);
         // Strings 1 up to the bass are all played, once each; the rest are muted.
         expect(strings).toEqual(Array.from({ length: strings.length }, (_, i) => i + 1));
+        // Every fretted note has a finger, open strings have none, and at most four are used.
+        const fingerOn = shape.fingering?.fingerOn;
+        for (const p of shape.positions) expect(fingerOn?.has(p.string)).toBe(p.fret > 0);
+        expect(Math.max(0, ...(fingerOn?.values() ?? []))).toBeLessThanOrEqual(4);
         expect(strings.length).toBeGreaterThanOrEqual(4);
         expect(shape.muted).toEqual(
           Array.from({ length: 6 - strings.length }, (_, i) => strings.length + i + 1),
