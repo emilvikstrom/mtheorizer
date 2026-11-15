@@ -129,7 +129,7 @@ describe("App", () => {
     expect(screen.queryByRole("img", { name: /^Piano keyboard/ })).not.toBeInTheDocument();
     expect(
       screen.getByRole("img", {
-        name: "Guitar neck showing C major, shape 1 of 6, open position: x 3 2 0 1 0",
+        name: "Guitar neck showing C major, shape 1 of 7, open position: x 3 2 0 1 0",
       }),
     ).toBeInTheDocument();
     // Only the open C chord is marked, with the low E string muted.
@@ -154,11 +154,23 @@ describe("App", () => {
     const previous = screen.getByRole("button", { name: "Previous shape" });
     const next = screen.getByRole("button", { name: "Next shape" });
     expect(previous).toBeDisabled();
-    expect(screen.getByText("Shape 1 of 6")).toBeInTheDocument();
+    expect(screen.getByText("Shape 1 of 7")).toBeInTheDocument();
     expect(screen.getByText("Open position")).toBeInTheDocument();
 
+    // The second shape is a variant of the open chord, with G on the high E string.
     await user.click(next);
-    expect(screen.getByText("Shape 2 of 6")).toBeInTheDocument();
+    expect(screen.getByText("Shape 2 of 7")).toBeInTheDocument();
+    expect(screen.getByText("Open position")).toBeInTheDocument();
+    expect(highlightedFrets(container)).toEqual([
+      "1/3:fifth",
+      "2/1:root",
+      "3/0:fifth",
+      "4/2:third",
+      "5/3:root",
+    ]);
+
+    await user.click(next);
+    expect(screen.getByText("Shape 3 of 7")).toBeInTheDocument();
     expect(screen.getByText("Frets 3–6")).toBeInTheDocument();
     expect(highlightedFrets(container)).toEqual([
       "1/3:fifth",
@@ -170,17 +182,18 @@ describe("App", () => {
     expect(previous).toBeEnabled();
 
     for (let i = 0; i < 4; i++) await user.click(next);
-    expect(screen.getByText("Shape 6 of 6")).toBeInTheDocument();
+    expect(screen.getByText("Shape 7 of 7")).toBeInTheDocument();
     expect(next).toBeDisabled();
 
     await user.click(previous);
-    expect(screen.getByText("Shape 5 of 6")).toBeInTheDocument();
+    expect(screen.getByText("Shape 6 of 7")).toBeInTheDocument();
   });
 
   it("stays in the same area of the neck when the chord changes", async () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("radio", { name: "Guitar" }));
+    await user.click(screen.getByRole("button", { name: "Next shape" }));
     await user.click(screen.getByRole("button", { name: "Next shape" }));
     expect(screen.getByText("Frets 3–6")).toBeInTheDocument();
 
@@ -202,7 +215,7 @@ describe("App", () => {
 
     expect(
       screen.getByRole("img", {
-        name: "Guitar neck showing E♭ minor, shape 1 of 3, frets 1–4: x x 1 3 4 2",
+        name: "Guitar neck showing E♭ minor, shape 1 of 4, frets 1–4: x x 1 3 4 2",
       }),
     ).toBeInTheDocument();
     const notes = [...container.querySelectorAll('[data-highlighted="true"]')].map(
