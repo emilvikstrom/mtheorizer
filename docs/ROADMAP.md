@@ -9,7 +9,7 @@ Status: ✅ klar · 🚧 pågår · ⏳ planerad · 💡 idé
 | M1 | Ackorduppslag med pianovisning | ✅ |
 | M2 | Fler ackordtyper och omvändningar | ✅ |
 | M3 | Skalor och modi | 🚧 |
-| M4 | Lyssna på ackord och skalor | 💡 |
+| M4 | Lyssna på ackord och skalor | ✅ |
 | M5 | Tonarter och harmoniska samband | ✅ |
 | X  | Tvärgående förbättringar (delbara länkar, språk, CI) | ⏳ |
 
@@ -42,9 +42,13 @@ Mål: Slå upp en skala eller modus på valfri grundton och se den på pianot.
 - Pentatonik och blues.
 - Klart: dur och naturlig moll, med en växel mellan ackord och skala (M3-01).
 
-## M4 – Lyssna 💡
+## M4 – Lyssna ✅
 
 Mål: Spela upp ackord och skalor i webbläsaren (Web Audio), både som brutet ackord och som samklang.
+
+Resultat:
+- `src/audio/playback.ts` planerar uppspelningen (ren funktion, testad) och spelar med Web Audio-oscillatorer. Ackord spelas i valt läge, antingen som samklang eller brutet nerifrån och upp; skalor spelas uppåt.
+- Knapparna syns bara när webbläsaren har Web Audio.
 
 ## M5 – Tonarter och harmoniska samband ✅
 

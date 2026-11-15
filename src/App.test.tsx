@@ -615,3 +615,50 @@ describe("App", () => {
     });
   });
 });
+
+describe("playback", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("plays the chord in its current inversion", async () => {
+    const freqs: number[] = [];
+    class FakeContext {
+      state = "running";
+      currentTime = 0;
+      destination = {};
+      createOscillator() {
+        const osc = {
+          type: "",
+          set frequency(_: unknown) {},
+          get frequency() {
+            return {
+              set value(v: number) {
+                freqs.push(Math.round(v));
+              },
+            };
+          },
+          connect: (n: unknown) => n,
+          start: () => {},
+          stop: () => {},
+        };
+        return osc;
+      }
+      createGain() {
+        return {
+          gain: { setValueAtTime: () => {}, exponentialRampToValueAtTime: () => {} },
+          connect: (n: unknown) => n,
+        };
+      }
+    }
+    vi.stubGlobal("AudioContext", FakeContext);
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Play C major together" }));
+    expect(freqs).toEqual([262, 330, 392]);
+  });
+
+  it("offers no buttons without Web Audio", () => {
+    vi.stubGlobal("AudioContext", undefined);
+    render(<App />);
+    expect(screen.queryByRole("group", { name: "Listen" })).not.toBeInTheDocument();
+  });
+});
