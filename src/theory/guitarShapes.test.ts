@@ -107,6 +107,26 @@ describe("chordShapes", () => {
     expect(shapesOf(0, "major")[0]?.fingering?.barre).toBeUndefined();
   });
 
+  it("finds power chords on the low strings with the high strings muted", () => {
+    const shapes = formatted(0, "power");
+    // C5: C on the A string with G and C above it; the open-string shapes need no fingers on the nut.
+    expect(shapes).toContain("x 3 5 5 x x");
+    expect(shapes).toContain("8 10 10 x x x");
+    for (const shape of shapesOf(0, "power")) {
+      expect(shape.muted).toContain(1);
+      expect(shape.positions.length).toBeLessThanOrEqual(3);
+    }
+    expect(formatted(4, "power")).toContain("0 2 2 x x x");
+  });
+
+  it("does not offer a barre across muted strings as a full barre", () => {
+    expect(fingeringFor([-1, -1, 1, 1, 3, -1]).barre).toEqual({
+      fret: 1,
+      fromString: 4,
+      toString: 3,
+    });
+  });
+
   describe("fingeringFor", () => {
     it("gives the barre to the index finger and the rest in fret order", () => {
       const f = fingeringFor([1, 1, 2, 3, 3, 1]);
@@ -135,15 +155,19 @@ describe("chordShapes", () => {
 
       for (const shape of shapes) {
         const strings = shape.positions.map((p) => p.string);
-        // Strings 1 up to the bass are all played, once each; the rest are muted.
-        expect(strings).toEqual(Array.from({ length: strings.length }, (_, i) => i + 1));
+        const sparse = quality === "power";
+        // The strings from the top one down to the bass are all played, once each; the rest are muted.
+        const top = Math.min(...strings);
+        if (!sparse) expect(top).toBe(1);
+        expect(strings).toEqual(Array.from({ length: strings.length }, (_, i) => top + i));
         // Every fretted note has a finger, open strings have none, and at most four are used.
         const fingerOn = shape.fingering?.fingerOn;
         for (const p of shape.positions) expect(fingerOn?.has(p.string)).toBe(p.fret > 0);
         expect(Math.max(0, ...(fingerOn?.values() ?? []))).toBeLessThanOrEqual(4);
-        expect(strings.length).toBeGreaterThanOrEqual(4);
+        if (sparse) expect(strings.length).toBeGreaterThanOrEqual(2);
+        else expect(strings.length).toBeGreaterThanOrEqual(4);
         expect(shape.muted).toEqual(
-          Array.from({ length: 6 - strings.length }, (_, i) => strings.length + i + 1),
+          [1, 2, 3, 4, 5, 6].filter((string) => !strings.includes(string)),
         );
 
         const bass = shape.positions[shape.positions.length - 1];

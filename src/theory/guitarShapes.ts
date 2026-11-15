@@ -60,6 +60,7 @@ const OPEN_CHORD_MAX_FRET = 3;
 
 /** The barre `frets` (string 1 first, 0 = open) allow: one at the lowest fretted fret, if it covers two or more strings. */
 function barreOf(frets: readonly number[]): Barre | undefined {
+  // A negative fret marks a muted string, which a barre may cross.
   const fretted = frets.filter((f) => f > 0);
   if (fretted.length === 0) return undefined;
   const lowest = Math.min(...fretted);
@@ -67,9 +68,11 @@ function barreOf(frets: readonly number[]): Barre | undefined {
   // so every string under it must be fretted at or above that fret.
   const barreFrom = frets.lastIndexOf(lowest);
   const underBarre = frets.slice(0, barreFrom + 1);
+  // The barre reaches up to the highest string that is played.
+  const barreTo = frets.findIndex((f) => f >= 0);
   const canBarre =
-    underBarre.every((f) => f >= lowest) && fretted.filter((f) => f === lowest).length > 1;
-  return canBarre ? { fret: lowest, fromString: barreFrom + 1, toString: 1 } : undefined;
+    underBarre.every((f) => f >= lowest || f < 0) && fretted.filter((f) => f === lowest).length > 1;
+  return canBarre ? { fret: lowest, fromString: barreFrom + 1, toString: barreTo + 1 } : undefined;
 }
 
 /**
@@ -95,7 +98,7 @@ export function fingeringFor(frets: readonly number[]): Fingering {
   return barre ? { fingerOn, barre } : { fingerOn };
 }
 
-/** Fingers needed to fret `frets` (string 1 first, 0 = open). One barre is allowed at the lowest fret. */
+/** Fingers needed to fret `frets` (string 1 first, 0 = open, -1 = muted). One barre is allowed at the lowest fret. */
 function fingersNeeded(frets: readonly number[]): number {
   return new Set(fingeringFor(frets).fingerOn.values()).size;
 }
@@ -129,6 +132,13 @@ function compareCost(a: number[], b: number[]): number {
   return 0;
 }
 
+/** A chord with at most this many distinct tones that must sound is a power chord: played on few strings. */
+const SPARSE_TONES = 2;
+const SPARSE_MIN_STRINGS = 2;
+const SPARSE_MAX_STRINGS = 3;
+/** Power chords are played on the lowest strings: the bass is one of this many of them. */
+const SPARSE_BASS_STRINGS = 3;
+
 /** Extra fingers a variant may need compared with the easiest shape of its window. */
 const VARIANT_EXTRA_FINGERS = 1;
 
@@ -151,26 +161,38 @@ function shapesInWindow(
   );
   const required = tones.filter((t) => !t.optional).map((t) => pitchClass(t.note));
 
+  // Chords of two tones (power chords) are played on two or three of the lowest strings with the
+  // rest muted. Any other chord plays every string from the bass up to string 1.
+  const sparse = new Set(required).size <= SPARSE_TONES;
   const found: (Omit<ChordShape, "firstFret" | "frets"> & { cost: number[] })[] = [];
-  // Strings 1..sounding are played; the bass strings below them are muted.
-  for (let sounding = stringCount; sounding >= MIN_STRINGS; sounding--) {
-    const bassChoices = (candidates[sounding - 1] ?? []).filter((p) => p.isRoot);
+  const lowestBass = sparse ? stringCount - SPARSE_BASS_STRINGS + 1 : MIN_STRINGS;
+  for (let bass = stringCount; bass >= lowestBass; bass--) {
+    const bassChoices = (candidates[bass - 1] ?? []).filter((p) => p.isRoot);
     if (bassChoices.length === 0) continue;
-    const lists = [...candidates.slice(0, sounding - 1), bassChoices];
-    for (const positions of combinations(lists)) {
-      const covered = new Set(positions.map((p) => pitchClass(p.note)));
-      if (!required.every((pc) => covered.has(pc))) continue;
-      const frets = positions.map((p) => p.fret);
-      if (frets.includes(0) && Math.max(...frets) > OPEN_CHORD_MAX_FRET) continue;
-      const fingers = fingersNeeded(frets);
-      if (fingers > MAX_FINGERS) continue;
-      const shape = {
-        positions: [...positions],
-        muted: Array.from({ length: stringCount - sounding }, (_, i) => sounding + i + 1),
-        fingers,
-        fingering: fingeringFor(frets),
-      };
-      found.push({ ...shape, cost: cost(shape) });
+    const topStrings = sparse
+      ? Array.from({ length: SPARSE_MAX_STRINGS - SPARSE_MIN_STRINGS + 1 }, (_, i) => bass - 1 - i)
+      : [1];
+    for (const top of topStrings.filter((t) => t >= 1 && t < bass)) {
+      const lists = [...candidates.slice(top - 1, bass - 1), bassChoices];
+      for (const positions of combinations(lists)) {
+        const covered = new Set(positions.map((p) => pitchClass(p.note)));
+        if (!required.every((pc) => covered.has(pc))) continue;
+        const fretOf = new Map(positions.map((p) => [p.string, p.fret]));
+        const frets = Array.from({ length: stringCount }, (_, i) => fretOf.get(i + 1) ?? -1);
+        const played = positions.map((p) => p.fret);
+        if (played.includes(0) && Math.max(...played) > OPEN_CHORD_MAX_FRET) continue;
+        const fingers = fingersNeeded(frets);
+        if (fingers > MAX_FINGERS) continue;
+        const shape = {
+          positions: [...positions],
+          muted: Array.from({ length: stringCount }, (_, i) => i + 1).filter(
+            (string) => !fretOf.has(string),
+          ),
+          fingers,
+          fingering: fingeringFor(frets),
+        };
+        found.push({ ...shape, cost: cost(shape) });
+      }
     }
   }
   found.sort((a, b) => compareCost(a.cost, b.cost));

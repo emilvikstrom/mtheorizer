@@ -65,10 +65,10 @@ describe("App", () => {
     );
     expect(
       within(screen.getByRole("group", { name: "Quality" })).getAllByRole("radio"),
-    ).toHaveLength(36);
+    ).toHaveLength(37);
     expect(
       within(screen.getByRole("group", { name: "Triads" })).getAllByRole("radio"),
-    ).toHaveLength(6);
+    ).toHaveLength(7);
     expect(
       within(screen.getByRole("group", { name: "Sevenths" })).getAllByRole("radio"),
     ).toHaveLength(10);

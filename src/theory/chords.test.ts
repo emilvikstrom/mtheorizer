@@ -103,6 +103,20 @@ const SPELLINGS: Record<ChordQualityId, readonly string[]> = {
     "Bb Eb F",
     "B E F#",
   ],
+  power: [
+    "C G",
+    "Db Ab",
+    "D A",
+    "Eb Bb",
+    "E B",
+    "F C",
+    "F# C#",
+    "G D",
+    "Ab Eb",
+    "A E",
+    "Bb F",
+    "B F#",
+  ],
   major6: [
     "C E G A",
     "Db F Ab Bb",
@@ -569,6 +583,7 @@ describe("chord qualities", () => {
       "+",
       "sus2",
       "sus4",
+      "5",
     ]);
   });
 
