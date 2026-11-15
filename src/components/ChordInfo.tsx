@@ -2,13 +2,15 @@ import { type Chord, formatNote, toneLabel } from "../theory";
 
 interface ChordInfoProps {
   chord: Chord;
+  /** The symbol to show, e.g. the slash chord "C/E"; defaults to the chord's own. */
+  symbol?: string;
 }
 
-export function ChordInfo({ chord }: ChordInfoProps) {
+export function ChordInfo({ chord, symbol = chord.symbol }: ChordInfoProps) {
   return (
     <section className="chord-info" aria-labelledby="chord-name">
       <h2 id="chord-name" className="chord-info__name" aria-live="polite">
-        {chord.name} <span className="chord-info__symbol">{chord.symbol}</span>
+        {chord.name} <span className="chord-info__symbol">{symbol}</span>
       </h2>
       <ol className="chord-info__tones" aria-label="Notes in the chord">
         {chord.tones.map((tone) => (

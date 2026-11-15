@@ -1,5 +1,5 @@
 import type { Chord, ChordTone } from "./chords";
-import { type Note, pitchClass } from "./notes";
+import { type Note, formatNote, pitchClass } from "./notes";
 import type { SpelledScale } from "./scales";
 
 export interface VoicedTone extends ChordTone {
@@ -76,6 +76,18 @@ export function inversionName(inversion: number): string {
   if (inversion === 0) return "Root position";
   const suffix = inversion === 1 ? "st" : inversion === 2 ? "nd" : inversion === 3 ? "rd" : "th";
   return `${inversion}${suffix} inversion`;
+}
+
+/**
+ * The chord symbol with the bass tone of an inversion, as a slash chord:
+ * "C/E" for C major in first inversion, "C" in root position. The inversion is
+ * clamped to what the chord has. Tones are listed from low to high, so the
+ * tone that takes the bass is the one at that index.
+ */
+export function inversionSymbol(chord: Chord, inversion: number): string {
+  const n = Math.max(0, Math.min(Math.trunc(inversion), inversionCount(chord)));
+  const bass = [...chord.tones].sort((a, b) => a.interval.semitones - b.interval.semitones)[n];
+  return n === 0 || !bass ? chord.symbol : `${chord.symbol}/${formatNote(bass.note)}`;
 }
 
 /**

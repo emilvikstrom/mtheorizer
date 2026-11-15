@@ -32,6 +32,7 @@ import {
   chordHighlights,
   inversionCount,
   inversionName,
+  inversionSymbol,
   chordOnKeyboard,
   chordShapes,
   commonSpellings,
@@ -323,7 +324,7 @@ function ChordView({ route }: { route: ChordRoute }) {
   const keys = chordOnKeyboard(chord, 4, inversion);
   return (
     <>
-      <ChordInfo chord={chord} />
+      <ChordInfo chord={chord} symbol={inversionSymbol(chord, inversion)} />
       <PlayButtons midis={keys.map((k) => k.midi)} kind="chord" name={chord.name} />
       <InstrumentView
         instrument={instrument}

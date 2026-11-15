@@ -29,10 +29,10 @@ Mål: Alla vanliga treklanger och fyrklanger, och möjlighet att se ackordet i o
 - Septimackord: maj7, 7, m7, m7♭5 och dim7.
 - Omvändningar (första, andra och tredje) på pianot.
 
-Resultat (M2-01–M2-04):
-- 36 ackordtyper i sju grupper: treklanger (dur, moll, °, +, sus2, sus4), sextackord (6, m6, 6/9, m6/9), septimackord (maj7, 7, m7, m(maj7), m7♭5, °7, 7♯5, maj7♯5, 7♭5, 7sus4), nonackord (maj9, 9, m9, 7♭9, 7♯9, 9sus4), undecimackord (11, m11, 7♯11, maj7♯11), tredecimackord (13, maj13, m13) och tillagda toner (add9, m(add9), add11).
+Resultat (M2-01–M2-05):
+- 42 ackordtyper i sju grupper: treklanger (dur, moll, °, +, sus2, sus4), sextackord (6, m6, 6/9, m6/9), septimackord (maj7, 7, m7, m(maj7), m7♭5, °7, 7♯5, maj7♯5, 7♭5, 7sus4), nonackord (maj9, 9, m9, m(maj9), 7♭9, 7♯9, 7♯5♯9, 9sus4), undecimackord (11, m11, 7♯11, maj7♯11), tredecimackord (13, maj13, m13, 7♭13, 13sus4) och tillagda toner (add2, add4, add9, m(add9), add11).
 - Varje ton har en roll (grundton, sekund, ters … tredecima) och kan märkas som valfri. Gitarrgreppen får då utelämna den, som kvinten i öppet C7 (x32310).
-- Omvändningar på pianot: grundläge samt 1:a–3:e omvändning, med basen markerad.
+- Omvändningar på pianot: grundläge samt 1:a–3:e omvändning, med basen markerad och skriven som snedackord (C/E).
 
 ## M3 – Skalor och modi 🚧
 
