@@ -7,6 +7,7 @@ import {
   formatFingering,
   formatShape,
   lastFret,
+  omittedTones,
   scalePositions,
 } from "./guitarShapes";
 import { pitchClass } from "./notes";
@@ -254,5 +255,31 @@ describe("other tunings", () => {
         expect(shown.size).toBe(tones.length);
       }
     });
+  });
+});
+
+describe("omittedTones", () => {
+  it("names the tones a shape leaves out, for every root", () => {
+    for (const pc of PITCH_CLASSES) {
+      for (const quality of CHORD_QUALITY_IDS) {
+        const tones = chordHighlights(chordOnPitchClass(pc, quality));
+        for (const shape of chordShapes(tones)) {
+          const omitted = omittedTones(shape, tones);
+          // Only optional tones may be left out, and everything else sounds.
+          expect(omitted.every((t) => t.optional)).toBe(true);
+          const played = new Set(shape.positions.map((p) => pitchClass(p.note)));
+          expect(played.size + omitted.length).toBe(tones.length);
+        }
+      }
+    }
+  });
+
+  it("reports the missing fifth of a seventh chord and nothing for a triad", () => {
+    const c9 = chordHighlights(chordOnPitchClass(0, "dominant9"));
+    const noFifth = chordShapes(c9).find((s) => omittedTones(s, c9).length > 0);
+    expect(noFifth).toBeDefined();
+    expect(omittedTones(noFifth!, c9).map((t) => t.role)).toEqual(["fifth"]);
+    const c = chordHighlights(chordOnPitchClass(0, "major"));
+    expect(chordShapes(c).every((s) => omittedTones(s, c).length === 0)).toBe(true);
   });
 });

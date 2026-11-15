@@ -214,6 +214,15 @@ function shapesInWindow(
     }));
 }
 
+/** The chord tones a shape leaves out, e.g. the fifth of a seventh chord. */
+export function omittedTones(
+  view: NeckView,
+  tones: readonly HighlightTone[],
+): readonly HighlightTone[] {
+  const played = new Set(view.positions.map((p) => pitchClass(p.note)));
+  return tones.filter((t) => !played.has(pitchClass(t.note)));
+}
+
 /** "x 3 2 0 1 0": the fret on each string from the lowest string up, x for muted. */
 export function formatShape(view: NeckView, stringCount = STANDARD_TUNING.length): string {
   const fretOn = new Map(view.positions.map((p) => [p.string, p.fret]));

@@ -21,10 +21,11 @@ _Inget just nu._
 
 ## Senare
 
-- [ ] **M2-06** Ange vilka toner som utelämnas i greppen (t.ex. "utan kvint") i gitarrvyn
+_Inget just nu._
 
 ## Klart
 
+- [x] **M2-06** Gitarrvyn anger vilka toner ett grepp utelämnar ("Without fifth (G)") under diagrammet och i dess beskrivning. Räknas i teorimodulen (`omittedTones`), tabelltestat för alla ackord och grundtoner _(2026-11-15)_
 - [x] **G-05** Kvintackord (C5, "power chord") som ny ackordtyp i triadgruppen (grundton + kvint). Greppsökningen tillåter nu dämpade strängar även ovanför greppet: kvintackord spelas på två–tre av de lägsta strängarna (x355xx, 8 10 10 x x x, 0 2 2 x x x) med övriga dämpade. Övriga ackord spelar som förut alla strängar från basen upp till sträng 1. Barré korsar dämpade strängar _(2026-11-15)_
 - [x] **M2-05** Fler ackord: 7♭13, 7♯5♯9, m(maj9), 13sus4 samt add2 och add4 som egna namn (43 ackordtyper, tabelltestade på alla 12 grundtoner). Snedackord: omvändningar skrivs som C/E och visas i ackordrubriken (`inversionSymbol`) _(2026-11-15)_
 - [x] **G-04** Fler varianter av samma grepp: varje läge på halsen visar nu även varianter som spelar lika många strängar och toner som det bästa greppet och kräver högst ett finger till (B♭: x10331 och x13331, C: x32010 och x32013). Det lättaste kommer först, och stegningen med pilarna skiljer varianter i samma läge åt _(2026-11-15)_
