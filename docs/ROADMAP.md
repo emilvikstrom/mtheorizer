@@ -8,7 +8,7 @@ Status: ✅ klar · 🚧 pågår · ⏳ planerad · 💡 idé
 |----|-----------|--------|
 | M1 | Ackorduppslag med pianovisning | ✅ |
 | M2 | Fler ackordtyper och omvändningar | ⏳ |
-| M3 | Skalor och modi | 💡 |
+| M3 | Skalor och modi | 🚧 |
 | M4 | Lyssna på ackord och skalor | 💡 |
 | M5 | Tonarter och harmoniska samband | 💡 |
 | X  | Tvärgående förbättringar (delbara länkar, språk, CI) | ⏳ |
@@ -29,13 +29,13 @@ Mål: Alla vanliga treklanger och fyrklanger, och möjlighet att se ackordet i o
 - Septimackord: maj7, 7, m7, m7♭5 och dim7.
 - Omvändningar (första, andra och tredje) på pianot.
 
-## M3 – Skalor och modi 💡
+## M3 – Skalor och modi 🚧
 
 Mål: Slå upp en skala eller modus på valfri grundton och se den på pianot.
 - Dur, naturlig, harmonisk och melodisk moll.
 - Kyrkotonarterna (jonisk till lokrisk).
 - Pentatonik och blues.
-- Teorimodulen har redan `buildScale` för dur och naturlig moll.
+- Klart: dur och naturlig moll, med en växel mellan ackord och skala (M3-01).
 
 ## M4 – Lyssna 💡
 

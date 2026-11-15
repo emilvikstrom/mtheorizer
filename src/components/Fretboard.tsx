@@ -1,4 +1,4 @@
-import { type Chord, type FretPosition, STANDARD_TUNING, formatNote, fretboardPositions } from '../theory';
+import { type HighlightTone, type NeckPlace, STANDARD_TUNING, formatNote, positionsOnNeck } from '../theory';
 import { ToneLegend } from './ToneLegend';
 
 const FRETS = 12;
@@ -28,12 +28,12 @@ const fretCentreX = (fret: number) =>
   fret === 0 ? OPEN_COLUMN / 2 : NECK_START + (fret - 0.5) * FRET_WIDTH;
 const midY = (a: number, b: number) => (stringY(a) + stringY(b)) / 2;
 
-function ToneDot({ position }: { position: FretPosition }) {
+function ToneDot({ position }: { position: HighlightTone & NeckPlace }) {
   const x = fretCentreX(position.fret);
   const y = stringY(position.string);
   return (
     <g
-      className={`fret-dot ${position.role === 'root' ? 'fret-dot--root' : 'fret-dot--tone'}`}
+      className={`fret-dot ${position.isRoot ? 'fret-dot--root' : 'fret-dot--tone'}`}
       data-highlighted="true"
       data-string={position.string}
       data-fret={position.fret}
@@ -48,16 +48,19 @@ function ToneDot({ position }: { position: FretPosition }) {
 }
 
 interface FretboardProps {
-  chord: Chord;
+  /** The tones to mark, each once; every place they can be played is shown. */
+  tones: readonly HighlightTone[];
+  /** What is shown, e.g. "C major" or "C major scale". */
+  name: string;
+  /** Legend for the marked positions: root/tonic, and the others. */
+  legend: { root: string; tone: string };
 }
 
-/** A guitar neck in standard tuning (frets 0–12) with every chord tone marked. */
-export function Fretboard({ chord }: FretboardProps) {
-  const positions = fretboardPositions(chord, STANDARD_TUNING, FRETS);
+/** A guitar neck in standard tuning (frets 0–12) with every given tone marked. */
+export function Fretboard({ tones, name, legend }: FretboardProps) {
+  const positions = positionsOnNeck(tones, STANDARD_TUNING, FRETS);
   const openStrings = new Set(positions.filter((p) => p.fret === 0).map((p) => p.string));
-  const description = `Guitar neck showing ${chord.name}: ${chord.tones
-    .map((tone) => formatNote(tone.note))
-    .join(', ')}`;
+  const description = `Guitar neck showing ${name}: ${tones.map((tone) => formatNote(tone.note)).join(', ')}`;
 
   return (
     <figure className="fretboard">
@@ -118,7 +121,7 @@ export function Fretboard({ chord }: FretboardProps) {
           ))}
         </svg>
       </div>
-      <ToneLegend />
+      <ToneLegend {...legend} />
     </figure>
   );
 }

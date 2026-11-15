@@ -2,7 +2,7 @@
   "name": "mtheorizer",
   "private": true,
   "version": "0.1.0",
-  "description": "Look up music theory: chords, with a piano keyboard visualization.",
+  "description": "Look up music theory: chords and scales, with a piano keyboard visualization.",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
