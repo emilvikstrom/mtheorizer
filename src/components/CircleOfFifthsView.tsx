@@ -1,4 +1,4 @@
-import type { Key } from "../theory";
+import type { ChordQualityId, Key, Note } from "../theory";
 import { CircleOfFifths } from "./CircleOfFifths";
 import { KeyDetails } from "./KeyDetails";
 
@@ -6,9 +6,11 @@ import { KeyDetails } from "./KeyDetails";
 export function CircleOfFifthsView({
   value: selected,
   onChange: setSelected,
+  onOpenChord,
 }: {
   value: Key;
   onChange: (key: Key) => void;
+  onOpenChord: (root: Note, quality: ChordQualityId) => void;
 }) {
   return (
     <div className="circle-view">
@@ -22,7 +24,7 @@ export function CircleOfFifthsView({
           </span>
         </figcaption>
       </figure>
-      <KeyDetails value={selected} onChange={setSelected} />
+      <KeyDetails value={selected} onChange={setSelected} onOpenChord={onOpenChord} />
     </div>
   );
 }

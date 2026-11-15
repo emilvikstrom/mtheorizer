@@ -52,6 +52,15 @@ export function App() {
           <CircleOfFifthsView
             value={route.key}
             onChange={(key) => navigate({ page: "circle", key })}
+            onOpenChord={(root, quality) =>
+              navigate({
+                page: "chord",
+                root,
+                quality,
+                inversion: 0,
+                instrument: storedInstrument(),
+              })
+            }
           />
         ) : (
           <Lookup route={route} onChange={navigate} />

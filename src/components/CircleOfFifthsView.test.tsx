@@ -1,13 +1,15 @@
 import { render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { type Key, key, note } from "../theory";
 import { CircleOfFifthsView } from "./CircleOfFifthsView";
 
+const opened = vi.fn();
+
 function Harness() {
   const [selected, setSelected] = useState<Key>(key(note("C"), "major"));
-  return <CircleOfFifthsView value={selected} onChange={setSelected} />;
+  return <CircleOfFifthsView value={selected} onChange={setSelected} onOpenChord={opened} />;
 }
 
 const heading = () => screen.getByRole("heading", { level: 2 });
@@ -28,6 +30,16 @@ describe("CircleOfFifthsView", () => {
     expect(screen.getByText("No sharps or flats")).toBeInTheDocument();
     expect(listText("Notes in the scale")).toEqual(["C", "D", "E", "F", "G", "A", "B"]);
     expect(triadSymbols()).toEqual(["C", "Dm", "Em", "F", "G", "Am", "B°"]);
+  });
+
+  it("opens a diatonic chord", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole("radio", { name: "E♭ major" }));
+    await user.click(screen.getByRole("button", { name: "Open B♭ in Chords & scales" }));
+    expect(opened).toHaveBeenLastCalledWith(note("B", -1), "major");
+    await user.click(screen.getByRole("button", { name: "Open D° in Chords & scales" }));
+    expect(opened).toHaveBeenLastCalledWith(note("D"), "diminished");
   });
 
   it("has 12 major and 12 minor keys", () => {

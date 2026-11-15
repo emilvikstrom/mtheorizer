@@ -254,6 +254,22 @@ describe("App", () => {
     expect(screen.getByRole("group", { name: "Root" })).toBeInTheDocument();
   });
 
+  it("opens a diatonic chord from the circle in the chord tab", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("tab", { name: "Circle of fifths" }));
+    await user.click(screen.getByRole("radio", { name: "A minor" }));
+    await user.click(screen.getByRole("button", { name: "Open B° in Chords & scales" }));
+
+    expect(screen.getByRole("tab", { name: "Chords & scales" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("B diminished");
+    expect(chordNotes()).toEqual(["B", "D", "F"]);
+    expect(window.location.hash).toBe("#/B/diminished?on=piano");
+  });
+
   it("shows B major across the octave break", async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);

@@ -1,6 +1,8 @@
 import {
+  type ChordQualityId,
   type HarmonicFunction,
   type Key,
+  type Note,
   circlePosition,
   diatonicTriads,
   dominantKey,
@@ -33,10 +35,12 @@ function signatureText(key: Key): string {
 interface KeyDetailsProps {
   value: Key;
   onChange: (key: Key) => void;
+  /** Open a diatonic chord in the chord view. */
+  onOpenChord: (root: Note, quality: ChordQualityId) => void;
 }
 
 /** Signature, scale, diatonic triads and related keys for the selected key. */
-export function KeyDetails({ value, onChange }: KeyDetailsProps) {
+export function KeyDetails({ value, onChange, onOpenChord }: KeyDetailsProps) {
   const spellings = keysAt(circlePosition(value), value.mode);
   const { accidentals } = keySignature(value);
   const harmonicDominant = harmonicMinorDominant(value);
@@ -100,14 +104,25 @@ export function KeyDetails({ value, onChange }: KeyDetailsProps) {
 
       <div className="key-details__section">
         <h3 className="key-details__heading">Diatonic triads</h3>
+        <p className="key-details__text">Click a chord to open it in Chords &amp; scales.</p>
         <ol className="triads" aria-label="Diatonic triads">
           {diatonicTriads(value).map((triad) => (
-            <li key={triad.degree} className={`triad triad--${triad.quality}`}>
-              <span className="triad__roman">{triad.roman}</span>
-              <span className="triad__symbol">{triad.symbol}</span>
-              <span className="triad__function">
-                {triad.function && FUNCTION_LABELS[triad.function]}
-              </span>
+            <li key={triad.degree}>
+              <button
+                type="button"
+                className={`triad triad--${triad.quality}`}
+                aria-label={`Open ${triad.symbol} in Chords & scales`}
+                onClick={() => {
+                  const root = triad.notes[0];
+                  if (root) onOpenChord(root, triad.quality);
+                }}
+              >
+                <span className="triad__roman">{triad.roman}</span>
+                <span className="triad__symbol">{triad.symbol}</span>
+                <span className="triad__function">
+                  {triad.function && FUNCTION_LABELS[triad.function]}
+                </span>
+              </button>
             </li>
           ))}
         </ol>
