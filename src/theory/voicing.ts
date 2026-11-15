@@ -1,6 +1,6 @@
-import type { Chord, ChordTone } from './chords';
-import { type Note, pitchClass } from './notes';
-import type { SpelledScale } from './scales';
+import type { Chord, ChordTone } from "./chords";
+import { type Note, pitchClass } from "./notes";
+import type { SpelledScale } from "./scales";
 
 export interface VoicedTone extends ChordTone {
   /** MIDI note number; middle C (C4) is 60. */
@@ -42,11 +42,20 @@ export interface KeyboardTone extends HighlightTone {
 }
 
 export function chordHighlights(chord: Chord): HighlightTone[] {
-  return chord.tones.map(({ note, role, optional }) => ({ note, isRoot: role === 'root', role, optional }));
+  return chord.tones.map(({ note, role, optional }) => ({
+    note,
+    isRoot: role === "root",
+    role,
+    optional,
+  }));
 }
 
 export function scaleHighlights(scale: SpelledScale): HighlightTone[] {
-  return scale.tones.map(({ note, degree }) => ({ note, isRoot: degree === 1, role: `degree-${degree}` }));
+  return scale.tones.map(({ note, degree }) => ({
+    note,
+    isRoot: degree === 1,
+    role: `degree-${degree}`,
+  }));
 }
 
 /** Most inversions offered: up to the third, even for chords with more tones. */
@@ -64,8 +73,8 @@ export function inversionCount(chord: Chord): number {
 
 /** The name of an inversion: "Root position", "1st inversion", "2nd inversion" … */
 export function inversionName(inversion: number): string {
-  if (inversion === 0) return 'Root position';
-  const suffix = inversion === 1 ? 'st' : inversion === 2 ? 'nd' : inversion === 3 ? 'rd' : 'th';
+  if (inversion === 0) return "Root position";
+  const suffix = inversion === 1 ? "st" : inversion === 2 ? "nd" : inversion === 3 ? "rd" : "th";
   return `${inversion}${suffix} inversion`;
 }
 
@@ -79,12 +88,14 @@ export function chordOnKeyboard(chord: Chord, octave = 4, inversion = 0): Keyboa
   // Tones are not always listed in pitch order, so invert by pitch.
   const inRootPosition = rootPosition(chord, octave);
   const lowest = new Set([...inRootPosition].sort((a, b) => a.midi - b.midi).slice(0, n));
-  const voiced = inRootPosition.map((tone) => (lowest.has(tone) ? { ...tone, midi: tone.midi + 12 } : tone));
+  const voiced = inRootPosition.map((tone) =>
+    lowest.has(tone) ? { ...tone, midi: tone.midi + 12 } : tone,
+  );
   const bass = Math.min(...voiced.map((tone) => tone.midi));
   return voiced.map(({ note, midi, role, optional }) => ({
     note,
     midi,
-    isRoot: role === 'root',
+    isRoot: role === "root",
     isBass: midi === bass,
     role,
     optional,
@@ -103,6 +114,6 @@ export function scaleOnKeyboard(scale: SpelledScale, octave = 4): KeyboardTone[]
     isRoot: degree === 1,
     role: `degree-${degree}`,
   }));
-  tones.push({ note: scale.tonic, midi: tonicMidi + 12, isRoot: true, role: 'degree-8' });
+  tones.push({ note: scale.tonic, midi: tonicMidi + 12, isRoot: true, role: "degree-8" });
   return tones;
 }

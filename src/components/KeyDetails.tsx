@@ -14,20 +14,20 @@ import {
   parallelKey,
   relativeKey,
   subdominantKey,
-} from '../theory';
+} from "../theory";
 
 const FUNCTION_LABELS: Record<HarmonicFunction, string> = {
-  tonic: 'Tonic',
-  subdominant: 'Subdominant',
-  dominant: 'Dominant',
+  tonic: "Tonic",
+  subdominant: "Subdominant",
+  dominant: "Dominant",
 };
 
 function signatureText(key: Key): string {
   const { kind, accidentals } = keySignature(key);
-  if (kind === 'none') return 'No sharps or flats';
+  if (kind === "none") return "No sharps or flats";
   const count = accidentals.length;
-  const word = kind === 'sharps' ? 'sharp' : 'flat';
-  return `${count} ${word}${count === 1 ? '' : 's'}`;
+  const word = kind === "sharps" ? "sharp" : "flat";
+  return `${count} ${word}${count === 1 ? "" : "s"}`;
 }
 
 interface KeyDetailsProps {
@@ -41,16 +41,18 @@ export function KeyDetails({ value, onChange }: KeyDetailsProps) {
   const { accidentals } = keySignature(value);
   const harmonicDominant = harmonicMinorDominant(value);
   const related: [string, Key][] = [
-    [value.mode === 'major' ? 'Relative minor' : 'Relative major', relativeKey(value)],
-    [value.mode === 'major' ? 'Parallel minor' : 'Parallel major', parallelKey(value)],
-    ['Subdominant', subdominantKey(value)],
-    ['Dominant', dominantKey(value)],
+    [value.mode === "major" ? "Relative minor" : "Relative major", relativeKey(value)],
+    [value.mode === "major" ? "Parallel minor" : "Parallel major", parallelKey(value)],
+    ["Subdominant", subdominantKey(value)],
+    ["Dominant", dominantKey(value)],
   ];
 
   return (
     <section className="key-details" aria-labelledby="key-name">
       <header>
-        <p className="key-details__eyebrow">{value.mode === 'major' ? 'Major key' : 'Minor key (natural minor)'}</p>
+        <p className="key-details__eyebrow">
+          {value.mode === "major" ? "Major key" : "Minor key (natural minor)"}
+        </p>
         <h2 id="key-name" className="key-details__name" aria-live="polite">
           {formatKey(value)}
         </h2>
@@ -89,7 +91,7 @@ export function KeyDetails({ value, onChange }: KeyDetailsProps) {
         <h3 className="key-details__heading">Scale</h3>
         <ol className="pills" aria-label="Notes in the scale">
           {keyScale(value).map((n, i) => (
-            <li key={formatNote(n)} className={`pill${i === 0 ? ' pill--tonic' : ''}`}>
+            <li key={formatNote(n)} className={`pill${i === 0 ? " pill--tonic" : ""}`}>
               {formatNote(n)}
             </li>
           ))}
@@ -103,13 +105,15 @@ export function KeyDetails({ value, onChange }: KeyDetailsProps) {
             <li key={triad.degree} className={`triad triad--${triad.quality}`}>
               <span className="triad__roman">{triad.roman}</span>
               <span className="triad__symbol">{triad.symbol}</span>
-              <span className="triad__function">{triad.function && FUNCTION_LABELS[triad.function]}</span>
+              <span className="triad__function">
+                {triad.function && FUNCTION_LABELS[triad.function]}
+              </span>
             </li>
           ))}
         </ol>
         {harmonicDominant && (
           <p className="key-details__note">
-            In harmonic minor the seventh is raised, so the dominant becomes major:{' '}
+            In harmonic minor the seventh is raised, so the dominant becomes major:{" "}
             <strong>{harmonicDominant.symbol}</strong> (V).
           </p>
         )}

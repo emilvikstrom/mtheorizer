@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useRef } from 'react';
+import { type KeyboardEvent, useRef } from "react";
 import {
   type Key,
   type KeyMode,
@@ -8,7 +8,7 @@ import {
   formatNote,
   keySignature,
   keysAt,
-} from '../theory';
+} from "../theory";
 
 const R_CENTER = 100;
 const R_SPLIT = 168;
@@ -16,7 +16,7 @@ const R_OUTER = 250;
 const R_SIGNATURE = 274;
 
 const POSITIONS = Array.from({ length: 12 }, (_, position) => position);
-const MODES: readonly KeyMode[] = ['major', 'minor'];
+const MODES: readonly KeyMode[] = ["major", "minor"];
 
 /** Angle in degrees of the middle of `position`, with C at the top. */
 const angleOf = (position: number) => -90 + position * 30;
@@ -29,7 +29,7 @@ function polar(radius: number, degrees: number): [number, number] {
 const point = (radius: number, degrees: number) =>
   polar(radius, degrees)
     .map((v) => v.toFixed(2))
-    .join(' ');
+    .join(" ");
 
 /** Ring segment between radii r1 < r2 and angles a0 < a1. */
 function sectorPath(r1: number, r2: number, a0: number, a1: number): string {
@@ -38,16 +38,16 @@ function sectorPath(r1: number, r2: number, a0: number, a1: number): string {
     `A ${r2} ${r2} 0 0 1 ${point(r2, a1)}`,
     `L ${point(r1, a1)}`,
     `A ${r1} ${r1} 0 0 0 ${point(r1, a0)}`,
-    'Z',
-  ].join(' ');
+    "Z",
+  ].join(" ");
 }
 
-const shortName = (k: Key) => formatNote(k.tonic) + (k.mode === 'minor' ? 'm' : '');
+const shortName = (k: Key) => formatNote(k.tonic) + (k.mode === "minor" ? "m" : "");
 
 export function signatureLabel(signature: KeySignature): string {
   const count = signature.accidentals.length;
-  if (signature.kind === 'none') return '0';
-  return `${count}${signature.kind === 'sharps' ? '♯' : '♭'}`;
+  if (signature.kind === "none") return "0";
+  return `${count}${signature.kind === "sharps" ? "♯" : "♭"}`;
 }
 
 const segmentId = (position: number, mode: KeyMode) => `${mode}-${position}`;
@@ -63,13 +63,18 @@ interface SegmentProps {
 
 function Segment({ position, mode, selected, nearby, onSelect, register }: SegmentProps) {
   const keys = keysAt(position, mode);
-  const [r1, r2] = mode === 'major' ? [R_SPLIT, R_OUTER] : [R_CENTER, R_SPLIT];
+  const [r1, r2] = mode === "major" ? [R_SPLIT, R_OUTER] : [R_CENTER, R_SPLIT];
   const mid = angleOf(position);
   const [x, y] = polar((r1 + r2) / 2, mid);
   const [main, ...alternatives] = keys.map(shortName);
-  const classes = ['circle__segment', `circle__segment--${mode}`, nearby && 'is-nearby', selected && 'is-selected']
+  const classes = [
+    "circle__segment",
+    `circle__segment--${mode}`,
+    nearby && "is-nearby",
+    selected && "is-selected",
+  ]
     .filter(Boolean)
-    .join(' ');
+    .join(" ");
 
   return (
     <g
@@ -77,7 +82,7 @@ function Segment({ position, mode, selected, nearby, onSelect, register }: Segme
       className={classes}
       role="radio"
       aria-checked={selected}
-      aria-label={keys.map(formatKey).join(' / ')}
+      aria-label={keys.map(formatKey).join(" / ")}
       tabIndex={selected ? 0 : -1}
       data-position={position}
       data-mode={mode}
@@ -93,7 +98,7 @@ function Segment({ position, mode, selected, nearby, onSelect, register }: Segme
               {main}
             </tspan>
             <tspan x={x} dy="1.15em" className="circle__alt">
-              {alternatives.join(' ')}
+              {alternatives.join(" ")}
             </tspan>
           </>
         )}
@@ -115,7 +120,8 @@ interface CircleOfFifthsProps {
 export function CircleOfFifths({ value, onChange }: CircleOfFifthsProps) {
   const segments = useRef(new Map<string, SVGGElement>());
   const selectedPosition = circlePosition(value);
-  const isNearby = (position: number) => [11, 0, 1].includes((position - selectedPosition + 12) % 12);
+  const isNearby = (position: number) =>
+    [11, 0, 1].includes((position - selectedPosition + 12) % 12);
 
   function select(position: number, mode: KeyMode, focus = false) {
     const [first] = keysAt(position, mode);
@@ -128,15 +134,15 @@ export function CircleOfFifths({ value, onChange }: CircleOfFifthsProps) {
     const moves: Record<string, [number, KeyMode]> = {
       ArrowRight: [selectedPosition + 1, value.mode],
       ArrowLeft: [selectedPosition + 11, value.mode],
-      ArrowUp: [selectedPosition, 'major'],
-      ArrowDown: [selectedPosition, 'minor'],
+      ArrowUp: [selectedPosition, "major"],
+      ArrowDown: [selectedPosition, "minor"],
     };
     const move = moves[event.key];
     if (move) {
       event.preventDefault();
       select(move[0] % 12, move[1], true);
-    } else if (event.key === 'Enter' || event.key === ' ') {
-      const target = (event.target as Element).closest<SVGGElement>('[data-position]');
+    } else if (event.key === "Enter" || event.key === " ") {
+      const target = (event.target as Element).closest<SVGGElement>("[data-position]");
       if (!target) return;
       event.preventDefault();
       select(Number(target.dataset.position), target.dataset.mode as KeyMode);
@@ -177,15 +183,15 @@ export function CircleOfFifths({ value, onChange }: CircleOfFifthsProps) {
           return (
             <text
               key={position}
-              className={`circle__signature${position === selectedPosition ? ' is-selected' : ''}`}
+              className={`circle__signature${position === selectedPosition ? " is-selected" : ""}`}
               x={x}
               y={y}
               textAnchor="middle"
               dominantBaseline="central"
             >
-              {keysAt(position, 'major')
+              {keysAt(position, "major")
                 .map((k) => signatureLabel(keySignature(k)))
-                .join(' / ')}
+                .join(" / ")}
             </text>
           );
         })}
@@ -195,7 +201,7 @@ export function CircleOfFifths({ value, onChange }: CircleOfFifthsProps) {
           {formatKey(value)}
         </text>
         <text className="circle__center-signature" y={22} textAnchor="middle">
-          {signature.kind === 'none' ? 'no sharps or flats' : signatureLabel(signature)}
+          {signature.kind === "none" ? "no sharps or flats" : signatureLabel(signature)}
         </text>
       </g>
     </svg>

@@ -24,3 +24,4 @@ services:
       - .:/app
       # Keep the container's node_modules instead of the (absent) host one.
       - /app/node_modules
+      - /app/tools/lint/node_modules

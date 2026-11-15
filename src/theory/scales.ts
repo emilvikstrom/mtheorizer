@@ -11,10 +11,10 @@ import {
   PERFECT_FOURTH,
   PERFECT_UNISON,
   transpose,
-} from './intervals';
-import { type Note, formatNote, mod12, noteEquals, spellingsOf } from './notes';
+} from "./intervals";
+import { type Note, formatNote, mod12, noteEquals, spellingsOf } from "./notes";
 
-export type ScaleId = 'major' | 'naturalMinor';
+export type ScaleId = "major" | "naturalMinor";
 
 export interface Scale {
   readonly id: ScaleId;
@@ -30,8 +30,8 @@ export interface Scale {
 }
 
 export const MAJOR_SCALE: Scale = {
-  id: 'major',
-  name: 'Major',
+  id: "major",
+  name: "Major",
   degrees: [
     PERFECT_UNISON,
     MAJOR_SECOND,
@@ -42,12 +42,12 @@ export const MAJOR_SCALE: Scale = {
     MAJOR_SEVENTH,
   ],
   // F♯ major (6♯), not G♭ major (6♭).
-  tieBreaks: { 6: { letter: 'F', accidental: 1 } },
+  tieBreaks: { 6: { letter: "F", accidental: 1 } },
 };
 
 export const NATURAL_MINOR_SCALE: Scale = {
-  id: 'naturalMinor',
-  name: 'Natural minor',
+  id: "naturalMinor",
+  name: "Natural minor",
   degrees: [
     PERFECT_UNISON,
     MAJOR_SECOND,
@@ -58,7 +58,7 @@ export const NATURAL_MINOR_SCALE: Scale = {
     MINOR_SEVENTH,
   ],
   // E♭ minor (6♭), not D♯ minor (6♯).
-  tieBreaks: { 3: { letter: 'E', accidental: -1 } },
+  tieBreaks: { 3: { letter: "E", accidental: -1 } },
 };
 
 export const SCALES: Record<ScaleId, Scale> = {
@@ -132,5 +132,5 @@ export function scaleOnPitchClass(pc: number, scaleId: ScaleId): SpelledScale {
 
 /** How to describe a scale tone to the reader: "Tonic", "Major second" … */
 export function scaleToneLabel(tone: ScaleTone): string {
-  return tone.degree === 1 ? 'Tonic' : tone.interval.name;
+  return tone.degree === 1 ? "Tonic" : tone.interval.name;
 }

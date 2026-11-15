@@ -1,6 +1,6 @@
-import { useSyncExternalStore } from 'react';
-import { type KeyboardTone, formatNote, midiOf } from '../theory';
-import { ToneLegend } from './ToneLegend';
+import { useSyncExternalStore } from "react";
+import { type KeyboardTone, formatNote, midiOf } from "../theory";
+import { ToneLegend } from "./ToneLegend";
 
 /** The keyboard always shows at least C4–B5; it grows by whole octaves for wider chords. */
 const MIN_OCTAVE = 4;
@@ -13,15 +13,15 @@ const BLACK_HEIGHT = 100;
 const BLACK_PITCH_CLASSES = new Set([1, 3, 6, 8, 10]);
 
 /** Below this width the keyboard shows only the part around the tones, so the labels stay readable. */
-const NARROW_QUERY = '(max-width: 600px)';
+const NARROW_QUERY = "(max-width: 600px)";
 /** Even a single note gets about an octave of keyboard around it. */
 const MIN_VISIBLE_WHITE_KEYS = 8;
 const MARGIN_WHITE_KEYS = 1;
 
 function subscribeNarrow(listener: () => void) {
   const query = window.matchMedia?.(NARROW_QUERY);
-  query?.addEventListener('change', listener);
-  return () => query?.removeEventListener('change', listener);
+  query?.addEventListener("change", listener);
+  return () => query?.removeEventListener("change", listener);
 }
 
 const isNarrow = () => window.matchMedia?.(NARROW_QUERY).matches ?? false;
@@ -62,7 +62,9 @@ export function visibleSpan(
   const shapes = keys.filter((k) => tones.some((t) => t.midi === k.midi));
   if (shapes.length === 0) return { x: 0, width: total };
   const left = Math.min(...shapes.map((k) => k.x)) - MARGIN_WHITE_KEYS * WHITE_WIDTH;
-  const right = Math.max(...shapes.map((k) => k.x + (k.black ? BLACK_WIDTH : WHITE_WIDTH))) + MARGIN_WHITE_KEYS * WHITE_WIDTH;
+  const right =
+    Math.max(...shapes.map((k) => k.x + (k.black ? BLACK_WIDTH : WHITE_WIDTH))) +
+    MARGIN_WHITE_KEYS * WHITE_WIDTH;
   const width = Math.min(total, Math.max(right - left, MIN_VISIBLE_WHITE_KEYS * WHITE_WIDTH));
   const centred = (left + right) / 2 - width / 2;
   return { x: Math.min(Math.max(centred, 0), total - width), width };
@@ -76,25 +78,30 @@ function PianoKey({ shape, tone }: { shape: KeyShape; tone: KeyboardTone | undef
   const centre = shape.x + width / 2;
   const isC = shape.midi % 12 === 0;
   const classes = [
-    'key',
-    shape.black ? 'key--black' : 'key--white',
-    tone && (tone.isRoot ? 'key--root' : 'key--tone'),
-    tone?.isBass && 'key--bass',
+    "key",
+    shape.black ? "key--black" : "key--white",
+    tone && (tone.isRoot ? "key--root" : "key--tone"),
+    tone?.isBass && "key--bass",
   ]
     .filter(Boolean)
-    .join(' ');
+    .join(" ");
 
   return (
     <g
       className={classes}
       data-midi={shape.midi}
-      data-highlighted={tone ? 'true' : undefined}
+      data-highlighted={tone ? "true" : undefined}
       data-role={tone?.role}
-      data-bass={tone?.isBass ? 'true' : undefined}
+      data-bass={tone?.isBass ? "true" : undefined}
     >
       <rect x={shape.x} y={0} width={width} height={height} rx={shape.black ? 3 : 4} />
       {tone ? (
-        <text className="key__label" x={centre} y={height - (shape.black ? 12 : 16)} textAnchor="middle">
+        <text
+          className="key__label"
+          x={centre}
+          y={height - (shape.black ? 12 : 16)}
+          textAnchor="middle"
+        >
           {formatNote(tone.note)}
         </text>
       ) : (
@@ -129,7 +136,7 @@ export function Piano({ tones, name, legend }: PianoProps) {
   const blackKeys = keys.filter((k) => k.black);
   const span = narrow ? visibleSpan(keys, tones) : { x: 0, width: whiteKeys.length * WHITE_WIDTH };
   const toneAt = new Map(tones.map((tone) => [tone.midi, tone]));
-  const description = `Piano keyboard showing ${name}: ${tones.map((tone) => formatNote(tone.note)).join(', ')}`;
+  const description = `Piano keyboard showing ${name}: ${tones.map((tone) => formatNote(tone.note)).join(", ")}`;
 
   return (
     <figure className="piano">

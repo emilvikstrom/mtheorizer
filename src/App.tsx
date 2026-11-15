@@ -1,7 +1,7 @@
-import { useRef } from 'react';
-import { CircleOfFifthsView } from './components/CircleOfFifthsView';
-import { Lookup } from './components/Lookup';
-import { type TabItem, Tabs, panelId, tabId } from './components/Tabs';
+import { useEffect, useRef } from "react";
+import { CircleOfFifthsView } from "./components/CircleOfFifthsView";
+import { Lookup } from "./components/Lookup";
+import { type TabItem, Tabs, panelId, tabId } from "./components/Tabs";
 import {
   type CircleRoute,
   type LookupRoute,
@@ -10,28 +10,30 @@ import {
   navigate,
   storedInstrument,
   useRoute,
-} from './route';
+} from "./route";
 
-type Tab = 'lookup' | 'circle-of-fifths';
+type Tab = "lookup" | "circle-of-fifths";
 
 const TABS: readonly TabItem<Tab>[] = [
-  { id: 'lookup', label: 'Chords & scales' },
-  { id: 'circle-of-fifths', label: 'Circle of fifths' },
+  { id: "lookup", label: "Chords & scales" },
+  { id: "circle-of-fifths", label: "Circle of fifths" },
 ];
 
 export function App() {
   const route = useRoute();
-  const tab: Tab = route.page === 'circle' ? 'circle-of-fifths' : 'lookup';
+  const tab: Tab = route.page === "circle" ? "circle-of-fifths" : "lookup";
 
   // Each tab keeps its own choice while you look at the other one.
   const lastLookup = useRef<LookupRoute | undefined>(undefined);
   const lastCircle = useRef<CircleRoute | undefined>(undefined);
-  if (route.page === 'circle') lastCircle.current = route;
-  else lastLookup.current = route;
+  useEffect(() => {
+    if (route.page === "circle") lastCircle.current = route;
+    else lastLookup.current = route;
+  }, [route]);
 
   const showTab = (next: Tab) =>
     navigate(
-      next === 'circle-of-fifths'
+      next === "circle-of-fifths"
         ? (lastCircle.current ?? defaultCircleRoute())
         : (lastLookup.current ?? defaultChordRoute(storedInstrument())),
     );
@@ -46,8 +48,11 @@ export function App() {
       <Tabs label="Views" tabs={TABS} value={tab} onChange={showTab} />
 
       <div className="app__panel" role="tabpanel" id={panelId(tab)} aria-labelledby={tabId(tab)}>
-        {route.page === 'circle' ? (
-          <CircleOfFifthsView value={route.key} onChange={(key) => navigate({ page: 'circle', key })} />
+        {route.page === "circle" ? (
+          <CircleOfFifthsView
+            value={route.key}
+            onChange={(key) => navigate({ page: "circle", key })}
+          />
         ) : (
           <Lookup route={route} onChange={navigate} />
         )}

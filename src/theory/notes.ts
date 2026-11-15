@@ -6,7 +6,7 @@
  * D♯–G–A♯). The pitch class is always derived from the spelling.
  */
 
-export const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'] as const;
+export const LETTERS = ["C", "D", "E", "F", "G", "A", "B"] as const;
 export type Letter = (typeof LETTERS)[number];
 
 /** Pitch class (0–11) of each natural letter, C = 0. */
@@ -66,9 +66,9 @@ export function noteEquals(a: Note, b: Note): boolean {
 }
 
 function accidentalSymbol(accidental: Accidental): string {
-  if (accidental === 2) return '𝄪';
-  if (accidental === -2) return '𝄫';
-  return accidental > 0 ? '♯'.repeat(accidental) : '♭'.repeat(-accidental);
+  if (accidental === 2) return "𝄪";
+  if (accidental === -2) return "𝄫";
+  return accidental > 0 ? "♯".repeat(accidental) : "♭".repeat(-accidental);
 }
 
 /** Display name with proper music symbols, e.g. "E♭", "F♯", "C". */
@@ -78,7 +78,7 @@ export function formatNote(n: Note): string {
 
 /** Plain ASCII name, e.g. "Eb", "F#", "C". Handy for ids and URLs. */
 export function formatNoteAscii(n: Note): string {
-  return n.letter + (n.accidental > 0 ? '#'.repeat(n.accidental) : 'b'.repeat(-n.accidental));
+  return n.letter + (n.accidental > 0 ? "#".repeat(n.accidental) : "b".repeat(-n.accidental));
 }
 
 /**
@@ -90,9 +90,9 @@ export function parseNote(name: string): Note {
   if (!match) {
     throw new Error(`Not a note name: "${name}"`);
   }
-  const letter = (match[1] ?? '').toUpperCase() as Letter;
-  const accidentals = [...(match[2] ?? '')];
-  const accidental = accidentals.reduce((sum, ch) => sum + (ch === '#' || ch === '♯' ? 1 : -1), 0);
+  const letter = (match[1] ?? "").toUpperCase() as Letter;
+  const accidentals = [...(match[2] ?? "")];
+  const accidental = accidentals.reduce((sum, ch) => sum + (ch === "#" || ch === "♯" ? 1 : -1), 0);
   return note(letter, accidental);
 }
 
@@ -125,5 +125,5 @@ export function commonSpellings(pc: number): Note[] {
 
 /** Label for a pitch class, e.g. "C" or "C♯/D♭". */
 export function pitchClassLabel(pc: number): string {
-  return commonSpellings(pc).map(formatNote).join('/');
+  return commonSpellings(pc).map(formatNote).join("/");
 }

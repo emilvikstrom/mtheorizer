@@ -7,7 +7,7 @@ import {
   pitchClass,
   preferredRootSpelling,
   qualitiesInGroup,
-} from '../theory';
+} from "../theory";
 
 interface ChordQualityPickerProps {
   /** The chosen root, so each choice can show its chord symbol (C♯m, D♭maj7). */
@@ -28,7 +28,12 @@ export function ChordQualityPicker({ root, value, onChange }: ChordQualityPicker
       <legend className="picker__legend">Quality</legend>
       <div className="quality-groups">
         {CHORD_GROUPS.map((group) => (
-          <div key={group.id} className="quality-group" role="group" aria-labelledby={`quality-group-${group.id}`}>
+          <div
+            key={group.id}
+            className="quality-group"
+            role="group"
+            aria-labelledby={`quality-group-${group.id}`}
+          >
             <span id={`quality-group-${group.id}`} className="quality-group__name">
               {group.name}
             </span>
@@ -43,7 +48,12 @@ export function ChordQualityPicker({ root, value, onChange }: ChordQualityPicker
                     checked={value === quality.id}
                     onChange={() => onChange(quality.id)}
                   />
-                  <span>{chordSymbol(automatic ? preferredRootSpelling(pc, quality.id) : root, quality.id)}</span>
+                  <span>
+                    {chordSymbol(
+                      automatic ? preferredRootSpelling(pc, quality.id) : root,
+                      quality.id,
+                    )}
+                  </span>
                 </label>
               ))}
             </div>
