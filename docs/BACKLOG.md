@@ -35,7 +35,6 @@ _Inget just nu._
 - [ ] **X-04** Välj enharmonisk stavning själv (C♯ eller D♭)
 - [ ] **X-05** Svenskt gränssnitt och H/B-notation
 - [ ] **X-06** Bättre pianovisning på mobil: etiketterna på svarta tangenter blir små vid 375 px bredd (större text eller bara den del av tangentbordet som behövs)
-- [ ] **M3-01** Skalvy: dur och naturlig moll på pianot (bygger på `buildScale`)
 - [ ] **M4-01** Spela upp ackordet med Web Audio
 
 ## Klart
@@ -45,3 +44,4 @@ _Inget just nu._
 - [x] **M1-03** UI för att välja grundton (12) och dur/moll, och visa ackordets toner med intervallnamn _(2026-11-15)_
 - [x] **M1-04** Pianovisualisering i SVG (C4–B5) med grundton och ackordtoner markerade _(2026-11-15)_
 - [x] **M1-05** Planeringsdokument (ROADMAP, BACKLOG, CLAUDE.md) och README _(2026-11-15)_
+- [x] **M3-01** Skalvy: välj Ackord eller Skala, dur och naturlig moll på pianot från grundton till grundton, med stegnummer och intervallnamn. Tabelltest för alla 24 skalor _(2026-11-15)_

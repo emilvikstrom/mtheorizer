@@ -98,8 +98,10 @@ body {
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
-.picker__options--qualities {
-  grid-template-columns: repeat(2, minmax(0, 8rem));
+.picker__options--segmented {
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 8rem);
+  justify-content: start;
 }
 
 .picker__option {
@@ -210,6 +212,23 @@ body {
 
 .tone--root {
   border-left-color: var(--accent-root);
+}
+
+.chord-info__tones--scale {
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+}
+
+.chord-info__tones--scale .tone {
+  padding: 10px 12px;
+}
+
+.tone__degree {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .tone__note {

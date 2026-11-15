@@ -1,5 +1,6 @@
 import type { Chord, ChordTone } from './chords';
-import { pitchClass } from './notes';
+import { type Note, pitchClass } from './notes';
+import type { SpelledScale } from './scales';
 
 export interface VoicedTone extends ChordTone {
   /** MIDI note number; middle C (C4) is 60. */
@@ -18,4 +19,39 @@ export function midiOf(pc: number, octave: number): number {
 export function rootPosition(chord: Chord, octave = 4): VoicedTone[] {
   const rootMidi = midiOf(pitchClass(chord.root), octave);
   return chord.tones.map((tone) => ({ ...tone, midi: rootMidi + tone.interval.semitones }));
+}
+
+/** A key to highlight on the keyboard, whatever is being shown. */
+export interface KeyboardTone {
+  readonly note: Note;
+  readonly midi: number;
+  /** The root of a chord or the tonic of a scale. */
+  readonly isRoot: boolean;
+  /** What the tone is, e.g. "third" in a chord or "degree-3" in a scale. */
+  readonly role: string;
+}
+
+export function chordOnKeyboard(chord: Chord, octave = 4): KeyboardTone[] {
+  return rootPosition(chord, octave).map(({ note, midi, role }) => ({
+    note,
+    midi,
+    isRoot: role === 'root',
+    role,
+  }));
+}
+
+/**
+ * The scale ascending from the tonic in `octave`, ending on the tonic an octave
+ * up. With octave 4 every scale fits in C4–B5 (B major runs B4–B5).
+ */
+export function scaleOnKeyboard(scale: SpelledScale, octave = 4): KeyboardTone[] {
+  const tonicMidi = midiOf(pitchClass(scale.tonic), octave);
+  const tones: KeyboardTone[] = scale.tones.map(({ note, degree, interval }) => ({
+    note,
+    midi: tonicMidi + interval.semitones,
+    isRoot: degree === 1,
+    role: `degree-${degree}`,
+  }));
+  tones.push({ note: scale.tonic, midi: tonicMidi + 12, isRoot: true, role: 'degree-8' });
+  return tones;
 }

@@ -1,6 +1,6 @@
 # mtheorizer
 
-En webapp för att slå upp musikteori. Välj en grundton (C, C♯/D♭, D …) och dur eller moll. Appen visar ackordets toner, korrekt stavade, och markerar dem på ett pianotangentbord.
+En webapp för att slå upp musikteori. Välj ackord eller skala, en grundton (C, C♯/D♭, D …) och dur eller moll. Appen visar tonerna, korrekt stavade, och markerar dem på ett pianotangentbord.
 
 ## Kom igång
 

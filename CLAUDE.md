@@ -24,9 +24,9 @@ Om `package.json` har ändrats och dev-servern körs med gamla `node_modules`: `
 - `src/theory/` innehåller ren musikteori utan React. All logik hör hemma här och ska ha enhetstester.
   - `notes.ts`: stavade toner (`Note` = bokstav + förtecken), tonklass, formattering.
   - `intervals.ts`: intervall (bokstavssteg + halvtoner) och `transpose`.
-  - `scales.ts`: skalor och antal förtecken i tonartens förtecken.
+  - `scales.ts`: skalor, antal förtecken i tonartens förtecken och stavning av grundton (`preferredTonicSpelling`, `scaleOnPitchClass`).
   - `chords.ts`: ackordkvaliteter, `buildChord` och `preferredRootSpelling`.
-  - `voicing.ts`: placering på tangentbordet (MIDI-nummer).
+  - `voicing.ts`: placering på tangentbordet (MIDI-nummer). `chordOnKeyboard`/`scaleOnKeyboard` ger `KeyboardTone[]` som `Piano` visar.
 - `src/components/` innehåller React-komponenter som bara presenterar det teorimodulen räknar fram.
 - `docs/` innehåller planeringen (se nedan).
 

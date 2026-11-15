@@ -3,10 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from './App';
 
-const chordNotes = () =>
-  within(screen.getByRole('list', { name: 'Notes in the chord' }))
+const notesIn = (listName: string) =>
+  within(screen.getByRole('list', { name: listName }))
     .getAllByRole('listitem')
     .map((item) => item.querySelector('.tone__note')?.textContent);
+
+const chordNotes = () => notesIn('Notes in the chord');
+const scaleNotes = () => notesIn('Notes in the scale');
 
 /** Highlighted piano keys as "midi:role", sorted. */
 const highlightedKeys = (container: HTMLElement) =>
@@ -58,4 +61,59 @@ describe('App', () => {
     expect(chordNotes()).toEqual(['B', 'D♯', 'F♯']);
     expect(highlightedKeys(container)).toEqual(['71:root', '75:third', '78:fifth']);
   });
+
+  describe('scales', () => {
+    it('switches to the major scale on the same root', async () => {
+      const user = userEvent.setup();
+      const { container } = render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'Scale' }));
+
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('C major scale');
+      expect(scaleNotes()).toEqual(['C', 'D', 'E', 'F', 'G', 'A', 'B']);
+      expect(screen.queryByRole('group', { name: 'Quality' })).not.toBeInTheDocument();
+      expect(within(screen.getByRole('group', { name: 'Scale' })).getAllByRole('radio')).toHaveLength(2);
+      expect(within(screen.getByRole('group', { name: 'Tonic' })).getAllByRole('radio')).toHaveLength(12);
+      expect(
+        screen.getByRole('img', { name: 'Piano keyboard showing C major scale: C, D, E, F, G, A, B, C' }),
+      ).toBeInTheDocument();
+      expect(highlightedKeys(container)).toEqual([
+        '60:degree-1',
+        '62:degree-2',
+        '64:degree-3',
+        '65:degree-4',
+        '67:degree-5',
+        '69:degree-6',
+        '71:degree-7',
+        '72:degree-8',
+      ]);
+    });
+
+    it('shows E♭ natural minor with flats', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'Scale' }));
+      await user.click(screen.getByRole('radio', { name: 'D♯/E♭' }));
+      await user.click(screen.getByRole('radio', { name: 'Natural minor' }));
+
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('E♭ natural minor scale');
+      expect(scaleNotes()).toEqual(['E♭', 'F', 'G♭', 'A♭', 'B♭', 'C♭', 'D♭']);
+    });
+
+    it('keeps root and major/minor when switching between chord and scale', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole('radio', { name: 'A' }));
+      await user.click(screen.getByRole('radio', { name: 'Minor' }));
+      await user.click(screen.getByRole('radio', { name: 'Scale' }));
+
+      expect(screen.getByRole('radio', { name: 'Natural minor' })).toBeChecked();
+      expect(scaleNotes()).toEqual(['A', 'B', 'C', 'D', 'E', 'F', 'G']);
+
+      await user.click(screen.getByRole('radio', { name: 'Major' }));
+      await user.click(screen.getByRole('radio', { name: 'Chord' }));
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('A major');
+      expect(chordNotes()).toEqual(['A', 'C♯', 'E']);
+    });
+  });
 });
+

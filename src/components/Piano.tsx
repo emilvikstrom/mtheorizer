@@ -1,4 +1,4 @@
-import { type Chord, type VoicedTone, formatNote, midiOf, rootPosition } from '../theory';
+import { type KeyboardTone, formatNote, midiOf } from '../theory';
 
 const LOWEST_OCTAVE = 4;
 const OCTAVES = 2;
@@ -36,7 +36,7 @@ const WHITE_KEYS = KEYS.filter((k) => !k.black);
 const BLACK_KEYS = KEYS.filter((k) => k.black);
 const WIDTH = WHITE_KEYS.length * WHITE_WIDTH;
 
-function PianoKey({ shape, tone }: { shape: KeyShape; tone: VoicedTone | undefined }) {
+function PianoKey({ shape, tone }: { shape: KeyShape; tone: KeyboardTone | undefined }) {
   const width = shape.black ? BLACK_WIDTH : WHITE_WIDTH;
   const height = shape.black ? BLACK_HEIGHT : WHITE_HEIGHT;
   const centre = shape.x + width / 2;
@@ -44,7 +44,7 @@ function PianoKey({ shape, tone }: { shape: KeyShape; tone: VoicedTone | undefin
   const classes = [
     'key',
     shape.black ? 'key--black' : 'key--white',
-    tone && (tone.role === 'root' ? 'key--root' : 'key--tone'),
+    tone && (tone.isRoot ? 'key--root' : 'key--tone'),
   ]
     .filter(Boolean)
     .join(' ');
@@ -73,16 +73,18 @@ function PianoKey({ shape, tone }: { shape: KeyShape; tone: VoicedTone | undefin
 }
 
 interface PianoProps {
-  chord: Chord;
+  /** Keys to highlight. Keys outside C4–B5 are not shown. */
+  tones: readonly KeyboardTone[];
+  /** What is shown, e.g. "C major" or "C major scale". */
+  name: string;
+  /** Legend for the highlighted keys: root/tonic, and the others. */
+  legend: { root: string; tone: string };
 }
 
-/** Two octaves (C4–B5) with the chord in root position highlighted. */
-export function Piano({ chord }: PianoProps) {
-  const voiced = rootPosition(chord, LOWEST_OCTAVE);
-  const toneAt = new Map(voiced.map((tone) => [tone.midi, tone]));
-  const description = `Piano keyboard showing ${chord.name}: ${voiced
-    .map((tone) => formatNote(tone.note))
-    .join(', ')}`;
+/** Two octaves (C4–B5) with `tones` highlighted. */
+export function Piano({ tones, name, legend }: PianoProps) {
+  const toneAt = new Map(tones.map((tone) => [tone.midi, tone]));
+  const description = `Piano keyboard showing ${name}: ${tones.map((tone) => formatNote(tone.note)).join(', ')}`;
 
   return (
     <figure className="piano">
@@ -101,8 +103,8 @@ export function Piano({ chord }: PianoProps) {
         ))}
       </svg>
       <figcaption className="piano__legend">
-        <span className="legend legend--root">Root</span>
-        <span className="legend legend--tone">Chord tone</span>
+        <span className="legend legend--root">{legend.root}</span>
+        <span className="legend legend--tone">{legend.tone}</span>
       </figcaption>
     </figure>
   );
