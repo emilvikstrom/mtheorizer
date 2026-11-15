@@ -1,5 +1,6 @@
 export * from './chords';
 export * from './fretboard';
+export * from './guitarShapes';
 export * from './intervals';
 export * from './notes';
 export * from './scales';

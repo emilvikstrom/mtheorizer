@@ -37,8 +37,9 @@ _Inget just nu._
 - [ ] **X-06** Bättre pianovisning på mobil: etiketterna på svarta tangenter blir små vid 375 px bredd (större text eller bara den del av tangentbordet som behövs)
 - [ ] **M4-01** Spela upp ackordet med Web Audio
 - [ ] **X-08** Kom ihåg valet piano/gitarr (i URL:en tillsammans med X-01, eller i localStorage)
-- [ ] **G-01** Ackordgrepp på gitarrhalsen: visa ett spelbart grepp (t.ex. CAGED-formerna) i stället för alla positioner
 - [ ] **G-02** Andra stämningar (Drop D, DADGAD) och vänsterhänt hals
+- [ ] **G-03** Fingersättning i greppen (vilket finger på vilken ton, barré markerad)
+- [ ] **G-04** Fler varianter av samma grepp (t.ex. x13331 och x10331 för B♭), i dag visas bara det bästa i varje läge
 
 ## Klart
 
@@ -49,3 +50,4 @@ _Inget just nu._
 - [x] **M1-05** Planeringsdokument (ROADMAP, BACKLOG, CLAUDE.md) och README _(2026-11-15)_
 - [x] **X-07** Växla mellan piano och gitarrhals: standardstämning, band 0–12, alla ackordtoner markerade och rätt stavade, tabelltest för alla 24 ackord. Halsen scrollar i sidled på smala skärmar _(2026-11-15)_
 - [x] **M3-01** Skalvy: välj Ackord eller Skala, dur och naturlig moll på pianot från grundton till grundton, med stegnummer och intervallnamn. Tabelltest för alla 24 skalor _(2026-11-15)_
+- [x] **G-01** Gitarrhalsen visar fyra band i taget med pilar ←/→. Ackord visas som spelbara grepp i grundläge (CAGED-formerna hittas automatiskt: basen är grundtonen, alla ackordtoner klingar, högst fyra fingrar med barré som ett). Skalor visas som lägen med hela skalan inom fyra band. Vid byte av ackord behålls läget på halsen _(2026-11-15)_

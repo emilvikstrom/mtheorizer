@@ -1,35 +1,53 @@
-import { type HighlightTone, type NeckPlace, STANDARD_TUNING, formatNote, positionsOnNeck } from '../theory';
+import { useState } from 'react';
+import {
+  type HighlightTone,
+  type NeckTone,
+  type NeckView,
+  STANDARD_TUNING,
+  formatNote,
+  formatShape,
+  lastFret,
+} from '../theory';
 import { ToneLegend } from './ToneLegend';
 
-const FRETS = 12;
-const OPEN_COLUMN = 40; // room left of the nut for open strings
-const FRET_WIDTH = 56;
+const NAME_COLUMN = 24; // string names
+const OPEN_COLUMN = 36; // open strings and muted-string marks, left of the nut
+const FRET_WIDTH = 72;
 const STRING_GAP = 30;
 const BOARD_PADDING = 14; // board edge above the top string and below the bottom one
-const TOP = BOARD_PADDING;
 const DOT_RADIUS = 12;
 const NUT_WIDTH = 5;
 
-const NECK_START = OPEN_COLUMN;
-const NECK_END = NECK_START + FRETS * FRET_WIDTH;
+const NECK_START = NAME_COLUMN + OPEN_COLUMN;
+const OPEN_X = NAME_COLUMN + OPEN_COLUMN / 2;
 const STRING_COUNT = STANDARD_TUNING.length;
 const BOARD_HEIGHT = (STRING_COUNT - 1) * STRING_GAP + 2 * BOARD_PADDING;
 const FRET_NUMBER_Y = BOARD_HEIGHT + 18;
-const WIDTH = NECK_END + 4;
 const HEIGHT = FRET_NUMBER_Y + 6;
 
-const SINGLE_INLAYS = [3, 5, 7, 9];
+const SINGLE_INLAYS = new Set([3, 5, 7, 9, 15]);
 const DOUBLE_INLAY = 12;
-const NUMBERED_FRETS = [3, 5, 7, 9, 12];
 
-const stringY = (string: number) => TOP + (string - 1) * STRING_GAP;
-/** Centre of the space behind a fret, where the finger goes; fret 0 is left of the nut. */
-const fretCentreX = (fret: number) =>
-  fret === 0 ? OPEN_COLUMN / 2 : NECK_START + (fret - 0.5) * FRET_WIDTH;
+const stringY = (string: number) => BOARD_PADDING + (string - 1) * STRING_GAP;
 const midY = (a: number, b: number) => (stringY(a) + stringY(b)) / 2;
 
-function ToneDot({ position }: { position: HighlightTone & NeckPlace }) {
-  const x = fretCentreX(position.fret);
+/** Nearest view to `fret`, so a new chord or scale opens where the hand already is. */
+function nearestIndex(views: readonly NeckView[], fret: number): number {
+  let best = 0;
+  views.forEach((view, i) => {
+    const bestView = views[best];
+    if (bestView && Math.abs(view.firstFret - fret) < Math.abs(bestView.firstFret - fret)) best = i;
+  });
+  return best;
+}
+
+function whereOnNeck(view: NeckView): string {
+  return view.positions.some((p) => p.fret === 0)
+    ? 'Open position'
+    : `Frets ${view.firstFret}–${lastFret(view)}`;
+}
+
+function ToneDot({ position, x }: { position: NeckTone; x: number }) {
   const y = stringY(position.string);
   return (
     <g
@@ -47,8 +65,96 @@ function ToneDot({ position }: { position: HighlightTone & NeckPlace }) {
   );
 }
 
+function NeckDiagram({ view, description }: { view: NeckView; description: string }) {
+  const frets = Array.from({ length: view.frets }, (_, i) => view.firstFret + i);
+  const neckEnd = NECK_START + view.frets * FRET_WIDTH;
+  const fretCentreX = (fret: number) =>
+    fret === 0 ? OPEN_X : NECK_START + (fret - view.firstFret + 0.5) * FRET_WIDTH;
+  const muted = new Set(view.muted);
+
+  return (
+    <svg className="fretboard__svg" role="img" aria-label={description} viewBox={`0 0 ${neckEnd + 4} ${HEIGHT}`}>
+      <title>{description}</title>
+      <rect className="fretboard__board" x={NECK_START} y={0} width={neckEnd - NECK_START} height={BOARD_HEIGHT} />
+
+      {frets.filter((f) => SINGLE_INLAYS.has(f)).map((fret) => (
+        <circle key={fret} className="fretboard__inlay" cx={fretCentreX(fret)} cy={midY(3, 4)} r={6} />
+      ))}
+      {frets.includes(DOUBLE_INLAY) && (
+        <>
+          <circle className="fretboard__inlay" cx={fretCentreX(DOUBLE_INLAY)} cy={midY(2, 3)} r={6} />
+          <circle className="fretboard__inlay" cx={fretCentreX(DOUBLE_INLAY)} cy={midY(4, 5)} r={6} />
+        </>
+      )}
+
+      {frets.map((fret, i) => {
+        const x = NECK_START + (i + 1) * FRET_WIDTH;
+        return <line key={fret} className="fretboard__fret" x1={x} y1={0} x2={x} y2={BOARD_HEIGHT} />;
+      })}
+      {view.firstFret === 1 ? (
+        <rect className="fretboard__nut" x={NECK_START - NUT_WIDTH / 2} y={0} width={NUT_WIDTH} height={BOARD_HEIGHT} />
+      ) : (
+        <line className="fretboard__fret" x1={NECK_START} y1={0} x2={NECK_START} y2={BOARD_HEIGHT} />
+      )}
+
+      {STANDARD_TUNING.map((open, index) => {
+        const string = index + 1;
+        const y = stringY(string);
+        return (
+          <g key={string}>
+            <line
+              className="fretboard__string"
+              x1={NECK_START}
+              y1={y}
+              x2={neckEnd}
+              y2={y}
+              // Lower strings are thicker.
+              strokeWidth={1 + index * 0.35}
+            />
+            <text
+              className="fretboard__string-name"
+              x={NAME_COLUMN / 2}
+              y={y}
+              textAnchor="middle"
+              dominantBaseline="central"
+            >
+              {formatNote(open.note)}
+            </text>
+            {muted.has(string) && (
+              <text
+                className="fretboard__muted"
+                data-muted={string}
+                x={OPEN_X}
+                y={y}
+                textAnchor="middle"
+                dominantBaseline="central"
+              >
+                ×
+              </text>
+            )}
+          </g>
+        );
+      })}
+
+      {frets.map((fret) => (
+        <text key={fret} className="fretboard__fret-number" x={fretCentreX(fret)} y={FRET_NUMBER_Y} textAnchor="middle">
+          {fret}
+        </text>
+      ))}
+
+      {view.positions.map((position) => (
+        <ToneDot key={`${position.string}-${position.fret}`} position={position} x={fretCentreX(position.fret)} />
+      ))}
+    </svg>
+  );
+}
+
 interface FretboardProps {
-  /** The tones to mark, each once; every place they can be played is shown. */
+  /** The stretches of the neck to step through, lowest first. */
+  views: readonly NeckView[];
+  /** Chord shapes are described fret by fret; scale positions by their notes. */
+  kind: 'shape' | 'position';
+  /** The tones shown, each once, for the description. */
   tones: readonly HighlightTone[];
   /** What is shown, e.g. "C major" or "C major scale". */
   name: string;
@@ -56,71 +162,55 @@ interface FretboardProps {
   legend: { root: string; tone: string };
 }
 
-/** A guitar neck in standard tuning (frets 0–12) with every given tone marked. */
-export function Fretboard({ tones, name, legend }: FretboardProps) {
-  const positions = positionsOnNeck(tones, STANDARD_TUNING, FRETS);
-  const openStrings = new Set(positions.filter((p) => p.fret === 0).map((p) => p.string));
-  const description = `Guitar neck showing ${name}: ${tones.map((tone) => formatNote(tone.note)).join(', ')}`;
+/** A few frets of a guitar neck at a time, with arrows to step along it. */
+export function Fretboard({ views, kind, tones, name, legend }: FretboardProps) {
+  // Remember where on the neck the player is rather than an index, so changing
+  // the chord keeps the hand in the same area.
+  const [wantedFret, setWantedFret] = useState(1);
+  const index = nearestIndex(views, wantedFret);
+  const view = views[index];
+  const noun = kind === 'shape' ? 'Shape' : 'Position';
+
+  if (!view) {
+    return <p className="fretboard__empty">No playable {noun.toLowerCase()} found.</p>;
+  }
+
+  const where = whereOnNeck(view);
+  const status = `${noun} ${index + 1} of ${views.length}`;
+  const detail = kind === 'shape' ? formatShape(view) : tones.map((tone) => formatNote(tone.note)).join(', ');
+  const description = `Guitar neck showing ${name}, ${status.toLowerCase()}, ${where.toLowerCase()}: ${detail}`;
+  const step = (delta: number) => {
+    const next = views[index + delta];
+    if (next) setWantedFret(next.firstFret);
+  };
 
   return (
     <figure className="fretboard">
-      <div className="fretboard__scroll">
-        <svg className="fretboard__svg" role="img" aria-label={description} viewBox={`0 0 ${WIDTH} ${HEIGHT}`}>
-          <title>{description}</title>
-          <rect className="fretboard__board" x={NECK_START} y={0} width={NECK_END - NECK_START} height={BOARD_HEIGHT} />
-
-          {SINGLE_INLAYS.map((fret) => (
-            <circle key={fret} className="fretboard__inlay" cx={fretCentreX(fret)} cy={midY(3, 4)} r={6} />
-          ))}
-          <circle className="fretboard__inlay" cx={fretCentreX(DOUBLE_INLAY)} cy={midY(2, 3)} r={6} />
-          <circle className="fretboard__inlay" cx={fretCentreX(DOUBLE_INLAY)} cy={midY(4, 5)} r={6} />
-
-          {Array.from({ length: FRETS }, (_, i) => i + 1).map((fret) => {
-            const x = NECK_START + fret * FRET_WIDTH;
-            return <line key={fret} className="fretboard__fret" x1={x} y1={0} x2={x} y2={BOARD_HEIGHT} />;
-          })}
-          <rect className="fretboard__nut" x={NECK_START - NUT_WIDTH / 2} y={0} width={NUT_WIDTH} height={BOARD_HEIGHT} />
-
-          {STANDARD_TUNING.map((open, index) => {
-            const string = index + 1;
-            const y = stringY(string);
-            return (
-              <g key={string}>
-                <line
-                  className="fretboard__string"
-                  x1={NECK_START}
-                  y1={y}
-                  x2={NECK_END}
-                  y2={y}
-                  // Lower strings are thicker.
-                  strokeWidth={1 + index * 0.35}
-                />
-                {!openStrings.has(string) && (
-                  <text
-                    className="fretboard__string-name"
-                    x={fretCentreX(0)}
-                    y={y}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                  >
-                    {formatNote(open.note)}
-                  </text>
-                )}
-              </g>
-            );
-          })}
-
-          {NUMBERED_FRETS.map((fret) => (
-            <text key={fret} className="fretboard__fret-number" x={fretCentreX(fret)} y={FRET_NUMBER_Y} textAnchor="middle">
-              {fret}
-            </text>
-          ))}
-
-          {positions.map((position) => (
-            <ToneDot key={`${position.string}-${position.fret}`} position={position} />
-          ))}
-        </svg>
+      <div className="fretboard__nav">
+        <button
+          type="button"
+          className="fretboard__arrow"
+          aria-label={`Previous ${noun.toLowerCase()}`}
+          disabled={index === 0}
+          onClick={() => step(-1)}
+        >
+          ←
+        </button>
+        <p className="fretboard__status" aria-live="polite">
+          <span className="fretboard__status-count">{status}</span>
+          <span className="fretboard__status-where">{where}</span>
+        </p>
+        <button
+          type="button"
+          className="fretboard__arrow"
+          aria-label={`Next ${noun.toLowerCase()}`}
+          disabled={index === views.length - 1}
+          onClick={() => step(1)}
+        >
+          →
+        </button>
       </div>
+      <NeckDiagram view={view} description={description} />
       <ToneLegend {...legend} />
     </figure>
   );
