@@ -12,12 +12,15 @@ import {
   type Letter,
   LETTERS,
   type Note,
+  PROGRESSIONS,
+  type ProgressionId,
   SCALES,
   type ScaleId,
   TUNING_IDS,
   type TuningId,
   circlePosition,
   identifyQuality,
+  isProgressionId,
   key,
   keyEquals,
   keysAt,
@@ -34,6 +37,7 @@ import {
  *   #/Cs/minor?with=7&on=guitar    C♯ minor seventh on the guitar
  *   #/A/scale/naturalMinor?on=piano  scale
  *   #/circle/Bb/major              circle of fifths with B♭ major selected
+ *   #/progression/Ab/pop           the I–V–vi–IV progression in A♭ major
  *
  * The chord is a base chord (`major`, `minor`, `diminished`, `augmented`, `sus2`,
  * `sus4` or `power`) and the qualities in `with`. Qualities that do not fit the
@@ -74,7 +78,14 @@ export interface CircleRoute {
   readonly key: Key;
 }
 
-export type Route = LookupRoute | CircleRoute;
+/** A common chord progression put in a key; the key's mode comes from the progression. */
+export interface ProgressionRoute {
+  readonly page: "progression";
+  readonly tonic: Note;
+  readonly id: ProgressionId;
+}
+
+export type Route = LookupRoute | CircleRoute | ProgressionRoute;
 
 const MAX_INVERSION = 3;
 const STORAGE_KEY = "mtheorizer.instrument";
@@ -126,6 +137,12 @@ export const defaultCircleRoute = (): CircleRoute => ({
   key: key(note("C"), "major"),
 });
 
+export const defaultProgressionRoute = (): ProgressionRoute => ({
+  page: "progression",
+  tonic: note("C"),
+  id: "pop",
+});
+
 // --- Format -----------------------------------------------------------------
 
 export function formatRouteNote(n: Note): string {
@@ -169,6 +186,8 @@ export function formatRoute(route: Route): string {
       return `#/${formatRouteNote(route.root)}/scale/${route.scaleId}?on=${route.instrument}${formatGuitarOptions(route)}`;
     case "circle":
       return `#/circle/${formatRouteNote(route.key.tonic)}/${route.key.mode}`;
+    case "progression":
+      return `#/progression/${formatRouteNote(route.tonic)}/${route.id}`;
   }
 }
 
@@ -255,6 +274,15 @@ function parseLink(
     return k ? { page: "circle", key: k } : strict ? undefined : defaultCircleRoute();
   }
 
+  if (parts[0] === "progression") {
+    const id = parts[2];
+    if (id !== undefined && isProgressionId(id)) {
+      const k = parseCircleKey(parts[1], PROGRESSIONS[id].mode);
+      if (k) return { page: "progression", tonic: k.tonic, id };
+    }
+    return strict ? undefined : defaultProgressionRoute();
+  }
+
   const onParam = query.get("on");
   const instrument = isInstrument(onParam) ? onParam : fallbackInstrument;
   const tuningParam = query.get("tuning");
@@ -312,7 +340,7 @@ const currentHash = () => window.location.hash;
 /** Show `route`: adds a history entry, so the back button returns to the previous view. */
 export function navigate(route: Route) {
   const hash = formatRoute(route);
-  if (route.page !== "circle") rememberInstrument(route.instrument);
+  if (route.page === "chord" || route.page === "scale") rememberInstrument(route.instrument);
   if (hash === window.location.hash) return;
   window.history.pushState(null, "", hash);
   for (const listener of listeners) listener();

@@ -4,6 +4,7 @@ import {
   type Route,
   defaultChordRoute,
   defaultCircleRoute,
+  defaultProgressionRoute,
   formatLegacyChordRoute,
   formatRoute,
   parseRoute,
@@ -13,6 +14,8 @@ import {
   CHORD_QUALITY_IDS,
   CIRCLE_OF_FIFTHS,
   type KeyMode,
+  PROGRESSIONS,
+  PROGRESSION_IDS,
   SCALES,
   type ScaleId,
   type ChordSpec,
@@ -35,7 +38,13 @@ function expectSame(actual: Route, expected: Route) {
   if (actual.page === "circle" && expected.page === "circle") {
     expect(actual.key.mode).toBe(expected.key.mode);
     expect(noteEquals(actual.key.tonic, expected.key.tonic)).toBe(true);
-  } else if (actual.page !== "circle" && expected.page !== "circle") {
+  } else if (actual.page === "progression" && expected.page === "progression") {
+    expect(actual.id).toBe(expected.id);
+    expect(noteEquals(actual.tonic, expected.tonic)).toBe(true);
+  } else if (
+    (actual.page === "chord" || actual.page === "scale") &&
+    (expected.page === "chord" || expected.page === "scale")
+  ) {
     expect(noteEquals(actual.root, expected.root)).toBe(true);
     expect(actual.instrument).toBe(expected.instrument);
     if (actual.page === "chord" && expected.page === "chord") {
@@ -148,8 +157,55 @@ describe("parseRoute", () => {
         for (const k of keysAt(position, mode)) routes.push({ page: "circle", key: k });
       }
     }
+    for (const id of PROGRESSION_IDS) {
+      for (let position = 0; position < CIRCLE_OF_FIFTHS.length; position++) {
+        for (const k of keysAt(position, PROGRESSIONS[id].mode)) {
+          routes.push({ page: "progression", tonic: k.tonic, id });
+        }
+      }
+    }
     expect(routes.length).toBeGreaterThan(600);
     for (const route of routes) expectSame(parseRoute(formatRoute(route)), route);
+  });
+});
+
+describe("progression links", () => {
+  it("writes the key's tonic and the progression", () => {
+    expect(formatRoute({ page: "progression", tonic: note("A", -1), id: "pop" })).toBe(
+      "#/progression/Ab/pop",
+    );
+    expect(formatRoute({ page: "progression", tonic: note("F", 1), id: "aeolian" })).toBe(
+      "#/progression/Fs/aeolian",
+    );
+  });
+
+  it("reads them back", () => {
+    expect(parseRoute("#/progression/Ab/pop")).toEqual({
+      page: "progression",
+      tonic: note("A", -1),
+      id: "pop",
+    });
+    expect(parseRoute("#/progression/E/blues")).toMatchObject({ page: "progression", id: "blues" });
+  });
+
+  it("falls back to I–V–vi–IV in C for a bad link", () => {
+    for (const hash of [
+      "#/progression",
+      "#/progression/C",
+      "#/progression/C/nonsense",
+      "#/progression/H/pop",
+      "#/progression/Ds/pop",
+      "#/progression/Bs/aeolian",
+    ]) {
+      expect(parseRoute(hash), hash).toEqual(defaultProgressionRoute());
+    }
+  });
+
+  it("checks the tonic against the progression's mode: D♯ minor is a key, D♯ major is not", () => {
+    expect(parseRouteStrict("#/progression/Ds/aeolian")).toMatchObject({ page: "progression" });
+    expect(parseRouteStrict("#/progression/Ds/pop")).toBeUndefined();
+    expect(parseRouteStrict("#/progression/Bs/aeolian")).toBeUndefined();
+    expect(parseRouteStrict("#/progression/Cs/pop")).toMatchObject({ page: "progression" });
   });
 });
 

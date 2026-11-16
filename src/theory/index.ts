@@ -8,5 +8,6 @@ export * from "./identify";
 export * from "./intervals";
 export * from "./keys";
 export * from "./notes";
+export * from "./progressions";
 export * from "./scales";
 export * from "./voicing";

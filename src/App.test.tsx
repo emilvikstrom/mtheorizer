@@ -208,6 +208,30 @@ describe("App", () => {
       expect(window.location.hash).toBe("#/C/major?with=7,flat5,flat9&on=piano");
     });
 
+    it("shows a progression on its own tab and keeps it when switching tabs", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole("tab", { name: "Progressions" }));
+      expect(window.location.hash).toBe("#/progression/C/pop");
+      await user.click(screen.getByRole("radio", { name: "12-bar blues" }));
+      expect(window.location.hash).toBe("#/progression/C/blues");
+
+      await user.click(screen.getByRole("tab", { name: "Chords & scales" }));
+      expect(window.location.hash).toBe("#/C/major?on=piano");
+      await user.click(screen.getByRole("tab", { name: "Progressions" }));
+      expect(window.location.hash).toBe("#/progression/C/blues");
+    });
+
+    it("opens a progression link and a chord of it in the chord view", async () => {
+      window.location.hash = "#/progression/Ab/pop";
+      const user = userEvent.setup();
+      render(<App />);
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("I–V–vi–IV in A♭ major");
+      await user.click(screen.getByRole("button", { name: "Open Fm in Chords & scales" }));
+      expect(window.location.hash).toBe("#/F/minor?on=piano");
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("F minor");
+    });
+
     it("keeps a free combination when switching tabs and back", async () => {
       const user = userEvent.setup();
       render(<App />);
