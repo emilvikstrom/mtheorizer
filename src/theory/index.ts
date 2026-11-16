@@ -1,3 +1,4 @@
+export * from "./chordNaming";
 export * from "./chordSpec";
 export * from "./chords";
 export * from "./fretboard";
