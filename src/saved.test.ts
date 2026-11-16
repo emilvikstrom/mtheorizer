@@ -43,7 +43,17 @@ describe("choiceOf", () => {
     expect(choiceOf("#/A/scale/dorian?on=guitar&tuning=dropD&hand=left")).toBeDefined();
   });
 
+  it("reads links from before the chord builder and stores them in the current form", () => {
+    expect(choiceOf("#/Cs/minor7?on=piano&inv=2")).toBe("#/Cs/minor?with=7&on=piano&inv=2");
+    expect(choiceOf("#/C/dominant7Sharp9?on=guitar")).toBe("#/C/major?with=7,sharp9&on=guitar");
+    expect(choiceOf("#/C/major?with=7,flat5,flat9&on=piano")).toBe(
+      "#/C/major?with=7,flat5,flat9&on=piano",
+    );
+  });
+
   it("rejects circle links, broken links and non-canonical ones", () => {
+    expect(choiceOf("#/C/major?with=banana&on=piano")).toBeUndefined();
+    expect(choiceOf("#/C/minor?with=flat5&on=piano")).toBeUndefined();
     expect(choiceOf("#/circle/C/major")).toBeUndefined();
     expect(choiceOf("#/H/major?on=piano")).toBeUndefined();
     expect(choiceOf("#/C/nonsense?on=piano")).toBeUndefined();
@@ -54,7 +64,7 @@ describe("choiceOf", () => {
 
 describe("round trip", () => {
   it("restores the whole choice from its stored link", () => {
-    const route = parseRoute("#/Cs/minor7?on=piano&inv=2");
+    const route = parseRoute("#/Cs/minor?with=7,flat9&on=piano&inv=2");
     if (route.page !== "chord") throw new Error("expected a chord");
     expect(routeOf(hashOf(route))).toEqual(route);
     const guitar = parseRoute("#/E/scale/dorian?on=guitar&tuning=dropD&hand=left");
@@ -73,6 +83,14 @@ describe("storage", () => {
     saveList(FAVORITES_KEY, ["#/C/major?on=piano"]);
     saveList(FAVORITES_KEY, []);
     expect(window.localStorage.getItem(FAVORITES_KEY)).toBeNull();
+  });
+
+  it("loads older saved links in the current form, without duplicates", () => {
+    window.localStorage.setItem(
+      RECENT_KEY,
+      JSON.stringify(["#/C/minor7?on=piano", "#/C/minor?with=7&on=piano"]),
+    );
+    expect(loadList(RECENT_KEY)).toEqual(["#/C/minor?with=7&on=piano"]);
   });
 
   it("ignores broken data, invalid entries and duplicates", () => {

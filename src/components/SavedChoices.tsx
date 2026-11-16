@@ -10,12 +10,12 @@ import {
   saveList,
   toggleFavorite,
 } from "../saved";
-import { SCALES, buildChord, formatNote, inversionSymbol } from "../theory";
+import { SCALES, chordFromSpec, formatNote, inversionSymbol } from "../theory";
 
 /** Short name of a stored choice: "Cm7", "C/E", "A Natural minor". */
 function labelOf(route: LookupRoute): string {
   if (route.page === "scale") return `${formatNote(route.root)} ${SCALES[route.scaleId].name}`;
-  return inversionSymbol(buildChord(route.root, route.quality), route.inversion);
+  return inversionSymbol(chordFromSpec(route.root, route.spec), route.inversion);
 }
 
 const instrumentOf = (route: LookupRoute) => (route.instrument === "guitar" ? "Guitar" : "Piano");

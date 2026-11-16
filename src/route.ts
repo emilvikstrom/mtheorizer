@@ -1,7 +1,12 @@
 import { useMemo, useSyncExternalStore } from "react";
 import {
+  CHORD_BASES,
+  CHORD_MODIFIERS,
   CHORD_QUALITIES,
+  type ChordBase,
+  type ChordModifier,
   type ChordQualityId,
+  type ChordSpec,
   type Key,
   type KeyMode,
   type Letter,
@@ -12,19 +17,28 @@ import {
   TUNING_IDS,
   type TuningId,
   circlePosition,
+  identifyQuality,
   key,
   keyEquals,
   keysAt,
+  normalizeSpec,
   note,
+  specOf,
 } from "./theory";
 
 /**
  * What the app shows, kept in the URL hash so a link opens the same view:
  *
  *   #/Db/major?on=piano&inv=1      chord (D♭ major, first inversion on the piano)
- *   #/Cs/minor7?on=guitar          chord (C♯ minor seventh on the guitar)
+ *   #/C/minor?with=7,9&on=piano    chord built from a base chord and qualities (Cm9)
+ *   #/Cs/minor?with=7&on=guitar    C♯ minor seventh on the guitar
  *   #/A/scale/naturalMinor?on=piano  scale
  *   #/circle/Bb/major              circle of fifths with B♭ major selected
+ *
+ * The chord is a base chord (`major`, `minor`, `diminished`, `augmented`, `sus2`,
+ * `sus4` or `power`) and the qualities in `with`. Qualities that do not fit the
+ * base chord are dropped, as in the chord builder. Links from before the builder
+ * (`#/C/dominant7Sharp9`) name the whole chord and still open it.
  *
  * Notes are a letter plus `s` (sharp) or `b` (flat). `#` is read as a sharp too.
  */
@@ -40,7 +54,8 @@ export interface GuitarOptions {
 export interface ChordRoute extends GuitarOptions {
   readonly page: "chord";
   readonly root: Note;
-  readonly quality: ChordQualityId;
+  /** Always normalized: every quality fits the base chord. */
+  readonly spec: ChordSpec;
   readonly inversion: number;
   readonly instrument: Instrument;
 }
@@ -101,7 +116,7 @@ export function guitarOptions(route: LookupRoute): GuitarOptions {
 export const defaultChordRoute = (instrument: Instrument = "piano"): ChordRoute => ({
   page: "chord",
   root: note("C"),
-  quality: "major",
+  spec: specOf("major"),
   inversion: 0,
   instrument,
 });
@@ -124,12 +139,31 @@ function formatGuitarOptions(route: LookupRoute): string {
   return `${tuning ? `&tuning=${tuning}` : ""}${left ? "&hand=left" : ""}`;
 }
 
+/** `minor?with=7,9` style: the base chord, then the qualities. */
+function formatChordSpec(spec: ChordSpec): { path: string; params: string } {
+  const { base, qualities } = normalizeSpec(spec);
+  return { path: base, params: qualities.length > 0 ? `with=${qualities.join(",")}&` : "" };
+}
+
+/**
+ * The link as it was written before the chord builder, which named the whole
+ * chord (`dominant7`). Only chords that have such a name can be written this way.
+ */
+export function formatLegacyChordRoute(route: ChordRoute): string | undefined {
+  const quality: ChordQualityId | undefined = identifyQuality(route.spec);
+  if (quality === undefined) return undefined;
+  const inversion =
+    route.inversion > 0 && route.instrument === "piano" ? `&inv=${route.inversion}` : "";
+  return `#/${formatRouteNote(route.root)}/${quality}?on=${route.instrument}${inversion}${formatGuitarOptions(route)}`;
+}
+
 export function formatRoute(route: Route): string {
   switch (route.page) {
     case "chord": {
       const inversion =
         route.inversion > 0 && route.instrument === "piano" ? `&inv=${route.inversion}` : "";
-      return `#/${formatRouteNote(route.root)}/${route.quality}?on=${route.instrument}${inversion}${formatGuitarOptions(route)}`;
+      const { path, params } = formatChordSpec(route.spec);
+      return `#/${formatRouteNote(route.root)}/${path}?${params}on=${route.instrument}${inversion}${formatGuitarOptions(route)}`;
     }
     case "scale":
       return `#/${formatRouteNote(route.root)}/scale/${route.scaleId}?on=${route.instrument}${formatGuitarOptions(route)}`;
@@ -172,12 +206,44 @@ function parseCircleKey(
     : undefined;
 }
 
+const isBase = (text: string): text is ChordBase =>
+  (CHORD_BASES as readonly string[]).includes(text);
+const isModifier = (text: string): text is ChordModifier =>
+  (CHORD_MODIFIERS as readonly string[]).includes(text);
+
+/** The chord of a link's path part and `with` list, or undefined when the path names no chord. */
+function parseChordSpec(part: string | undefined, withParam: string | null): ChordSpec | undefined {
+  if (part === undefined) return undefined;
+  let spec: ChordSpec;
+  if (isBase(part)) spec = { base: part, qualities: [] };
+  else if (has(CHORD_QUALITIES, part)) spec = specOf(part as ChordQualityId);
+  else return undefined;
+  const extra = (withParam ?? "").split(",").filter(isModifier);
+  return normalizeSpec({ base: spec.base, qualities: [...spec.qualities, ...extra] });
+}
+
 /**
  * The view a hash stands for. A link that makes no sense falls back to C major
  * (or to C major on the circle, for a broken circle link). `fallbackInstrument`
  * is used when the link does not name an instrument.
  */
 export function parseRoute(hash: string, fallbackInstrument: Instrument = "piano"): Route {
+  return parseLink(hash, fallbackInstrument, false) as Route;
+}
+
+/** Like `parseRoute`, but undefined for a link that names no chord, scale or key. */
+export function parseRouteStrict(
+  hash: string,
+  fallbackInstrument: Instrument = "piano",
+): Route | undefined {
+  return parseLink(hash, fallbackInstrument, true);
+}
+
+function parseLink(
+  hash: string,
+  fallbackInstrument: Instrument,
+  strict: boolean,
+): Route | undefined {
   const trimmed = hash.replace(/^#\/?/, "");
   const queryAt = trimmed.indexOf("?");
   const path = queryAt === -1 ? trimmed : trimmed.slice(0, queryAt);
@@ -186,7 +252,7 @@ export function parseRoute(hash: string, fallbackInstrument: Instrument = "piano
 
   if (parts[0] === "circle") {
     const k = parseCircleKey(parts[1], parts[2]);
-    return k ? { page: "circle", key: k } : defaultCircleRoute();
+    return k ? { page: "circle", key: k } : strict ? undefined : defaultCircleRoute();
   }
 
   const onParam = query.get("on");
@@ -201,7 +267,7 @@ export function parseRoute(hash: string, fallbackInstrument: Instrument = "piano
       : {}),
     ...(instrument === "guitar" && query.get("hand") === "left" ? { left: true } : {}),
   };
-  const fallback = defaultChordRoute(instrument);
+  const fallback = strict ? undefined : defaultChordRoute(instrument);
   const root = parseRouteNote(parts[0]);
   if (!root) return fallback;
 
@@ -212,13 +278,13 @@ export function parseRoute(hash: string, fallbackInstrument: Instrument = "piano
       : fallback;
   }
 
-  const quality = parts[1];
-  if (quality === undefined || !has(CHORD_QUALITIES, quality)) return fallback;
+  const spec = parseChordSpec(parts[1], query.get("with"));
+  if (!spec) return fallback;
   const inversion = Number(query.get("inv") ?? 0);
   return {
     page: "chord",
     root,
-    quality: quality as ChordQualityId,
+    spec,
     inversion:
       Number.isInteger(inversion) && inversion >= 0 && inversion <= MAX_INVERSION ? inversion : 0,
     instrument,
