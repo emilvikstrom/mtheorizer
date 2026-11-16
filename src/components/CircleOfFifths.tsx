@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useRef } from "react";
+import { type CSSProperties, type KeyboardEvent, useRef, useState } from "react";
 import {
   type ChordQualityId,
   type HarmonicFunction,
@@ -8,6 +8,7 @@ import {
   type Note,
   type RingChord,
   circlePosition,
+  degreeWheel,
   diatonicBlock,
   formatKey,
   formatNote,
@@ -242,10 +243,79 @@ function DiminishedSegment({ position, radii, selected, info, onSelect }: Dimini
   );
 }
 
+/**
+ * The step ring in the hub: IV I V ii vi iii vii° (or VI III VII iv i v ii°
+ * in a minor key) on the seven circle positions where the chords' roots are.
+ * It is drawn with the tonic's neighbours around the top and the whole ring is
+ * turned to the key, by the shortest way round, so the step numbers glide
+ * when the key changes (the transition is switched off for
+ * `prefers-reduced-motion` in the stylesheet). The labels are turned back so
+ * they stay upright.
+ */
+function StepRing({ value, outer }: { value: Key; outer: number }) {
+  const { position, steps } = degreeWheel(value);
+  const inner = Math.max(14, outer - 46);
+  const target = position * 30;
+  const [turn, setTurn] = useState(target);
+  // Take the shortest way round: from 11 to 0 is a step clockwise, not 330° back.
+  const delta = mod12Degrees(target - turn);
+  if (delta !== 0) setTurn(turn + delta);
+
+  return (
+    <g
+      className="circle__wheel"
+      aria-hidden="true"
+      data-position={position}
+      style={{ "--turn": `${turn}deg` } as CSSProperties}
+    >
+      {POSITIONS.map((slot) => {
+        // Slot 0 of the ring is the key's own position; the ring offsets run -6…5.
+        const offset = slot > 5 ? slot - 12 : slot;
+        const step = steps.find((s) => s.offset === offset);
+        const mid = -90 + offset * 30;
+        const [x, y] = polar(outer - 14, mid);
+        return (
+          <g
+            key={offset}
+            className={[
+              "circle__wheel-slot",
+              step && "is-step",
+              step?.function && `is-${step.function}`,
+              step?.degree === 1 && "is-tonic",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            data-step={step?.roman}
+            data-slot={step ? step.slot : undefined}
+          >
+            <path d={sectorPath(inner, outer, mid - 15, mid + 15)} />
+            {step && (
+              <text
+                className="circle__wheel-label"
+                x={x}
+                y={y}
+                textAnchor="middle"
+                dominantBaseline="central"
+              >
+                {step.roman}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+/** `degrees` folded into the range -180…180. */
+const mod12Degrees = (degrees: number) => ((((degrees + 180) % 360) + 360) % 360) - 180;
+
 interface CircleOfFifthsProps {
   value: Key;
   onChange: (key: Key) => void;
   rings?: RingCount;
+  /** Show the rotating step ring in the hub. Default: off. */
+  stepRing?: boolean;
   /** What a click on one of the key's chords does. Default: select its key. */
   clickAction?: ClickAction;
   onOpenChord?: (root: Note, quality: ChordQualityId) => void;
@@ -264,6 +334,7 @@ export function CircleOfFifths({
   value,
   onChange,
   rings = 3,
+  stepRing = false,
   clickAction = "key",
   onOpenChord,
 }: CircleOfFifthsProps) {
@@ -380,6 +451,8 @@ export function CircleOfFifths({
 
         <circle className="circle__center" r={hubRadius} />
       </g>
+
+      {stepRing && <StepRing value={value} outer={hubRadius - 4} />}
     </svg>
   );
 }

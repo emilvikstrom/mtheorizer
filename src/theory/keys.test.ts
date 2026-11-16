@@ -4,6 +4,7 @@ import {
   type Key,
   type KeyMode,
   circlePosition,
+  degreeWheel,
   diatonicBlock,
   diatonicTriads,
   dominantKey,
@@ -331,6 +332,73 @@ describe("diatonicBlock", () => {
       expect(hm?.dominant.position).toBe((c + 4) % 12);
       expect(hm?.leadingTone.position).toBe((c + 3) % 12);
       expect(hm?.dominant.symbol).toBe(harmonicMinorDominant(minor)?.symbol);
+    }
+  });
+});
+
+describe("degreeWheel", () => {
+  const ALL_KEYS: Key[] = CIRCLE_OF_FIFTHS.flat().flatMap((tonic) => {
+    const major = key(tonic, "major");
+    return [major, relativeKey(major)];
+  });
+  const romans = (x: Key) =>
+    Object.fromEntries(degreeWheel(x).steps.map((s) => [s.offset, s.roman]));
+
+  it("fills seven consecutive positions, IV I V ii vi iii vii° in a major key", () => {
+    expect(romans(k("C"))).toEqual({
+      "-1": "IV",
+      0: "I",
+      1: "V",
+      2: "ii",
+      3: "vi",
+      4: "iii",
+      5: "vii°",
+    });
+  });
+
+  it("uses the minor numbering on the same roots in a minor key", () => {
+    expect(romans(k("A", "minor"))).toEqual({
+      "-1": "VI",
+      0: "III",
+      1: "VII",
+      2: "iv",
+      3: "i",
+      4: "v",
+      5: "ii°",
+    });
+  });
+
+  it.each(ALL_KEYS.map((x) => [ascii(x), x] as const))(
+    "puts every chord of %s on the circle slot of its root",
+    (_name, x) => {
+      const { position, steps } = degreeWheel(x);
+      expect(position).toBe(circlePosition(x));
+      expect(steps).toHaveLength(7);
+      const triads = diatonicTriads(x);
+      steps.forEach((step, i) => {
+        expect(step.roman).toBe(triads[i]?.roman);
+        expect(step.root).toEqual(triads[i]?.notes[0]);
+        // A fifth is seven semitones and 7 × 7 ≡ 1 (mod 12), so this inverts it.
+        expect((pitchClass(step.root) * 7) % 12).toBe(step.slot);
+        expect((position + step.offset + 12) % 12).toBe(step.slot);
+      });
+    },
+  );
+
+  it("turns the tonic step onto the key's own tonic", () => {
+    for (const x of ALL_KEYS) {
+      const { steps } = degreeWheel(x);
+      const tonic = steps.find((s) => s.degree === 1);
+      expect(tonic?.slot).toBe((pitchClass(x.tonic) * 7) % 12);
+      // Major: I sits on the key's position. Minor: i sits three positions on.
+      expect(tonic?.offset).toBe(x.mode === "major" ? 0 : 3);
+    }
+  });
+
+  it("has the same offsets in every key of a mode", () => {
+    const shape = (x: Key) => degreeWheel(x).steps.map((s) => s.offset);
+    for (const x of ALL_KEYS) {
+      expect(shape(x)).toEqual(shape(k("C", x.mode)));
     }
   });
 });

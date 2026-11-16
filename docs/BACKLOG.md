@@ -17,10 +17,7 @@ _Inget just nu._
 
 ## Nästa
 
-_Ackordbyggaren (M6) först, sedan utbyggd kvintcirkel (M7)._
-
-- [ ] **M7-04** Roterande stegring: en inre ring med stegnummer (I, ii, iii, IV, V, vi, vii°) som man vrider så att I hamnar på vald tonart, och som animeras när tonarten byts (respekterar `prefers-reduced-motion`)
-  - Acceptans: ringen pekar alltid på rätt ackord i alla tonarter och i både dur och moll. Utan animation byter den läge direkt. Kan tas bort från vyn med samma ringväxling som i M7-02
+_Inget just nu. Bryt ner nästa uppgifter från **Senare**._
 
 ## Senare
 
@@ -124,6 +121,7 @@ Instrument och kvalitet:
 
 ## Klart
 
+- [x] **M7-04** Roterande stegring i navet på kvintcirkeln (`degreeWheel` i `keys.ts`, `StepRing` i `CircleOfFifths.tsx`): stegnumren (IV I V ii vi iii vii° i dur, VI III VII iv i v ii° i moll) ligger på de sju positioner där ackordens grundtoner finns, och ringen vrids så att I (i moll i) hamnar på tonartens tonika. Vridningen tar kortaste vägen (11 → 0 är ett steg medurs), animeras med CSS och slås av med `prefers-reduced-motion`. Etiketterna vrids tillbaka så de står upprätt. Knappen "Step ring" i ringväxeln tar bort den. Tabelltestat för alla 24 tonarter _(2026-11-16)_
 - [x] **M6-05** Byggda ackord i länk, ljud och vyer: länken beskriver grundackord och kvaliteter (`#/C/minor?with=7,9&on=piano`, `with` är kvaliteternas id i kanonisk ordning, `flat5`, `sharp9`, `dim7` …). Gamla länkar (`#/Db/major`, `#/C/dominant7Sharp9`) öppnar samma ackord, och ogiltiga kombinationer normaliseras som i M6-02. `ChordRoute` har en `spec` i stället för en `quality`, så fria ackord (C7♭5♭9) ligger i länken, i senaste och favoriter och följer med när man byter flik. Övergångslösningen från M6-04 (`FreeChord` i `Lookup`) är borttagen. Äldre sparade länkar i senaste och favoriter läses och sparas om i den nya formen (`choiceOf`). Tabelltestat: rundtur länk → spec → länk för alla 43 typer och ett urval fria _(2026-11-16)_
 - [x] **M6-06** Läsa ackordsymboler: `parseChordSymbol` i `src/theory/chordParse.ts` ger rot, spec, namngiven typ, bas och omvändning (`inversion` är 0–3 när basen är en ackordton inom oktaven, annars `null`) eller ett begripligt felmeddelande. Alla symboler som `chordSymbolFor` ger läses tillbaka för alla 43 typer och alla nåbara specar på alla stavningar av alla grundtoner, och för alla omvändningar som `inversionSymbol` skriver. Vanliga varianter (Cmaj7, CM7, C△7, Cmin7, C-7, Cø, Cdim, C+, Csus, C69, CmM7) och ASCII (`#`, `b`) fungerar. Själva sökfältet är utbrutet till M6-06b _(2026-11-16)_
 - [x] **M6-04** Byggar-UI som ersätter ackordväljaren (`ChordBuilder`, `ChordQualityPicker` är borttagen): sju grundackord som radioknappar med symbolen på vald grundton, och kvaliteterna som växlingsknappar (`aria-pressed`) i grupperna Seventh, Sixth, Extensions, Altered och Added. Bara det `availableQualities` ger visas (aktiva kvaliteter alltid), grupper utan innehåll döljs och C5 visar en förklarande text. Byte av grundackord behåller kvaliteter som fortfarande passar. Försvinner den tryckta knappen flyttas fokus till gruppen (eller till kvaliteterna om gruppen också är borta). Alla 43 typer byggs med klick (testat). Fria kombinationer går också: `chordFromSpec` ger ackordet, och länken har närmaste namngivna typ tills M6-05. 44 px höga knappar och ingen horisontell scroll i 375 px _(2026-11-16)_

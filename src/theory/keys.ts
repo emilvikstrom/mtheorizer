@@ -346,3 +346,42 @@ export function diatonicBlock(k: Key): DiatonicBlock {
     },
   };
 }
+
+// --- Rotating degree ring -----------------------------------------------------
+
+export interface WheelStep {
+  /** Scale degree, 1–7. */
+  readonly degree: number;
+  readonly roman: string;
+  readonly function?: HarmonicFunction;
+  readonly root: Note;
+  /** Position of the chord's root on the circle of fifths (C = 0, G = 1 …). */
+  readonly slot: number;
+  /** `slot` relative to the key's own position, from -6 to 5. */
+  readonly offset: number;
+}
+
+/**
+ * The seven chords of the key as steps on a ring that is turned so that I (or
+ * i) sits at the key's tonic. Chords a fifth apart are neighbours, so the
+ * roots always fill seven consecutive positions of the circle, IV I V ii vi
+ * iii vii° in a major key. The offsets are the same in every key and for
+ * both modes, which is why one ring can be rotated to any key. In a minor key
+ * the ring uses the minor numbering (VI III VII iv i v ii°) on the same roots.
+ */
+export function degreeWheel(k: Key): { position: number; steps: readonly WheelStep[] } {
+  const position = circlePosition(k);
+  const steps = diatonicTriads(k).map((triad): WheelStep => {
+    const root = triad.notes[0] ?? k.tonic;
+    const slot = mod12(pitchClass(root) * 7);
+    return {
+      degree: triad.degree,
+      roman: triad.roman,
+      ...(triad.function ? { function: triad.function } : {}),
+      root,
+      slot,
+      offset: mod12(slot - position + 6) - 6,
+    };
+  });
+  return { position, steps };
+}

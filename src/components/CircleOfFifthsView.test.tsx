@@ -2,7 +2,20 @@ import { render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { CIRCLE_OF_FIFTHS, type Key, type KeyMode, key, keysAt, note } from "../theory";
+import {
+  CIRCLE_OF_FIFTHS,
+  type Key,
+  type KeyMode,
+  type Note,
+  circlePosition,
+  diatonicTriads,
+  formatKey,
+  key,
+  keysAt,
+  note,
+  pitchClass,
+  relativeKey,
+} from "../theory";
 import { CircleOfFifths } from "./CircleOfFifths";
 import { CircleOfFifthsView } from "./CircleOfFifthsView";
 
@@ -327,6 +340,99 @@ describe("CircleOfFifthsView", () => {
       expect(opened).toHaveBeenLastCalledWith(note("E"), "major");
       await user.click(sector("diminished", 3) as Element);
       expect(opened).toHaveBeenLastCalledWith(note("G", 1), "diminished");
+    });
+  });
+
+  describe("step ring", () => {
+    const wheel = (container: HTMLElement) =>
+      container.querySelector<SVGGElement>(".circle__wheel");
+    const steps = (container: HTMLElement) =>
+      [...container.querySelectorAll<SVGGElement>("[data-step]")].map((el) => ({
+        roman: el.dataset.step,
+        slot: Number(el.dataset.slot),
+      }));
+
+    it("is shown, and can be removed with the ring switch", async () => {
+      const user = userEvent.setup();
+      const { container } = render(<Harness />);
+      expect(wheel(container)).not.toBeNull();
+      const toggle = screen.getByRole("button", { name: "Step ring" });
+      expect(toggle).toHaveAttribute("aria-pressed", "true");
+
+      await user.click(toggle);
+      expect(toggle).toHaveAttribute("aria-pressed", "false");
+      expect(wheel(container)).toBeNull();
+      // The other ring controls are unaffected.
+      expect(container.querySelectorAll("[data-ring='diminished']")).toHaveLength(12);
+
+      await user.click(toggle);
+      expect(wheel(container)).not.toBeNull();
+    });
+
+    it("is off in the bare circle unless asked for", () => {
+      const { container } = render(
+        <CircleOfFifths value={key(note("C"), "major")} onChange={vi.fn()} />,
+      );
+      expect(wheel(container)).toBeNull();
+    });
+
+    it("lays the steps out around the top in C major", () => {
+      const { container } = render(<Harness />);
+      expect(wheel(container)).toHaveAttribute("data-position", "0");
+      // In document order, from the key's own position on and then round to IV.
+      expect(steps(container)).toEqual([
+        { roman: "I", slot: 0 },
+        { roman: "V", slot: 1 },
+        { roman: "ii", slot: 2 },
+        { roman: "vi", slot: 3 },
+        { roman: "iii", slot: 4 },
+        { roman: "vii°", slot: 5 },
+        { roman: "IV", slot: 11 },
+      ]);
+    });
+
+    const ALL_KEYS = CIRCLE_OF_FIFTHS.flat().flatMap((tonic) => [
+      key(tonic, "major"),
+      key(relativeKey(key(tonic, "major")).tonic, "minor"),
+    ]);
+
+    it.each(ALL_KEYS.map((k) => [formatKey(k), k] as const))(
+      "points I at the tonic of %s",
+      (_name, k) => {
+        const { container } = render(<CircleOfFifths value={k} onChange={vi.fn()} stepRing />);
+        const position = circlePosition(k);
+        expect(wheel(container)).toHaveAttribute("data-position", String(position));
+        expect(wheel(container)?.style.getPropertyValue("--turn")).toBe(`${position * 30}deg`);
+
+        const all = steps(container);
+        expect(all).toHaveLength(7);
+        // The tonic step sits on the circle slot of the tonic's root.
+        const tonic = all.find((s) => s.roman === (k.mode === "major" ? "I" : "i"));
+        expect(tonic?.slot).toBe((pitchClass(k.tonic) * 7) % 12);
+        // Every step is on the slot of its chord's root.
+        const triads = diatonicTriads(k);
+        expect(all.map((s) => s.roman).sort()).toEqual(triads.map((t) => t.roman).sort());
+        for (const triad of triads) {
+          const step = all.find((s) => s.roman === triad.roman);
+          expect(step?.slot).toBe((pitchClass(triad.notes[0] as Note) * 7) % 12);
+        }
+      },
+    );
+
+    it("turns the shortest way round when the key changes", async () => {
+      const user = userEvent.setup();
+      const { container } = render(<Harness />);
+      const turn = () => wheel(container)?.style.getPropertyValue("--turn");
+      expect(turn()).toBe("0deg");
+
+      // From C (0) to F (11) is one step counterclockwise, not 330° clockwise.
+      await user.click(screen.getByRole("radio", { name: "F major" }));
+      expect(turn()).toBe("-30deg");
+      // And on to B♭ (10), then back round through C to G (1).
+      await user.click(screen.getByRole("radio", { name: "B♭ major" }));
+      expect(turn()).toBe("-60deg");
+      await user.click(screen.getByRole("radio", { name: "G major" }));
+      expect(turn()).toBe("30deg");
     });
   });
 });
