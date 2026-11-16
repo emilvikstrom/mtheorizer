@@ -28,10 +28,10 @@ describe("recent and favorite choices", () => {
     await user.click(screen.getByRole("radio", { name: "1st inversion" }));
     await user.click(screen.getByRole("radio", { name: "Guitar" }));
     await user.click(screen.getByRole("radio", { name: "E" }));
-    expect(window.location.hash).toBe("#/E/dominant7?on=guitar");
+    expect(window.location.hash).toBe("#/E/major?with=7&on=guitar");
 
     await user.click(screen.getByRole("button", { name: "Open C7/E (Piano)" }));
-    expect(window.location.hash).toBe("#/C/dominant7?on=piano&inv=1");
+    expect(window.location.hash).toBe("#/C/major?with=7&on=piano&inv=1");
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("C dominant seventh");
     expect(screen.getByRole("radio", { name: "1st inversion" })).toBeChecked();
   });

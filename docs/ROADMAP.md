@@ -83,7 +83,7 @@ Mål: Ackordväljaren ersätts av en byggare. Man väljer ett grundackord (C, Cm
 - Ackord bygger vidare på samma piano, gitarr, ljud och omvändningar, och får delbara länkar.
 - Därefter åt andra hållet: skriv in en ackordsymbol (`F#m7b5/C`) eller klicka in toner och se vilket ackord de bildar.
 
-Uppgifter: M6-05 ligger under **Nästa**, resten under **Senare** i [BACKLOG.md](BACKLOG.md).
+Uppgifter: M6-01–M6-05 och M6-07 är klara, M6-06 och M6-08 ligger under **Senare** i [BACKLOG.md](BACKLOG.md).
 
 ## M7 – Utbyggd kvintcirkel ⏳
 

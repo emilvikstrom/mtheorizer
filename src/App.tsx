@@ -12,6 +12,7 @@ import {
   storedInstrument,
   useRoute,
 } from "./route";
+import { specOf } from "./theory";
 
 type Tab = "lookup" | "circle-of-fifths";
 
@@ -57,7 +58,7 @@ export function App() {
               navigate({
                 page: "chord",
                 root,
-                quality,
+                spec: specOf(quality),
                 inversion: 0,
                 instrument: storedInstrument(),
               })
