@@ -302,7 +302,11 @@ export function Fretboard({ views, kind, tones, name, legend, tuning, left }: Fr
   const noun = kind === "shape" ? "Shape" : "Position";
 
   if (!view) {
-    return <p className="fretboard__empty">No playable {noun.toLowerCase()} found.</p>;
+    return (
+      <p className="fretboard__empty" role="status">
+        {kind === "shape" ? "No playable shape in this position" : "No playable position found"}
+      </p>
+    );
   }
 
   const where = whereOnNeck(view);
