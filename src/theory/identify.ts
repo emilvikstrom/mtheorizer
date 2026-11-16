@@ -1,6 +1,6 @@
 import {
   CHORD_QUALITY_IDS,
-  type Chord,
+  type NamedChord,
   type ChordQualityId,
   type ChordTone,
   buildChord,
@@ -10,7 +10,7 @@ import { type Note, formatNote, mod12, note, pitchClass } from "./notes";
 
 /** A chord that fits a set of pitch classes. */
 export interface ChordMatch {
-  readonly chord: Chord;
+  readonly chord: NamedChord;
   /** The bass tone, spelled as the chord spells it. Only set when a bass was given. */
   readonly bass: Note | undefined;
   /** The bass is not the root: the chord is a slash chord such as Am7/C. */

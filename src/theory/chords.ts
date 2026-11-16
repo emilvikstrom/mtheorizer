@@ -390,12 +390,15 @@ export interface Chord {
   readonly symbol: string;
 }
 
+/** A chord built from one of the named qualities, so `quality` is always present. */
+export type NamedChord = Chord & { readonly quality: ChordQuality };
+
 /** The chord symbol for `quality` on `root`, e.g. "B♭7". */
 export function chordSymbol(root: Note, qualityId: ChordQualityId): string {
   return `${formatNote(root)}${CHORD_QUALITIES[qualityId].symbol}`;
 }
 
-export function buildChord(root: Note, qualityId: ChordQualityId): Chord {
+export function buildChord(root: Note, qualityId: ChordQualityId): NamedChord {
   const quality = CHORD_QUALITIES[qualityId];
   const tones = quality.tones.map((tone) => ({ ...tone, note: transpose(root, tone.interval) }));
   return {
@@ -433,6 +436,6 @@ export function preferredRootSpelling(pc: number, qualityId: ChordQualityId): No
 }
 
 /** The chord on pitch class `pc` (0 = C … 11 = B), with its root spelled the usual way. */
-export function chordOnPitchClass(pc: number, qualityId: ChordQualityId): Chord {
+export function chordOnPitchClass(pc: number, qualityId: ChordQualityId): NamedChord {
   return buildChord(preferredRootSpelling(pc, qualityId), qualityId);
 }
