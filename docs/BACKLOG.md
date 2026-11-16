@@ -25,6 +25,8 @@ _Inget just nu._
 
 ## Klart
 
+- [x] **M3-03** Skalväljaren grupperas (Major & minor, Modes, Pentatonic & blues) och visar alias ("Major (Ionian)"). Skalvyn, länkarna och växeln till ackord fungerar för alla 13 skalor; byte till ackord ger treklangen på skalan (locrian → diminished) _(2026-11-16)_
+- [x] **M3-02** Fler skalor: harmonisk och melodisk moll, de fem övriga kyrkotonarterna (dorian, phrygian, lydian, mixolydian, locrian), dur- och mollpentatonik samt moll- och durblues (13 skalor). Tabelltestade på alla 12 grundtoner (rätt tonhöjder, stavning och grundton med högst ett förtecken). Gitarrpositioner och pianot fungerar för skalor med fem–sju toner _(2026-11-16)_
 - [x] **M2-06** Gitarrvyn anger vilka toner ett grepp utelämnar ("Without fifth (G)") under diagrammet och i dess beskrivning. Räknas i teorimodulen (`omittedTones`), tabelltestat för alla ackord och grundtoner _(2026-11-15)_
 - [x] **G-05** Kvintackord (C5, "power chord") som ny ackordtyp i triadgruppen (grundton + kvint). Greppsökningen tillåter nu dämpade strängar även ovanför greppet: kvintackord spelas på två–tre av de lägsta strängarna (x355xx, 8 10 10 x x x, 0 2 2 x x x) med övriga dämpade. Övriga ackord spelar som förut alla strängar från basen upp till sträng 1. Barré korsar dämpade strängar _(2026-11-15)_
 - [x] **M2-05** Fler ackord: 7♭13, 7♯5♯9, m(maj9), 13sus4 samt add2 och add4 som egna namn (43 ackordtyper, tabelltestade på alla 12 grundtoner). Snedackord: omvändningar skrivs som C/E och visas i ackordrubriken (`inversionSymbol`) _(2026-11-15)_

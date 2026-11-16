@@ -96,7 +96,7 @@ describe("parseRoute", () => {
     "#/C/nonsense",
     "#/C/toString",
     "#/C/scale",
-    "#/C/scale/dorian",
+    "#/C/scale/bebop",
     "#/C/major/extra/parts?on=banjo",
     "#/%E0%A4%A/major",
     "#garbage",

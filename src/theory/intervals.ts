@@ -26,6 +26,7 @@ export const MAJOR_SECOND = interval("Major second", "M2", 1, 2);
 export const MINOR_THIRD = interval("Minor third", "m3", 2, 3);
 export const MAJOR_THIRD = interval("Major third", "M3", 2, 4);
 export const PERFECT_FOURTH = interval("Perfect fourth", "P4", 3, 5);
+export const AUGMENTED_FOURTH = interval("Augmented fourth", "A4", 3, 6);
 export const PERFECT_FIFTH = interval("Perfect fifth", "P5", 4, 7);
 export const MINOR_SIXTH = interval("Minor sixth", "m6", 5, 8);
 export const MAJOR_SIXTH = interval("Major sixth", "M6", 5, 9);

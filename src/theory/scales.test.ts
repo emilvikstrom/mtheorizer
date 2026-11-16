@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { formatNoteAscii, parseNote } from "./notes";
+import { formatNote, formatNoteAscii, parseNote, pitchClass } from "./notes";
 import {
   MAJOR_SCALE,
   NATURAL_MINOR_SCALE,
   buildScale,
   keySignatureAccidentals,
+  SCALES,
+  SCALE_GROUPS,
+  type ScaleId,
+  scaleLabel,
   scaleOnPitchClass,
   scaleToneLabel,
 } from "./scales";
@@ -104,6 +108,102 @@ describe("all 24 major and natural minor scales", () => {
       "Perfect fourth",
       "Perfect fifth",
       "Minor sixth",
+      "Minor seventh",
+    ]);
+  });
+});
+
+describe("scales and modes", () => {
+  // Semitones above the tonic, written out independently of the interval data.
+  const PATTERNS: Record<ScaleId, number[]> = {
+    major: [0, 2, 4, 5, 7, 9, 11],
+    naturalMinor: [0, 2, 3, 5, 7, 8, 10],
+    harmonicMinor: [0, 2, 3, 5, 7, 8, 11],
+    melodicMinor: [0, 2, 3, 5, 7, 9, 11],
+    dorian: [0, 2, 3, 5, 7, 9, 10],
+    phrygian: [0, 1, 3, 5, 7, 8, 10],
+    lydian: [0, 2, 4, 6, 7, 9, 11],
+    mixolydian: [0, 2, 4, 5, 7, 9, 10],
+    locrian: [0, 1, 3, 5, 6, 8, 10],
+    majorPentatonic: [0, 2, 4, 7, 9],
+    minorPentatonic: [0, 3, 5, 7, 10],
+    minorBlues: [0, 3, 5, 6, 7, 10],
+    majorBlues: [0, 2, 3, 4, 7, 9],
+  };
+  const ids = Object.keys(SCALES) as ScaleId[];
+  const pitchClasses = Array.from({ length: 12 }, (_, pc) => pc);
+
+  it("lists every scale in exactly one group", () => {
+    const listed = SCALE_GROUPS.flatMap((g) => g.scales);
+    expect([...listed].sort()).toEqual([...ids].sort());
+  });
+
+  describe.each(ids)("%s", (id) => {
+    it.each(pitchClasses)("on pitch class %i has the right pitches", (pc) => {
+      const scale = scaleOnPitchClass(pc, id);
+      expect(pitchClass(scale.tonic)).toBe(pc);
+      expect(scale.tones.map((t) => (pitchClass(t.note) - pc + 12) % 12)).toEqual(PATTERNS[id]);
+    });
+
+    it.each(pitchClasses)("on pitch class %i uses each letter at most once", (pc) => {
+      const scale = scaleOnPitchClass(pc, id);
+      const letters = scale.tones.map((t) => t.note.letter);
+      // The blues scales have both ♭3 and 3, or ♭5 and 5, on one letter.
+      const distinct = id.endsWith("Blues") ? 5 : letters.length;
+      expect(new Set(letters).size).toBe(distinct);
+    });
+
+    it.each(pitchClasses)(
+      "on pitch class %i spells the tonic with at most one accidental",
+      (pc) => {
+        expect(Math.abs(scaleOnPitchClass(pc, id).tonic.accidental)).toBeLessThanOrEqual(1);
+      },
+    );
+  });
+
+  it("spells the modes the way a musician would", () => {
+    const spell = (pc: number, id: ScaleId) =>
+      scaleOnPitchClass(pc, id)
+        .tones.map((t) => formatNoteAscii(t.note))
+        .join(" ");
+    expect(spell(2, "dorian")).toBe("D E F G A B C");
+    expect(spell(4, "phrygian")).toBe("E F G A B C D");
+    expect(spell(5, "lydian")).toBe("F G A B C D E");
+    expect(spell(7, "mixolydian")).toBe("G A B C D E F");
+    expect(spell(11, "locrian")).toBe("B C D E F G A");
+    expect(spell(9, "harmonicMinor")).toBe("A B C D E F G#");
+    expect(spell(9, "melodicMinor")).toBe("A B C D E F# G#");
+    expect(spell(3, "harmonicMinor")).toBe("Eb F Gb Ab Bb Cb D");
+    expect(spell(7, "dorian")).toBe("G A Bb C D E F");
+    expect(spell(0, "majorPentatonic")).toBe("C D E G A");
+    expect(spell(9, "minorPentatonic")).toBe("A C D E G");
+    expect(spell(9, "minorBlues")).toBe("A C D Eb E G");
+    expect(spell(0, "majorBlues")).toBe("C D Eb E G A");
+  });
+
+  it("spells a tonic on a black key with the fewest accidentals", () => {
+    const tonic = (pc: number, id: ScaleId) => formatNote(scaleOnPitchClass(pc, id).tonic);
+    expect(tonic(1, "dorian")).toBe("C♯");
+    expect(tonic(3, "dorian")).toBe("E♭");
+    expect(tonic(1, "mixolydian")).toBe("D♭");
+    expect(tonic(8, "harmonicMinor")).toBe("A♭");
+    expect(tonic(6, "majorPentatonic")).toBe("F♯");
+  });
+
+  it("names the scales for a picker", () => {
+    expect(scaleLabel(SCALES.major)).toBe("Major (Ionian)");
+    expect(scaleLabel(SCALES.naturalMinor)).toBe("Natural minor (Aeolian)");
+    expect(scaleLabel(SCALES.dorian)).toBe("Dorian");
+  });
+
+  it("labels the blue note", () => {
+    const labels = scaleOnPitchClass(0, "minorBlues").tones.map(scaleToneLabel);
+    expect(labels).toEqual([
+      "Tonic",
+      "Minor third",
+      "Perfect fourth",
+      "Diminished fifth",
+      "Perfect fifth",
       "Minor seventh",
     ]);
   });

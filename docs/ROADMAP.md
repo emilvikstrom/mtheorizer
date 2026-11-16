@@ -8,7 +8,7 @@ Status: ✅ klar · 🚧 pågår · ⏳ planerad · 💡 idé
 |----|-----------|--------|
 | M1 | Ackorduppslag med pianovisning | ✅ |
 | M2 | Fler ackordtyper och omvändningar | ✅ |
-| M3 | Skalor och modi | 🚧 |
+| M3 | Skalor och modi | ✅ |
 | M4 | Lyssna på ackord och skalor | ✅ |
 | M5 | Tonarter och harmoniska samband | ✅ |
 | X  | Tvärgående förbättringar (delbara länkar, språk, CI) | ⏳ |
@@ -34,13 +34,17 @@ Resultat (M2-01–M2-05):
 - Varje ton har en roll (grundton, sekund, ters … tredecima) och kan märkas som valfri. Gitarrgreppen får då utelämna den, som kvinten i öppet C7 (x32310).
 - Omvändningar på pianot: grundläge samt 1:a–3:e omvändning, med basen markerad och skriven som snedackord (C/E).
 
-## M3 – Skalor och modi 🚧
+## M3 – Skalor och modi ✅
 
 Mål: Slå upp en skala eller modus på valfri grundton och se den på pianot.
 - Dur, naturlig, harmonisk och melodisk moll.
 - Kyrkotonarterna (jonisk till lokrisk).
 - Pentatonik och blues.
-- Klart: dur och naturlig moll, med en växel mellan ackord och skala (M3-01).
+
+Resultat (M3-01–M3-03):
+- 13 skalor som data i `src/theory/scales.ts`: dur (jonisk), naturlig, harmonisk och melodisk moll, dorisk, frygisk, lydisk, mixolydisk, lokrisk, dur- och mollpentatonik samt moll- och durblues (med bluetonen ♭5 respektive ♭3).
+- Skalorna är fem, sex eller sju toner långa och stavas rätt på alla 12 grundtoner, med färst förtecken i grundtonen. Dubbla namn avgörs av en tabell per skala.
+- Skalväljaren är grupperad (Major & minor, Modes, Pentatonic & blues). Skalorna visas på piano och gitarrhals, spelas upp och ligger i länken (`#/D/scale/dorian`). Byte tillbaka till ackord ger treklangen på skalan (D° för lokrisk).
 
 ## M4 – Lyssna ✅
 
