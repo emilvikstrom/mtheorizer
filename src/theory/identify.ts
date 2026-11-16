@@ -7,6 +7,7 @@ import {
   preferredRootSpelling,
 } from "./chords";
 import { type Note, formatNote, mod12, note, pitchClass } from "./notes";
+import { inversionCount } from "./voicing";
 
 /** A chord that fits a set of pitch classes. */
 export interface ChordMatch {
@@ -111,6 +112,21 @@ const CHORD_ORDER = Object.fromEntries(CHORD_QUALITY_IDS.map((id, i) => [id, i])
   ChordQualityId,
   number
 >;
+
+/**
+ * Which inversion (1–3) of the keyboard a slash chord is: the tones are listed
+ * from low to high and the one in the bass is that index, as in `inversionSymbol`.
+ * Root position gives 0. A bass the keyboard can't show as an inversion (C/D, or a
+ * ninth in the bass) also gives 0, so the chord opens in root position.
+ */
+export function matchInversion(match: ChordMatch): number {
+  if (!match.inverted || !match.bass) return 0;
+  const bassPc = pitchClass(match.bass);
+  const index = [...match.chord.tones]
+    .sort((a, b) => a.interval.semitones - b.interval.semitones)
+    .findIndex((t) => pitchClass(t.note) === bassPc);
+  return index >= 1 && index <= inversionCount(match.chord) ? index : 0;
+}
 
 function accidentals(root: Note): number {
   return Math.abs(root.accidental);

@@ -1,5 +1,5 @@
 interface ToneLegendProps {
-  /** Label for the root of a chord or the tonic of a scale. */
+  /** Label for the root of a chord or the tonic of a scale. An empty label leaves it out. */
   root?: string;
   /** Label for the other highlighted tones. */
   tone?: string;
@@ -11,7 +11,7 @@ interface ToneLegendProps {
 export function ToneLegend({ root = "Root", tone = "Chord tone", bass = false }: ToneLegendProps) {
   return (
     <figcaption className="tone-legend">
-      <span className="legend legend--root">{root}</span>
+      {root !== "" && <span className="legend legend--root">{root}</span>}
       <span className="legend legend--tone">{tone}</span>
       {bass && <span className="legend legend--bass">Bass</span>}
     </figcaption>

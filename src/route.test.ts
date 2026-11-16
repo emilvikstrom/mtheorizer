@@ -35,7 +35,10 @@ function expectSame(actual: Route, expected: Route) {
   if (actual.page === "circle" && expected.page === "circle") {
     expect(actual.key.mode).toBe(expected.key.mode);
     expect(noteEquals(actual.key.tonic, expected.key.tonic)).toBe(true);
-  } else if (actual.page !== "circle" && expected.page !== "circle") {
+  } else if (
+    (actual.page === "chord" || actual.page === "scale") &&
+    (expected.page === "chord" || expected.page === "scale")
+  ) {
     expect(noteEquals(actual.root, expected.root)).toBe(true);
     expect(actual.instrument).toBe(expected.instrument);
     if (actual.page === "chord" && expected.page === "chord") {
@@ -117,6 +120,12 @@ describe("parseRoute", () => {
     for (const inv of ["-1", "4", "1.5", "x"]) {
       expect(parseRoute(`#/C/major?inv=${inv}`)).toMatchObject({ inversion: 0 });
     }
+  });
+
+  it("links to the chord finder", () => {
+    expect(formatRoute({ page: "identify" })).toBe("#/identify");
+    expect(parseRoute("#/identify")).toEqual({ page: "identify" });
+    expect(parseRouteStrict("#/identify")).toEqual({ page: "identify" });
   });
 
   it("falls back to C major on the circle for a bad circle link", () => {

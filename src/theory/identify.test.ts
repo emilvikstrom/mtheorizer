@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CHORD_QUALITY_IDS, buildChord, chordOnPitchClass } from "./chords";
-import { identifyChords } from "./identify";
+import { identifyChords, matchInversion } from "./identify";
 import { formatNote, pitchClass } from "./notes";
 
 const symbols = (tones: number[], bass?: number) =>
@@ -112,5 +112,33 @@ describe("identifyChords on every chord quality and root", () => {
       for (const t of tones) expect(own.has(t)).toBe(true);
       expect(m.omitted.every((t) => t.optional)).toBe(true);
     }
+  });
+});
+
+describe("matchInversion", () => {
+  const find = (tones: number[], bass: number | undefined, symbol: string) => {
+    const found = identifyChords(tones, bass === undefined ? {} : { bass }).find(
+      (m) => m.symbol === symbol,
+    );
+    if (!found) throw new Error(`${symbol} not found`);
+    return found;
+  };
+
+  it("is 0 in root position and without a bass", () => {
+    expect(matchInversion(find([0, 4, 7], 0, "C"))).toBe(0);
+    expect(matchInversion(find([0, 4, 7], undefined, "C"))).toBe(0);
+  });
+
+  it("counts the bass tone from the low end, as inversionSymbol does", () => {
+    expect(matchInversion(find([0, 4, 7], 4, "C/E"))).toBe(1);
+    expect(matchInversion(find([0, 4, 7], 7, "C/G"))).toBe(2);
+    expect(matchInversion(find([0, 4, 7, 10], 10, "C7/B♭"))).toBe(3);
+  });
+
+  it("is 0 for a bass the keyboard cannot show as an inversion", () => {
+    // D is the ninth of C9: it stays where it is.
+    const ninth = identifyChords([0, 2, 4, 7, 10], { bass: 2 }).find((m) => m.symbol === "C9/D");
+    expect(ninth).toBeDefined();
+    if (ninth) expect(matchInversion(ninth)).toBe(0);
   });
 });
