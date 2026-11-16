@@ -17,8 +17,7 @@ _Inget just nu._
 
 ## Nästa
 
-_Ackordbyggaren (M6) först, sedan utbyggd kvintcirkel (M7)._
-
+_Inget just nu. Bryt ner nästa uppgifter från **Senare**._
 
 ## Senare
 
