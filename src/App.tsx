@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ChordFinder } from "./components/ChordFinder";
 import { CircleOfFifthsView } from "./components/CircleOfFifthsView";
 import { Lookup } from "./components/Lookup";
 import { ProgressionView } from "./components/ProgressionView";
@@ -10,19 +11,21 @@ import {
   type ProgressionRoute,
   defaultChordRoute,
   defaultCircleRoute,
+  defaultIdentifyRoute,
   defaultProgressionRoute,
   navigate,
   storedInstrument,
   useRoute,
 } from "./route";
-import { specOf } from "./theory";
+import { matchInversion, specOf } from "./theory";
 
-type Tab = "lookup" | "circle-of-fifths" | "progressions";
+type Tab = "lookup" | "circle-of-fifths" | "progressions" | "identify";
 
 const TABS: readonly TabItem<Tab>[] = [
   { id: "lookup", label: "Chords & scales" },
   { id: "circle-of-fifths", label: "Circle of fifths" },
   { id: "progressions", label: "Progressions" },
+  { id: "identify", label: "What chord is this?" },
 ];
 
 export function App() {
@@ -32,7 +35,9 @@ export function App() {
       ? "circle-of-fifths"
       : route.page === "progression"
         ? "progressions"
-        : "lookup";
+        : route.page === "identify"
+          ? "identify"
+          : "lookup";
 
   // Each tab keeps its own choice while you look at the other one.
   const lastLookup = useRef<LookupRoute | undefined>(undefined);
@@ -41,8 +46,11 @@ export function App() {
   useEffect(() => {
     if (route.page === "circle") lastCircle.current = route;
     else if (route.page === "progression") lastProgression.current = route;
-    else lastLookup.current = route;
+    else if (route.page === "chord" || route.page === "scale") lastLookup.current = route;
   }, [route]);
+
+  // The keys pressed in "What chord is this?" (MIDI numbers).
+  const [pressed, setPressed] = useState<readonly number[]>([]);
 
   const showTab = (next: Tab) =>
     navigate(
@@ -50,7 +58,9 @@ export function App() {
         ? (lastCircle.current ?? defaultCircleRoute())
         : next === "progressions"
           ? (lastProgression.current ?? defaultProgressionRoute())
-          : (lastLookup.current ?? defaultChordRoute(storedInstrument())),
+          : next === "identify"
+            ? defaultIdentifyRoute()
+            : (lastLookup.current ?? defaultChordRoute(storedInstrument())),
     );
 
   return (
@@ -88,6 +98,20 @@ export function App() {
                 root,
                 spec: specOf(quality),
                 inversion: 0,
+                instrument: storedInstrument(),
+              })
+            }
+          />
+        ) : route.page === "identify" ? (
+          <ChordFinder
+            selected={pressed}
+            onChange={setPressed}
+            onOpen={(match) =>
+              navigate({
+                page: "chord",
+                root: match.chord.root,
+                spec: specOf(match.chord.quality.id),
+                inversion: matchInversion(match),
                 instrument: storedInstrument(),
               })
             }

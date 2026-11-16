@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { type KeyboardEvent, useSyncExternalStore } from "react";
 import { type KeyboardTone, formatNote, midiOf } from "../theory";
 import { ToneLegend } from "./ToneLegend";
 
@@ -72,7 +72,18 @@ export function visibleSpan(
 
 const octaveOf = (midi: number) => Math.floor(midi / 12) - 1;
 
-function PianoKey({ shape, tone }: { shape: KeyShape; tone: KeyboardTone | undefined }) {
+/** Names for the keys' accessible labels, which can't tell C♯ from D♭. */
+const NOTE_NAMES = ["C", "C♯/D♭", "D", "D♯/E♭", "E", "F", "F♯/G♭", "G", "G♯/A♭", "A", "A♯/B♭", "B"];
+
+function PianoKey({
+  shape,
+  tone,
+  onToggle,
+}: {
+  shape: KeyShape;
+  tone: KeyboardTone | undefined;
+  onToggle?: (midi: number) => void;
+}) {
   const width = shape.black ? BLACK_WIDTH : WHITE_WIDTH;
   const height = shape.black ? BLACK_HEIGHT : WHITE_HEIGHT;
   const centre = shape.x + width / 2;
@@ -82,6 +93,7 @@ function PianoKey({ shape, tone }: { shape: KeyShape; tone: KeyboardTone | undef
     shape.black ? "key--black" : "key--white",
     tone && (tone.isRoot ? "key--root" : "key--tone"),
     tone?.isBass && "key--bass",
+    onToggle && "key--pressable",
   ]
     .filter(Boolean)
     .join(" ");
@@ -93,6 +105,20 @@ function PianoKey({ shape, tone }: { shape: KeyShape; tone: KeyboardTone | undef
       data-highlighted={tone ? "true" : undefined}
       data-role={tone?.role}
       data-bass={tone?.isBass ? "true" : undefined}
+      {...(onToggle
+        ? {
+            role: "button",
+            tabIndex: 0,
+            "aria-pressed": tone !== undefined,
+            "aria-label": `${NOTE_NAMES[shape.midi % 12]}${octaveOf(shape.midi)}`,
+            onClick: () => onToggle(shape.midi),
+            onKeyDown: (event: KeyboardEvent) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              onToggle(shape.midi);
+            },
+          }
+        : {})}
     >
       <rect x={shape.x} y={0} width={width} height={height} rx={shape.black ? 3 : 4} />
       {tone ? (
@@ -122,10 +148,12 @@ interface PianoProps {
   name: string;
   /** Legend for the highlighted keys: root/tonic, and the others. */
   legend: { root: string; tone: string };
+  /** Makes the keys buttons that call this with the key's MIDI number. The keyboard is then always shown in full. */
+  onToggleKey?: (midi: number) => void;
 }
 
 /** A keyboard from C4 to at least B5, wide enough for all of `tones`, with `tones` highlighted. */
-export function Piano({ tones, name, legend }: PianoProps) {
+export function Piano({ tones, name, legend, onToggleKey }: PianoProps) {
   const narrow = useSyncExternalStore(subscribeNarrow, isNarrow, () => false);
   const midis = tones.map((tone) => tone.midi);
   const keys = keyboard(
@@ -134,7 +162,10 @@ export function Piano({ tones, name, legend }: PianoProps) {
   );
   const whiteKeys = keys.filter((k) => !k.black);
   const blackKeys = keys.filter((k) => k.black);
-  const span = narrow ? visibleSpan(keys, tones) : { x: 0, width: whiteKeys.length * WHITE_WIDTH };
+  const span =
+    narrow && !onToggleKey
+      ? visibleSpan(keys, tones)
+      : { x: 0, width: whiteKeys.length * WHITE_WIDTH };
   const toneAt = new Map(tones.map((tone) => [tone.midi, tone]));
   const description = `Piano keyboard showing ${name}: ${tones.map((tone) => formatNote(tone.note)).join(", ")}`;
 
@@ -142,16 +173,26 @@ export function Piano({ tones, name, legend }: PianoProps) {
     <figure className="piano">
       <svg
         className="piano__svg"
-        role="img"
+        role={onToggleKey ? "group" : "img"}
         aria-label={description}
         viewBox={`${span.x - 1} -1 ${span.width + 2} ${WHITE_HEIGHT + 2}`}
       >
         <title>{description}</title>
         {whiteKeys.map((shape) => (
-          <PianoKey key={shape.midi} shape={shape} tone={toneAt.get(shape.midi)} />
+          <PianoKey
+            key={shape.midi}
+            shape={shape}
+            tone={toneAt.get(shape.midi)}
+            onToggle={onToggleKey}
+          />
         ))}
         {blackKeys.map((shape) => (
-          <PianoKey key={shape.midi} shape={shape} tone={toneAt.get(shape.midi)} />
+          <PianoKey
+            key={shape.midi}
+            shape={shape}
+            tone={toneAt.get(shape.midi)}
+            onToggle={onToggleKey}
+          />
         ))}
       </svg>
       <ToneLegend {...legend} bass={tones.some((tone) => tone.isBass)} />

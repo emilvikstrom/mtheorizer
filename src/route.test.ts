@@ -128,6 +128,12 @@ describe("parseRoute", () => {
     }
   });
 
+  it("links to the chord finder", () => {
+    expect(formatRoute({ page: "identify" })).toBe("#/identify");
+    expect(parseRoute("#/identify")).toEqual({ page: "identify" });
+    expect(parseRouteStrict("#/identify")).toEqual({ page: "identify" });
+  });
+
   it("falls back to C major on the circle for a bad circle link", () => {
     for (const hash of ["#/circle", "#/circle/Cs/foo", "#/circle/Ds/major", "#/circle/H/minor"]) {
       expectSame(parseRoute(hash), defaultCircleRoute());

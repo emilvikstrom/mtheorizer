@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ChordQualityId, Key, Note } from "../theory";
+import type { ChordQualityId, ChordSize, Key, Note } from "../theory";
 import { CircleOfFifths, type ClickAction, type RingCount } from "./CircleOfFifths";
 import { KeyDetails } from "./KeyDetails";
 
@@ -7,6 +7,11 @@ const RING_OPTIONS: readonly { count: RingCount; label: string }[] = [
   { count: 1, label: "Major" },
   { count: 2, label: "Major + minor" },
   { count: 3, label: "Major, minor + diminished" },
+];
+
+const SIZE_OPTIONS: readonly { size: ChordSize; label: string }[] = [
+  { size: "triads", label: "Triads" },
+  { size: "sevenths", label: "Seventh chords" },
 ];
 
 const CLICK_OPTIONS: readonly { action: ClickAction; label: string }[] = [
@@ -26,6 +31,7 @@ export function CircleOfFifthsView({
 }) {
   const [rings, setRings] = useState<RingCount>(3);
   const [stepRing, setStepRing] = useState(true);
+  const [chordSize, setChordSize] = useState<ChordSize>("triads");
   const [clickAction, setClickAction] = useState<ClickAction>("key");
   const minor = selected.mode === "minor";
   return (
@@ -52,6 +58,19 @@ export function CircleOfFifthsView({
             Step ring
           </button>
         </div>
+        <div className="circle-view__rings" role="group" aria-label="Chords on the rings">
+          {SIZE_OPTIONS.map(({ size, label }) => (
+            <button
+              key={size}
+              type="button"
+              className="toggle"
+              aria-pressed={chordSize === size}
+              onClick={() => setChordSize(size)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="circle-view__rings" role="group" aria-label="Clicking a chord">
           {CLICK_OPTIONS.map(({ action, label }) => (
             <button
@@ -70,6 +89,7 @@ export function CircleOfFifthsView({
           onChange={setSelected}
           rings={rings}
           stepRing={stepRing}
+          chordSize={chordSize}
           clickAction={clickAction}
           onOpenChord={onOpenChord}
         />
@@ -87,8 +107,13 @@ export function CircleOfFifthsView({
             </span>
           )}
           <span className="legend legend--block">
-            The key's seven chords, with step numbers (I–vii°)
+            {chordSize === "sevenths"
+              ? "The key's seven chords, with step numbers (Imaj7, ii7, iii7, IVmaj7, V7, vi7, viiø7)"
+              : "The key's seven chords, with step numbers (I–vii°)"}
           </span>
+          {chordSize === "sevenths" && (
+            <span>The rings hold maj7, m7 and m7♭5. The dominant is V7, not maj7</span>
+          )}
           <span className="legend legend--tonic">T tonic (I)</span>
           <span className="legend legend--subdominant">S subdominant (IV)</span>
           <span className="legend legend--dominant">D dominant (V)</span>

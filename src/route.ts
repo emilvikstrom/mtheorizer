@@ -38,6 +38,7 @@ import {
  *   #/A/scale/naturalMinor?on=piano  scale
  *   #/circle/Bb/major              circle of fifths with B♭ major selected
  *   #/progression/Ab/pop           the I–V–vi–IV progression in A♭ major
+ *   #/identify                     "What chord is this?" (the keys you pick are not in the link)
  *
  * The chord is a base chord (`major`, `minor`, `diminished`, `augmented`, `sus2`,
  * `sus4` or `power`) and the qualities in `with`. Qualities that do not fit the
@@ -85,7 +86,11 @@ export interface ProgressionRoute {
   readonly id: ProgressionId;
 }
 
-export type Route = LookupRoute | CircleRoute | ProgressionRoute;
+export interface IdentifyRoute {
+  readonly page: "identify";
+}
+
+export type Route = LookupRoute | CircleRoute | ProgressionRoute | IdentifyRoute;
 
 const MAX_INVERSION = 3;
 const STORAGE_KEY = "mtheorizer.instrument";
@@ -131,6 +136,8 @@ export const defaultChordRoute = (instrument: Instrument = "piano"): ChordRoute 
   inversion: 0,
   instrument,
 });
+
+export const defaultIdentifyRoute = (): IdentifyRoute => ({ page: "identify" });
 
 export const defaultCircleRoute = (): CircleRoute => ({
   page: "circle",
@@ -188,6 +195,8 @@ export function formatRoute(route: Route): string {
       return `#/circle/${formatRouteNote(route.key.tonic)}/${route.key.mode}`;
     case "progression":
       return `#/progression/${formatRouteNote(route.tonic)}/${route.id}`;
+    case "identify":
+      return "#/identify";
   }
 }
 
@@ -268,6 +277,8 @@ function parseLink(
   const path = queryAt === -1 ? trimmed : trimmed.slice(0, queryAt);
   const query = new URLSearchParams(queryAt === -1 ? "" : trimmed.slice(queryAt + 1));
   const parts = path.split("/").filter(Boolean).map(safeDecode);
+
+  if (parts[0] === "identify") return { page: "identify" };
 
   if (parts[0] === "circle") {
     const k = parseCircleKey(parts[1], parts[2]);
