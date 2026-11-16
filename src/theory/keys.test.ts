@@ -4,6 +4,7 @@ import {
   type Key,
   type KeyMode,
   circlePosition,
+  diatonicBlock,
   diatonicTriads,
   dominantKey,
   formatKey,
@@ -13,6 +14,7 @@ import {
   keySignature,
   keysAt,
   parallelKey,
+  ringChords,
   relativeKey,
   subdominantKey,
 } from "./keys";
@@ -209,5 +211,126 @@ describe("harmonicMinorDominant", () => {
       harmonicMinorDominant(k("G#", "minor"))?.tones.map((t) => formatNoteAscii(t.note)),
     ).toEqual(["D#", "F##", "A#"]);
     expect(harmonicMinorDominant(k("C"))).toBeUndefined();
+  });
+});
+
+describe("ringChords", () => {
+  const symbols = (chords: { symbol: string }[]) =>
+    chords.map((c) => c.symbol.replace(/♯/g, "#").replace(/♭/g, "b")).join(" ");
+  // Position 0..11: major, relative minor and vii° of the major key.
+  const EXPECTED = [
+    ["C", "Am", "B°"],
+    ["G", "Em", "F#°"],
+    ["D", "Bm", "C#°"],
+    ["A", "F#m", "G#°"],
+    ["E", "C#m", "D#°"],
+    ["B Cb", "G#m Abm", "A#° Bb°"],
+    ["F# Gb", "D#m Ebm", "E#° F°"],
+    ["Db C#", "Bbm A#m", "C° B#°"],
+    ["Ab", "Fm", "G°"],
+    ["Eb", "Cm", "D°"],
+    ["Bb", "Gm", "A°"],
+    ["F", "Dm", "E°"],
+  ] as const;
+
+  it.each(EXPECTED.map((e, position) => [position, e] as const))(
+    "position %i",
+    (position, [major, minor, diminished]) => {
+      const rings = ringChords(position);
+      expect(symbols(rings.major)).toBe(major);
+      expect(symbols(rings.minor)).toBe(minor);
+      expect(symbols(rings.diminished)).toBe(diminished);
+      for (const ring of [rings.major, rings.minor, rings.diminished]) {
+        for (const c of ring) expect(c.position).toBe(position);
+      }
+    },
+  );
+
+  it("wraps positions and spells the notes", () => {
+    expect(ringChords(12).major[0]?.symbol).toBe("C");
+    expect(ringChords(-1).major[0]?.symbol).toBe("F");
+    expect(ringChords(1).diminished[0]?.notes.map(formatNoteAscii)).toEqual(["F#", "A", "C"]);
+  });
+});
+
+describe("diatonicBlock", () => {
+  const MAJOR_KEYS = CIRCLE_OF_FIFTHS.flat();
+  const place = (tonic: string, mode: KeyMode) =>
+    diatonicBlock(k(tonic, mode)).chords.map((c) => `${c.chord.ring}${c.chord.position}`);
+
+  it("has the same shape in all 12 major keys, shifted with the tonic", () => {
+    for (const tonic of MAJOR_KEYS) {
+      const key_ = key(tonic, "major");
+      const c = circlePosition(key_);
+      const at = (ring: string, offset: number) => `${ring}${(c + offset + 12) % 12}`;
+      expect(place(formatNoteAscii(tonic), "major")).toEqual([
+        at("major", 0),
+        at("minor", -1),
+        at("minor", 1),
+        at("major", -1),
+        at("major", 1),
+        at("minor", 0),
+        at("diminished", 0),
+      ]);
+    }
+  });
+
+  it("has the same shape in the relative minor keys", () => {
+    for (const tonic of MAJOR_KEYS) {
+      const major = key(tonic, "major");
+      const minor = relativeKey(major);
+      const a = diatonicBlock(major).chords;
+      const b = diatonicBlock(minor).chords;
+      // Same seven chords on the same positions: I=III, ii=iv, iii=v …
+      const byRoot = (cs: typeof a) =>
+        cs.map((c) => `${c.chord.symbol}@${c.chord.ring}${c.chord.position}`).sort();
+      expect(byRoot(b)).toEqual(byRoot(a));
+    }
+  });
+
+  it("spells and numbers the C major block", () => {
+    const block = diatonicBlock(k("C")).chords;
+    expect(block.map((c) => c.roman)).toEqual(["I", "ii", "iii", "IV", "V", "vi", "vii°"]);
+    expect(block.map((c) => c.chord.symbol)).toEqual(["C", "Dm", "Em", "F", "G", "Am", "B°"]);
+    expect(block.map((c) => c.function ?? "-")).toEqual([
+      "tonic",
+      "-",
+      "-",
+      "subdominant",
+      "dominant",
+      "-",
+      "-",
+    ]);
+  });
+
+  it("follows the key signature in spelling", () => {
+    expect(diatonicBlock(k("G")).chords[6]?.chord.symbol).toBe("F♯°");
+    expect(diatonicBlock(k("Db")).chords[6]?.chord.symbol).toBe("C°");
+    expect(diatonicBlock(k("Gb")).chords[6]?.chord.symbol).toBe("F°");
+  });
+
+  it("puts the minor key centre on the middle ring", () => {
+    const block = diatonicBlock(k("A", "minor")).chords;
+    expect(block.map((c) => c.chord.symbol)).toEqual(["Am", "B°", "C", "Dm", "Em", "F", "G"]);
+    expect(block.map((c) => c.roman)).toEqual(["i", "ii°", "III", "iv", "v", "VI", "VII"]);
+    expect(block[0]?.chord).toMatchObject({ ring: "minor", position: 0 });
+  });
+
+  it("places harmonic minor V and vii° outside the block", () => {
+    expect(diatonicBlock(k("C")).harmonicMinor).toBeUndefined();
+    const hm = diatonicBlock(k("A", "minor")).harmonicMinor;
+    expect(hm?.dominant).toMatchObject({ symbol: "E", ring: "major", position: 4 });
+    expect(hm?.leadingTone).toMatchObject({ symbol: "G♯°", ring: "diminished", position: 3 });
+  });
+
+  it("offsets harmonic minor V by +4 and vii° by +3 in every minor key", () => {
+    for (const tonic of MAJOR_KEYS) {
+      const minor = relativeKey(key(tonic, "major"));
+      const c = circlePosition(minor);
+      const hm = diatonicBlock(minor).harmonicMinor;
+      expect(hm?.dominant.position).toBe((c + 4) % 12);
+      expect(hm?.leadingTone.position).toBe((c + 3) % 12);
+      expect(hm?.dominant.symbol).toBe(harmonicMinorDominant(minor)?.symbol);
+    }
   });
 });

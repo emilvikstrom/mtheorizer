@@ -1,6 +1,7 @@
-import { type Chord, buildChord } from "./chords";
+import { type Chord, type ChordQualityId, buildChord, chordSymbol } from "./chords";
 import {
   type Interval,
+  MAJOR_SEVENTH,
   MAJOR_SIXTH,
   MINOR_THIRD,
   PERFECT_FIFTH,
@@ -231,4 +232,117 @@ export function diatonicTriads(k: Key): DiatonicTriad[] {
  */
 export function harmonicMinorDominant(k: Key): Chord | undefined {
   return k.mode === "minor" ? buildChord(transpose(k.tonic, PERFECT_FIFTH), "major") : undefined;
+}
+
+// --- Rings of the extended circle ---------------------------------------------
+
+export type RingId = "major" | "minor" | "diminished";
+
+export interface RingChord {
+  readonly ring: RingId;
+  /** Position on the circle (0 = C major / A minor / B°). */
+  readonly position: number;
+  readonly root: Note;
+  readonly notes: readonly Note[];
+  /** Chord symbol, e.g. "C", "Am" or "B°". */
+  readonly symbol: string;
+}
+
+const RING_QUALITY: Record<RingId, ChordQualityId> = {
+  major: "major",
+  minor: "minor",
+  diminished: "diminished",
+};
+
+function ringChord(ring: RingId, position: number, root: Note): RingChord {
+  const quality = RING_QUALITY[ring];
+  return {
+    ring,
+    position: mod12(position),
+    root,
+    notes: buildChord(root, quality).tones.map((t) => t.note),
+    symbol: chordSymbol(root, quality),
+  };
+}
+
+/**
+ * The three chords at `position`, one list per ring. Each list has one entry
+ * per spelling of the major key there (see `keysAt`), in the same order:
+ * C / Am / B° at 0, B / G♯m / A♯° and C♭ / A♭m / B♭° at 5. The diminished
+ * chord is vii° of the major key and ii° of its relative minor.
+ */
+export function ringChords(position: number): Record<RingId, RingChord[]> {
+  const majors = keysAt(position, "major");
+  return {
+    major: majors.map((m) => ringChord("major", position, m.tonic)),
+    minor: majors.map((m) => ringChord("minor", position, relativeKey(m).tonic)),
+    diminished: majors.map((m) =>
+      ringChord("diminished", position, transpose(m.tonic, MAJOR_SEVENTH)),
+    ),
+  };
+}
+
+export interface BlockChord {
+  /** Scale degree, 1–7. */
+  readonly degree: number;
+  readonly roman: string;
+  readonly function?: HarmonicFunction;
+  readonly chord: RingChord;
+}
+
+export interface DiatonicBlock {
+  /** The seven diatonic triads placed on the rings, in scale-degree order. */
+  readonly chords: readonly BlockChord[];
+  /** Minor keys only: V and vii° of harmonic minor, which lie outside the block. */
+  readonly harmonicMinor?: { readonly dominant: RingChord; readonly leadingTone: RingChord };
+}
+
+/** Ring and offset from the key's circle position, per scale degree 1–7. */
+const BLOCK_MAJOR: readonly (readonly [RingId, number])[] = [
+  ["major", 0], // I
+  ["minor", -1], // ii
+  ["minor", 1], // iii
+  ["major", -1], // IV
+  ["major", 1], // V
+  ["minor", 0], // vi
+  ["diminished", 0], // vii°
+];
+const BLOCK_MINOR: readonly (readonly [RingId, number])[] = [
+  ["minor", 0], // i
+  ["diminished", 0], // ii°
+  ["major", 0], // III
+  ["minor", -1], // iv
+  ["minor", 1], // v
+  ["major", -1], // VI
+  ["major", 1], // VII
+];
+
+/**
+ * The key's seven chords as a block on the rings. The shape is the same for
+ * every key: IV I V outside, ii vi iii in the middle and vii° inside, with
+ * the same offsets for a minor key (VI III VII, iv i v, ii°). Spelling
+ * follows the key.
+ */
+export function diatonicBlock(k: Key): DiatonicBlock {
+  const center = circlePosition(k);
+  const layout = k.mode === "major" ? BLOCK_MAJOR : BLOCK_MINOR;
+  const chords = diatonicTriads(k).map((triad, i): BlockChord => {
+    const [ring, offset] = layout[i] ?? ["major", 0];
+    return {
+      degree: triad.degree,
+      roman: triad.roman,
+      ...(triad.function ? { function: triad.function } : {}),
+      chord: ringChord(ring, center + offset, triad.notes[0] ?? k.tonic),
+    };
+  });
+  const dominant = harmonicMinorDominant(k);
+  if (!dominant) return { chords };
+  const leading = transpose(k.tonic, MAJOR_SEVENTH);
+  return {
+    chords,
+    harmonicMinor: {
+      dominant: ringChord("major", circlePosition(key(dominant.root, "major")), dominant.root),
+      leadingTone: ringChord("diminished", circlePosition(key(k.tonic, "major")), leading),
+    },
+  };
 }
