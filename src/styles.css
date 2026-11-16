@@ -630,6 +630,19 @@ body {
   font-size: 15px;
 }
 
+/* Seventh chord names (Cmaj7, Am7, Bm7♭5) are longer, so they are set smaller. */
+.circle--sevenths .circle__segment--major .circle__label {
+  font-size: 20px;
+}
+
+.circle--sevenths .circle__segment--minor .circle__label {
+  font-size: 14px;
+}
+
+.circle--sevenths .circle__segment--diminished .circle__label {
+  font-size: 11px;
+}
+
 .circle__step {
   fill: var(--text);
   font-size: 13px;
