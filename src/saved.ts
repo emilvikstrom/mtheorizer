@@ -25,7 +25,7 @@ export const FAVORITES_KEY = "mtheorizer.favorites";
 export function choiceOf(hash: string): string | undefined {
   if (!hash.startsWith("#/")) return undefined;
   const route = parseRouteStrict(hash);
-  if (!route || route.page === "circle" || route.page === "identify") return undefined;
+  if (!route || (route.page !== "chord" && route.page !== "scale")) return undefined;
   const current = formatRoute(route);
   const legacy = route.page === "chord" ? formatLegacyChordRoute(route) : undefined;
   return current === hash || legacy === hash ? current : undefined;

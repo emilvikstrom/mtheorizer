@@ -1,5 +1,32 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { midiToFrequency, planPlayback, playNotes } from "./playback";
+import {
+  PROGRESSION_STEP,
+  midiToFrequency,
+  planPlayback,
+  planProgression,
+  playNotes,
+} from "./playback";
+
+describe("planProgression", () => {
+  it("plays the chords one after another, each as a block", () => {
+    const plan = planProgression([
+      [60, 64, 67],
+      [62, 65, 69],
+    ]);
+    expect(plan.map((n) => n.midi)).toEqual([60, 64, 67, 62, 65, 69]);
+    expect(plan.map((n) => n.start)).toEqual([0, 0, 0, 1, 1, 1].map((i) => i * PROGRESSION_STEP));
+  });
+
+  it("cuts a chord off just after the next one starts", () => {
+    for (const note of planProgression([[60], [62], [64]], 1)) {
+      expect(note.duration).toBeLessThanOrEqual(1.1);
+    }
+  });
+
+  it("plans nothing for no chords", () => {
+    expect(planProgression([])).toEqual([]);
+  });
+});
 
 describe("midiToFrequency", () => {
   it("puts A4 at 440 Hz and middle C at about 261.63 Hz", () => {

@@ -41,6 +41,26 @@ export function planPlayback(
   }));
 }
 
+/** Seconds each chord of a progression lasts. */
+export const PROGRESSION_STEP = 1.2;
+
+/**
+ * A progression as one plan: each chord sounds together, one after another,
+ * and is cut off when the next one starts so they do not pile up.
+ */
+export function planProgression(
+  chords: readonly (readonly number[])[],
+  step = PROGRESSION_STEP,
+): ScheduledNote[] {
+  return chords.flatMap((midis, i) =>
+    planPlayback(midis, "together").map((n) => ({
+      midi: n.midi,
+      start: i * step,
+      duration: Math.min(n.duration, step * 1.1),
+    })),
+  );
+}
+
 let context: AudioContext | undefined;
 
 /** Whether this browser can play sound through Web Audio. */

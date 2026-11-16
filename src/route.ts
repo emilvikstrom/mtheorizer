@@ -12,12 +12,15 @@ import {
   type Letter,
   LETTERS,
   type Note,
+  PROGRESSIONS,
+  type ProgressionId,
   SCALES,
   type ScaleId,
   TUNING_IDS,
   type TuningId,
   circlePosition,
   identifyQuality,
+  isProgressionId,
   key,
   keyEquals,
   keysAt,
@@ -34,6 +37,7 @@ import {
  *   #/Cs/minor?with=7&on=guitar    C♯ minor seventh on the guitar
  *   #/A/scale/naturalMinor?on=piano  scale
  *   #/circle/Bb/major              circle of fifths with B♭ major selected
+ *   #/progression/Ab/pop           the I–V–vi–IV progression in A♭ major
  *   #/identify                     "What chord is this?" (the keys you pick are not in the link)
  *
  * The chord is a base chord (`major`, `minor`, `diminished`, `augmented`, `sus2`,
@@ -75,11 +79,18 @@ export interface CircleRoute {
   readonly key: Key;
 }
 
+/** A common chord progression put in a key; the key's mode comes from the progression. */
+export interface ProgressionRoute {
+  readonly page: "progression";
+  readonly tonic: Note;
+  readonly id: ProgressionId;
+}
+
 export interface IdentifyRoute {
   readonly page: "identify";
 }
 
-export type Route = LookupRoute | CircleRoute | IdentifyRoute;
+export type Route = LookupRoute | CircleRoute | ProgressionRoute | IdentifyRoute;
 
 const MAX_INVERSION = 3;
 const STORAGE_KEY = "mtheorizer.instrument";
@@ -133,6 +144,12 @@ export const defaultCircleRoute = (): CircleRoute => ({
   key: key(note("C"), "major"),
 });
 
+export const defaultProgressionRoute = (): ProgressionRoute => ({
+  page: "progression",
+  tonic: note("C"),
+  id: "pop",
+});
+
 // --- Format -----------------------------------------------------------------
 
 export function formatRouteNote(n: Note): string {
@@ -176,6 +193,8 @@ export function formatRoute(route: Route): string {
       return `#/${formatRouteNote(route.root)}/scale/${route.scaleId}?on=${route.instrument}${formatGuitarOptions(route)}`;
     case "circle":
       return `#/circle/${formatRouteNote(route.key.tonic)}/${route.key.mode}`;
+    case "progression":
+      return `#/progression/${formatRouteNote(route.tonic)}/${route.id}`;
     case "identify":
       return "#/identify";
   }
@@ -264,6 +283,15 @@ function parseLink(
   if (parts[0] === "circle") {
     const k = parseCircleKey(parts[1], parts[2]);
     return k ? { page: "circle", key: k } : strict ? undefined : defaultCircleRoute();
+  }
+
+  if (parts[0] === "progression") {
+    const id = parts[2];
+    if (id !== undefined && isProgressionId(id)) {
+      const k = parseCircleKey(parts[1], PROGRESSIONS[id].mode);
+      if (k) return { page: "progression", tonic: k.tonic, id };
+    }
+    return strict ? undefined : defaultProgressionRoute();
   }
 
   const onParam = query.get("on");

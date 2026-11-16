@@ -13,7 +13,7 @@ Status: ✅ klar · 🚧 pågår · ⏳ planerad · 💡 idé
 | M5 | Tonarter och harmoniska samband | ✅ |
 | M6 | Ackordbyggare | ⏳ |
 | M7 | Utbyggd kvintcirkel (flera ringar) | ⏳ |
-| M8 | Harmoni och progressioner | 💡 |
+| M8 | Harmoni och progressioner | 🚧 |
 | M9 | Öva | 💡 |
 | X  | Tvärgående förbättringar (delbara länkar, språk, CI) | ⏳ |
 
@@ -116,7 +116,7 @@ Andra varianter som finns och som vi kan ta med:
 
 Uppgifter: M7-01–M7-04 under **Nästa**, resten under **Senare**.
 
-## M8 – Harmoni och progressioner 💡
+## M8 – Harmoni och progressioner 🚧
 
 Mål: Gå från att slå upp enskilda ackord till att förstå hur de hänger ihop i en låt. Begreppen nedan kan vara nya, så här är en kort förklaring av var och en:
 
