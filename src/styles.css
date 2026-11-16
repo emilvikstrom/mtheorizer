@@ -475,6 +475,14 @@ body {
   margin: 0;
 }
 
+.circle-view__rings {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
 .circle {
   display: block;
   width: 100%;
@@ -531,6 +539,14 @@ body {
 
 .circle__segment--minor .circle__label {
   font-size: 17px;
+}
+
+.circle__segment--diminished path {
+  fill: color-mix(in srgb, var(--text) 8%, var(--surface));
+}
+
+.circle__segment--diminished .circle__label {
+  font-size: 15px;
 }
 
 .circle__alt {

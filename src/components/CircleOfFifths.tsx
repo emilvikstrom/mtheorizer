@@ -8,12 +8,24 @@ import {
   formatNote,
   keySignature,
   keysAt,
+  ringChords,
 } from "../theory";
 
-const R_CENTER = 100;
-const R_SPLIT = 168;
+/** How many rings to draw: major only, plus minor, plus diminished. */
+export type RingCount = 1 | 2 | 3;
+
+type Ring = "major" | "minor" | "diminished";
+type Radii = readonly [inner: number, outer: number];
+
 const R_OUTER = 250;
 const R_SIGNATURE = 274;
+
+/** Inner and outer radius of each ring, per number of rings shown. */
+const RING_RADII: Record<RingCount, Partial<Record<Ring, Radii>>> = {
+  1: { major: [120, R_OUTER] },
+  2: { major: [168, R_OUTER], minor: [100, 168] },
+  3: { major: [182, R_OUTER], minor: [118, 182], diminished: [64, 118] },
+};
 
 const POSITIONS = Array.from({ length: 12 }, (_, position) => position);
 const MODES: readonly KeyMode[] = ["major", "minor"];
@@ -52,21 +64,42 @@ export function signatureLabel(signature: KeySignature): string {
 
 const segmentId = (position: number, mode: KeyMode) => `${mode}-${position}`;
 
+/** A segment's label: the main name, and further spellings in smaller type below. */
+function SegmentLabel({ names, x, y }: { names: readonly string[]; x: number; y: number }) {
+  const [main, ...alternatives] = names;
+  return (
+    <text className="circle__label" x={x} y={y} textAnchor="middle" dominantBaseline="central">
+      {alternatives.length === 0 ? (
+        main
+      ) : (
+        <>
+          <tspan x={x} dy="-0.45em">
+            {main}
+          </tspan>
+          <tspan x={x} dy="1.15em" className="circle__alt">
+            {alternatives.join(" ")}
+          </tspan>
+        </>
+      )}
+    </text>
+  );
+}
+
 interface SegmentProps {
   position: number;
   mode: KeyMode;
+  radii: Radii;
   selected: boolean;
   nearby: boolean;
   onSelect: () => void;
   register: (el: SVGGElement | null) => void;
 }
 
-function Segment({ position, mode, selected, nearby, onSelect, register }: SegmentProps) {
+function Segment({ position, mode, radii, selected, nearby, onSelect, register }: SegmentProps) {
   const keys = keysAt(position, mode);
-  const [r1, r2] = mode === "major" ? [R_SPLIT, R_OUTER] : [R_CENTER, R_SPLIT];
+  const [r1, r2] = radii;
   const mid = angleOf(position);
   const [x, y] = polar((r1 + r2) / 2, mid);
-  const [main, ...alternatives] = keys.map(shortName);
   const classes = [
     "circle__segment",
     `circle__segment--${mode}`,
@@ -89,20 +122,38 @@ function Segment({ position, mode, selected, nearby, onSelect, register }: Segme
       onClick={onSelect}
     >
       <path d={sectorPath(r1, r2, mid - 15, mid + 15)} />
-      <text className="circle__label" x={x} y={y} textAnchor="middle" dominantBaseline="central">
-        {alternatives.length === 0 ? (
-          main
-        ) : (
-          <>
-            <tspan x={x} dy="-0.45em">
-              {main}
-            </tspan>
-            <tspan x={x} dy="1.15em" className="circle__alt">
-              {alternatives.join(" ")}
-            </tspan>
-          </>
-        )}
-      </text>
+      <SegmentLabel names={keys.map(shortName)} x={x} y={y} />
+    </g>
+  );
+}
+
+interface DiminishedSegmentProps {
+  position: number;
+  radii: Radii;
+  selected: boolean;
+  onSelect: () => void;
+}
+
+/**
+ * The diminished chord at `position` (vii° of the major key, ii° of its
+ * relative minor). It is a chord, not a key, so it is not part of the radio
+ * group: a click anywhere in the sector selects the position and keeps the
+ * current mode, and the keyboard uses the major and minor segments.
+ */
+function DiminishedSegment({ position, radii, selected, onSelect }: DiminishedSegmentProps) {
+  const [r1, r2] = radii;
+  const mid = angleOf(position);
+  const [x, y] = polar((r1 + r2) / 2, mid);
+  return (
+    <g
+      className={`circle__segment circle__segment--diminished${selected ? " is-selected" : ""}`}
+      aria-hidden="true"
+      data-position={position}
+      data-ring="diminished"
+      onClick={onSelect}
+    >
+      <path d={sectorPath(r1, r2, mid - 15, mid + 15)} />
+      <SegmentLabel names={ringChords(position).diminished.map((c) => c.symbol)} x={x} y={y} />
     </g>
   );
 }
@@ -110,16 +161,24 @@ function Segment({ position, mode, selected, nearby, onSelect, register }: Segme
 interface CircleOfFifthsProps {
   value: Key;
   onChange: (key: Key) => void;
+  rings?: RingCount;
 }
 
 /**
  * The circle of fifths: major keys on the outer ring, their relative minors
- * on the inner ring and the key signature outside. The selected key and its
- * neighbours (the six diatonic major and minor chords) are highlighted.
+ * inside it, the diminished chords innermost and the key signature outside.
+ * The selected key and its neighbours (the six diatonic major and minor
+ * chords) are highlighted. The key's name and signature are shown by the
+ * panel next to the circle, so the hub is left empty.
  */
-export function CircleOfFifths({ value, onChange }: CircleOfFifthsProps) {
+export function CircleOfFifths({ value, onChange, rings = 3 }: CircleOfFifthsProps) {
   const segments = useRef(new Map<string, SVGGElement>());
+  const radii = RING_RADII[rings];
+  const diminishedRadii = radii.diminished;
   const selectedPosition = circlePosition(value);
+  // Without the minor ring a minor key is shown by its relative major.
+  const shownMode: KeyMode = radii.minor ? value.mode : "major";
+  const hubRadius = Math.min(...Object.values(radii).map(([inner]) => inner));
   const isNearby = (position: number) =>
     [11, 0, 1].includes((position - selectedPosition + 12) % 12);
 
@@ -132,11 +191,11 @@ export function CircleOfFifths({ value, onChange }: CircleOfFifthsProps) {
 
   function onKeyDown(event: KeyboardEvent) {
     const moves: Record<string, [number, KeyMode]> = {
-      ArrowRight: [selectedPosition + 1, value.mode],
-      ArrowLeft: [selectedPosition + 11, value.mode],
+      ArrowRight: [selectedPosition + 1, shownMode],
+      ArrowLeft: [selectedPosition + 11, shownMode],
       ArrowUp: [selectedPosition, "major"],
-      ArrowDown: [selectedPosition, "minor"],
     };
+    if (radii.minor) moves.ArrowDown = [selectedPosition, "minor"];
     const move = moves[event.key];
     if (move) {
       event.preventDefault();
@@ -149,8 +208,6 @@ export function CircleOfFifths({ value, onChange }: CircleOfFifthsProps) {
     }
   }
 
-  const signature = keySignature(value);
-
   return (
     <svg
       className="circle"
@@ -160,22 +217,38 @@ export function CircleOfFifths({ value, onChange }: CircleOfFifthsProps) {
       onKeyDown={onKeyDown}
     >
       {POSITIONS.flatMap((position) =>
-        MODES.map((mode) => (
-          <Segment
-            key={segmentId(position, mode)}
-            position={position}
-            mode={mode}
-            selected={position === selectedPosition && mode === value.mode}
-            nearby={isNearby(position)}
-            onSelect={() => select(position, mode)}
-            register={(el) => {
-              const id = segmentId(position, mode);
-              if (el) segments.current.set(id, el);
-              else segments.current.delete(id);
-            }}
-          />
-        )),
+        MODES.map((mode) => {
+          const ringRadii = radii[mode];
+          if (!ringRadii) return null;
+          return (
+            <Segment
+              key={segmentId(position, mode)}
+              position={position}
+              mode={mode}
+              radii={ringRadii}
+              selected={position === selectedPosition && mode === shownMode}
+              nearby={isNearby(position)}
+              onSelect={() => select(position, mode)}
+              register={(el) => {
+                const id = segmentId(position, mode);
+                if (el) segments.current.set(id, el);
+                else segments.current.delete(id);
+              }}
+            />
+          );
+        }),
       )}
+
+      {diminishedRadii &&
+        POSITIONS.map((position) => (
+          <DiminishedSegment
+            key={`diminished-${position}`}
+            position={position}
+            radii={diminishedRadii}
+            selected={position === selectedPosition}
+            onSelect={() => select(position, shownMode)}
+          />
+        ))}
 
       <g aria-hidden="true">
         {POSITIONS.map((position) => {
@@ -196,13 +269,7 @@ export function CircleOfFifths({ value, onChange }: CircleOfFifthsProps) {
           );
         })}
 
-        <circle className="circle__center" r={R_CENTER} />
-        <text className="circle__center-name" y={-8} textAnchor="middle">
-          {formatKey(value)}
-        </text>
-        <text className="circle__center-signature" y={22} textAnchor="middle">
-          {signature.kind === "none" ? "no sharps or flats" : signatureLabel(signature)}
-        </text>
+        <circle className="circle__center" r={hubRadius} />
       </g>
     </svg>
   );
