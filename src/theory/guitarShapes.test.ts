@@ -11,11 +11,11 @@ import {
   scalePositions,
 } from "./guitarShapes";
 import { pitchClass } from "./notes";
-import { type ScaleId, scaleOnPitchClass } from "./scales";
+import { SCALES, type ScaleId, scaleOnPitchClass } from "./scales";
 import { chordHighlights, scaleHighlights } from "./voicing";
 
 const PITCH_CLASSES = Array.from({ length: 12 }, (_, pc) => pc);
-const SCALE_IDS: ScaleId[] = ["major", "naturalMinor"];
+const SCALE_IDS = Object.keys(SCALES) as ScaleId[];
 
 const shapesOf = (pc: number, quality: ChordQualityId) =>
   chordShapes(chordHighlights(chordOnPitchClass(pc, quality)));
@@ -206,7 +206,9 @@ describe("scalePositions", () => {
       const scale = scaleOnPitchClass(pc, scaleId);
       for (const view of scalePositions(scaleHighlights(scale))) {
         expect(view.muted).toEqual([]);
-        expect(new Set(view.positions.map((p) => pitchClass(p.note))).size).toBe(7);
+        expect(new Set(view.positions.map((p) => pitchClass(p.note))).size).toBe(
+          scale.tones.length,
+        );
         for (const p of view.positions) {
           expect(
             p.fret === 0

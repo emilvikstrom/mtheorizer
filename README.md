@@ -1,6 +1,6 @@
 # mtheorizer
 
-En webapp för att slå upp musikteori. Välj ackord eller skala, en grundton (C, C♯/D♭, D …) och dur eller moll. Appen visar tonerna, korrekt stavade, och markerar dem på ett pianotangentbord eller, om man växlar visning, på en gitarrhals.
+En webapp för att slå upp musikteori. Välj ackord eller skala (dur, moll, kyrkotonarter, pentatonik och blues), en grundton (C, C♯/D♭, D …) och dur eller moll. Appen visar tonerna, korrekt stavade, och markerar dem på ett pianotangentbord eller, om man växlar visning, på en gitarrhals.
 
 Fliken **Circle of fifths** visar kvintcirkeln. Välj en tonart för att se dess förtecken, skala, diatoniska ackord och närliggande tonarter.
 

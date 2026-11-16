@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CHORD_QUALITIES, CHORD_QUALITY_IDS, chordOnPitchClass, qualitiesInGroup } from "./chords";
-import { scaleOnPitchClass } from "./scales";
+import { SCALES, type ScaleId, scaleOnPitchClass } from "./scales";
 import {
   chordOnKeyboard,
   inversionCount,
@@ -130,7 +130,7 @@ describe("voicing", () => {
 
   it("fits every scale on a two-octave keyboard from C4", () => {
     for (let pc = 0; pc < 12; pc++) {
-      for (const id of ["major", "naturalMinor"] as const) {
+      for (const id of Object.keys(SCALES) as ScaleId[]) {
         for (const { midi } of scaleOnKeyboard(scaleOnPitchClass(pc, id))) {
           expect(midi).toBeGreaterThanOrEqual(60);
           expect(midi).toBeLessThanOrEqual(83);

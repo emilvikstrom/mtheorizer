@@ -14,6 +14,7 @@ import {
   type ScaleRoute,
 } from "../route";
 import { ScaleInfo } from "./ScaleInfo";
+import { ScalePicker } from "./ScalePicker";
 import {
   CHORD_QUALITIES,
   type Chord,
@@ -54,11 +55,6 @@ const VIEW_OPTIONS: readonly PickerOption<View>[] = [
   { value: "scale", label: "Scale" },
 ];
 
-const SCALE_OPTIONS: readonly PickerOption<ScaleId>[] = [
-  { value: "major", label: "Major" },
-  { value: "naturalMinor", label: "Natural minor" },
-];
-
 const INSTRUMENT_OPTIONS: readonly PickerOption<Instrument>[] = [
   { value: "piano", label: "Piano" },
   { value: "guitar", label: "Guitar" },
@@ -70,7 +66,21 @@ const HAND_OPTIONS: readonly PickerOption<"right" | "left">[] = [
 ];
 
 /** A scale choice that matches no chord picks the plain triad of that scale. */
-const TRIAD_FOR_SCALE: Record<ScaleId, ChordQualityId> = { major: "major", naturalMinor: "minor" };
+const TRIAD_FOR_SCALE: Record<ScaleId, ChordQualityId> = {
+  major: "major",
+  naturalMinor: "minor",
+  harmonicMinor: "minor",
+  melodicMinor: "minor",
+  dorian: "minor",
+  phrygian: "minor",
+  lydian: "major",
+  mixolydian: "major",
+  locrian: "diminished",
+  majorPentatonic: "major",
+  minorPentatonic: "minor",
+  minorBlues: "minor",
+  majorBlues: "major",
+};
 
 const CHORD_LEGEND = { root: "Root", tone: "Chord tone" };
 const SCALE_LEGEND = { root: "Tonic", tone: "Scale tone" };
@@ -230,17 +240,16 @@ export function Lookup({ route, onChange }: LookupProps) {
             )}
           </>
         ) : (
-          <div className="controls__row">
-            <OptionPicker
-              legend="Scale"
-              name="scale"
-              options={SCALE_OPTIONS}
+          <>
+            <ScalePicker
               value={route.scaleId}
               onChange={(scaleId) => onChange(follow(route, { ...route, scaleId }))}
             />
-            {instrumentPicker}
-            {guitarPickers}
-          </div>
+            <div className="controls__row">
+              {instrumentPicker}
+              {guitarPickers}
+            </div>
+          </>
         )}
       </section>
 

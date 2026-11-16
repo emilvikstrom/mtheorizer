@@ -326,7 +326,7 @@ describe("App", () => {
       expect(screen.queryByRole("group", { name: "Quality" })).not.toBeInTheDocument();
       expect(
         within(screen.getByRole("group", { name: "Scale" })).getAllByRole("radio"),
-      ).toHaveLength(2);
+      ).toHaveLength(13);
       expect(
         within(screen.getByRole("group", { name: "Tonic" })).getAllByRole("radio"),
       ).toHaveLength(12);
@@ -352,7 +352,7 @@ describe("App", () => {
       render(<App />);
       await user.click(screen.getByRole("radio", { name: "Scale" }));
       await user.click(screen.getByRole("radio", { name: "D♯/E♭" }));
-      await user.click(screen.getByRole("radio", { name: "Natural minor" }));
+      await user.click(screen.getByRole("radio", { name: "Natural minor (Aeolian)" }));
 
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("E♭ natural minor scale");
       expect(scaleNotes()).toEqual(["E♭", "F", "G♭", "A♭", "B♭", "C♭", "D♭"]);
@@ -363,7 +363,7 @@ describe("App", () => {
       render(<App />);
       await user.click(screen.getByRole("radio", { name: "Minor seventh" }));
       await user.click(screen.getByRole("radio", { name: "Scale" }));
-      expect(screen.getByRole("radio", { name: "Natural minor" })).toBeChecked();
+      expect(screen.getByRole("radio", { name: "Natural minor (Aeolian)" })).toBeChecked();
 
       await user.click(screen.getByRole("radio", { name: "Chord" }));
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("C minor seventh");
@@ -376,13 +376,40 @@ describe("App", () => {
       await user.click(screen.getByRole("radio", { name: "Minor" }));
       await user.click(screen.getByRole("radio", { name: "Scale" }));
 
-      expect(screen.getByRole("radio", { name: "Natural minor" })).toBeChecked();
+      expect(screen.getByRole("radio", { name: "Natural minor (Aeolian)" })).toBeChecked();
       expect(scaleNotes()).toEqual(["A", "B", "C", "D", "E", "F", "G"]);
 
-      await user.click(screen.getByRole("radio", { name: "Major" }));
+      await user.click(screen.getByRole("radio", { name: "Major (Ionian)" }));
       await user.click(screen.getByRole("radio", { name: "Chord" }));
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("A major");
       expect(chordNotes()).toEqual(["A", "C♯", "E"]);
+    });
+
+    it("shows modes, pentatonic and blues scales", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole("radio", { name: "D" }));
+      await user.click(screen.getByRole("radio", { name: "Scale" }));
+
+      await user.click(screen.getByRole("radio", { name: "Dorian" }));
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("D dorian scale");
+      expect(scaleNotes()).toEqual(["D", "E", "F", "G", "A", "B", "C"]);
+      expect(window.location.hash).toBe("#/D/scale/dorian?on=piano");
+
+      await user.click(screen.getByRole("radio", { name: "Minor blues" }));
+      expect(scaleNotes()).toEqual(["D", "F", "G", "A♭", "A", "C"]);
+
+      await user.click(screen.getByRole("radio", { name: "Major pentatonic" }));
+      expect(scaleNotes()).toEqual(["D", "E", "F♯", "A", "B"]);
+    });
+
+    it("goes back to a plain triad from a mode", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole("radio", { name: "Scale" }));
+      await user.click(screen.getByRole("radio", { name: "Locrian" }));
+      await user.click(screen.getByRole("radio", { name: "Chord" }));
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("C diminished");
     });
 
     it("shows a scale on the guitar neck", async () => {

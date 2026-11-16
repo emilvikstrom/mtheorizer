@@ -1,5 +1,8 @@
 import {
+  AUGMENTED_FOURTH,
+  DIMINISHED_FIFTH,
   type Interval,
+  MINOR_SECOND,
   MAJOR_SECOND,
   MAJOR_SEVENTH,
   MAJOR_SIXTH,
@@ -14,12 +17,29 @@ import {
 } from "./intervals";
 import { type Note, formatNote, mod12, noteEquals, spellingsOf } from "./notes";
 
-export type ScaleId = "major" | "naturalMinor";
+export type ScaleId =
+  | "major"
+  | "naturalMinor"
+  | "harmonicMinor"
+  | "melodicMinor"
+  | "dorian"
+  | "phrygian"
+  | "lydian"
+  | "mixolydian"
+  | "locrian"
+  | "majorPentatonic"
+  | "minorPentatonic"
+  | "minorBlues"
+  | "majorBlues";
+
+export type ScaleGroupId = "minor" | "modes" | "pentatonic";
 
 export interface Scale {
   readonly id: ScaleId;
   /** E.g. "Natural minor". */
   readonly name: string;
+  /** Other name for the same scale, e.g. "Ionian" for major. */
+  readonly alias?: string;
   /** Intervals of each degree above the tonic. */
   readonly degrees: readonly Interval[];
   /**
@@ -29,42 +49,171 @@ export interface Scale {
   readonly tieBreaks: Partial<Record<number, Note>>;
 }
 
-export const MAJOR_SCALE: Scale = {
-  id: "major",
-  name: "Major",
-  degrees: [
-    PERFECT_UNISON,
-    MAJOR_SECOND,
-    MAJOR_THIRD,
-    PERFECT_FOURTH,
-    PERFECT_FIFTH,
-    MAJOR_SIXTH,
-    MAJOR_SEVENTH,
-  ],
-  // F♯ major (6♯), not G♭ major (6♭).
-  tieBreaks: { 6: { letter: "F", accidental: 1 } },
-};
+const sharp = (letter: Note["letter"]): Note => ({ letter, accidental: 1 });
+const flat = (letter: Note["letter"]): Note => ({ letter, accidental: -1 });
 
-export const NATURAL_MINOR_SCALE: Scale = {
-  id: "naturalMinor",
-  name: "Natural minor",
-  degrees: [
-    PERFECT_UNISON,
-    MAJOR_SECOND,
-    MINOR_THIRD,
-    PERFECT_FOURTH,
-    PERFECT_FIFTH,
-    MINOR_SIXTH,
-    MINOR_SEVENTH,
-  ],
+function scaleOf(
+  id: ScaleId,
+  name: string,
+  degrees: readonly Interval[],
+  tieBreaks: Partial<Record<number, Note>> = {},
+  alias?: string,
+): Scale {
+  return {
+    id,
+    name,
+    degrees: [PERFECT_UNISON, ...degrees],
+    tieBreaks,
+    ...(alias ? { alias } : {}),
+  };
+}
+
+export const MAJOR_SCALE = scaleOf(
+  "major",
+  "Major",
+  [MAJOR_SECOND, MAJOR_THIRD, PERFECT_FOURTH, PERFECT_FIFTH, MAJOR_SIXTH, MAJOR_SEVENTH],
+  // F♯ major (6♯), not G♭ major (6♭).
+  { 6: sharp("F") },
+  "Ionian",
+);
+
+export const NATURAL_MINOR_SCALE = scaleOf(
+  "naturalMinor",
+  "Natural minor",
+  [MAJOR_SECOND, MINOR_THIRD, PERFECT_FOURTH, PERFECT_FIFTH, MINOR_SIXTH, MINOR_SEVENTH],
   // E♭ minor (6♭), not D♯ minor (6♯).
-  tieBreaks: { 3: { letter: "E", accidental: -1 } },
-};
+  { 3: flat("E") },
+  "Aeolian",
+);
+
+const HARMONIC_MINOR_SCALE = scaleOf(
+  "harmonicMinor",
+  "Harmonic minor",
+  [MAJOR_SECOND, MINOR_THIRD, PERFECT_FOURTH, PERFECT_FIFTH, MINOR_SIXTH, MAJOR_SEVENTH],
+  { 8: flat("A") },
+);
+
+const MELODIC_MINOR_SCALE = scaleOf(
+  "melodicMinor",
+  "Melodic minor",
+  [MAJOR_SECOND, MINOR_THIRD, PERFECT_FOURTH, PERFECT_FIFTH, MAJOR_SIXTH, MAJOR_SEVENTH],
+  { 1: sharp("C") },
+);
+
+const DORIAN_SCALE = scaleOf(
+  "dorian",
+  "Dorian",
+  [MAJOR_SECOND, MINOR_THIRD, PERFECT_FOURTH, PERFECT_FIFTH, MAJOR_SIXTH, MINOR_SEVENTH],
+  { 8: sharp("G") },
+);
+
+const PHRYGIAN_SCALE = scaleOf(
+  "phrygian",
+  "Phrygian",
+  [MINOR_SECOND, MINOR_THIRD, PERFECT_FOURTH, PERFECT_FIFTH, MINOR_SIXTH, MINOR_SEVENTH],
+  { 10: flat("B") },
+);
+
+const LYDIAN_SCALE = scaleOf("lydian", "Lydian", [
+  MAJOR_SECOND,
+  MAJOR_THIRD,
+  AUGMENTED_FOURTH,
+  PERFECT_FIFTH,
+  MAJOR_SIXTH,
+  MAJOR_SEVENTH,
+]);
+
+const MIXOLYDIAN_SCALE = scaleOf(
+  "mixolydian",
+  "Mixolydian",
+  [MAJOR_SECOND, MAJOR_THIRD, PERFECT_FOURTH, PERFECT_FIFTH, MAJOR_SIXTH, MINOR_SEVENTH],
+  { 1: flat("D") },
+);
+
+const LOCRIAN_SCALE = scaleOf("locrian", "Locrian", [
+  MINOR_SECOND,
+  MINOR_THIRD,
+  PERFECT_FOURTH,
+  DIMINISHED_FIFTH,
+  MINOR_SIXTH,
+  MINOR_SEVENTH,
+]);
+
+const MAJOR_PENTATONIC_SCALE = scaleOf(
+  "majorPentatonic",
+  "Major pentatonic",
+  [MAJOR_SECOND, MAJOR_THIRD, PERFECT_FIFTH, MAJOR_SIXTH],
+  { 6: sharp("F") },
+);
+
+const MINOR_PENTATONIC_SCALE = scaleOf(
+  "minorPentatonic",
+  "Minor pentatonic",
+  [MINOR_THIRD, PERFECT_FOURTH, PERFECT_FIFTH, MINOR_SEVENTH],
+  { 3: flat("E") },
+);
+
+/** Minor pentatonic with the "blue note" ♭5 between the fourth and the fifth. */
+const MINOR_BLUES_SCALE = scaleOf(
+  "minorBlues",
+  "Minor blues",
+  [MINOR_THIRD, PERFECT_FOURTH, DIMINISHED_FIFTH, PERFECT_FIFTH, MINOR_SEVENTH],
+  { 10: flat("B") },
+);
+
+/** Major pentatonic with the blue note ♭3 between the second and the major third. */
+const MAJOR_BLUES_SCALE = scaleOf(
+  "majorBlues",
+  "Major blues",
+  [MAJOR_SECOND, MINOR_THIRD, MAJOR_THIRD, PERFECT_FIFTH, MAJOR_SIXTH],
+  { 1: flat("D") },
+);
 
 export const SCALES: Record<ScaleId, Scale> = {
   major: MAJOR_SCALE,
   naturalMinor: NATURAL_MINOR_SCALE,
+  harmonicMinor: HARMONIC_MINOR_SCALE,
+  melodicMinor: MELODIC_MINOR_SCALE,
+  dorian: DORIAN_SCALE,
+  phrygian: PHRYGIAN_SCALE,
+  lydian: LYDIAN_SCALE,
+  mixolydian: MIXOLYDIAN_SCALE,
+  locrian: LOCRIAN_SCALE,
+  majorPentatonic: MAJOR_PENTATONIC_SCALE,
+  minorPentatonic: MINOR_PENTATONIC_SCALE,
+  minorBlues: MINOR_BLUES_SCALE,
+  majorBlues: MAJOR_BLUES_SCALE,
 };
+
+export interface ScaleGroup {
+  readonly id: ScaleGroupId;
+  readonly name: string;
+  readonly scales: readonly ScaleId[];
+}
+
+/** The scales as the picker lists them. Major and natural minor come first, ungrouped by family. */
+export const SCALE_GROUPS: readonly ScaleGroup[] = [
+  {
+    id: "minor",
+    name: "Major & minor",
+    scales: ["major", "naturalMinor", "harmonicMinor", "melodicMinor"],
+  },
+  {
+    id: "modes",
+    name: "Modes",
+    scales: ["dorian", "phrygian", "lydian", "mixolydian", "locrian"],
+  },
+  {
+    id: "pentatonic",
+    name: "Pentatonic & blues",
+    scales: ["majorPentatonic", "minorPentatonic", "minorBlues", "majorBlues"],
+  },
+];
+
+/** The name a picker shows: "Major (Ionian)", "Dorian". */
+export function scaleLabel(scale: Scale): string {
+  return scale.alias ? `${scale.name} (${scale.alias})` : scale.name;
+}
 
 export function buildScale(tonic: Note, scale: Scale): Note[] {
   return scale.degrees.map((degree) => transpose(tonic, degree));
