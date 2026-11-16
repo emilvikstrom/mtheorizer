@@ -381,7 +381,8 @@ export function toneLabel(tone: ChordTone): string {
 
 export interface Chord {
   readonly root: Note;
-  readonly quality: ChordQuality;
+  /** The named chord quality; a free combination from the chord builder (C7♭5♭9) has none. */
+  readonly quality?: ChordQuality;
   readonly tones: readonly ChordTone[];
   /** E.g. "E♭ minor seventh". */
   readonly name: string;

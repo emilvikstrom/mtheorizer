@@ -24,7 +24,7 @@ describe("recent and favorite choices", () => {
   it("restores the whole choice with one click", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole("radio", { name: "Dominant seventh" }));
+    await user.click(screen.getByRole("button", { name: "7" }));
     await user.click(screen.getByRole("radio", { name: "1st inversion" }));
     await user.click(screen.getByRole("radio", { name: "Guitar" }));
     await user.click(screen.getByRole("radio", { name: "E" }));
