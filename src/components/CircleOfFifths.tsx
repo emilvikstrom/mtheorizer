@@ -1,9 +1,14 @@
 import { type KeyboardEvent, useRef } from "react";
 import {
+  type ChordQualityId,
+  type HarmonicFunction,
   type Key,
   type KeyMode,
   type KeySignature,
+  type Note,
+  type RingChord,
   circlePosition,
+  diatonicBlock,
   formatKey,
   formatNote,
   keySignature,
@@ -13,6 +18,9 @@ import {
 
 /** How many rings to draw: major only, plus minor, plus diminished. */
 export type RingCount = 1 | 2 | 3;
+
+/** What a click on a chord does: pick its key, or open it in the chord tab. */
+export type ClickAction = "key" | "chord";
 
 type Ring = "major" | "minor" | "diminished";
 type Radii = readonly [inner: number, outer: number];
@@ -64,6 +72,71 @@ export function signatureLabel(signature: KeySignature): string {
 
 const segmentId = (position: number, mode: KeyMode) => `${mode}-${position}`;
 
+/** One of the key's chords as it sits on the rings. */
+interface BlockInfo {
+  readonly roman: string;
+  readonly function?: HarmonicFunction;
+  /** V or vii° of harmonic minor: outside the block of seven. */
+  readonly harmonic: boolean;
+  readonly chord: RingChord;
+}
+
+const blockKey = (ring: Ring, position: number) => `${ring}-${position}`;
+
+const FUNCTION_LETTER: Record<HarmonicFunction, string> = {
+  tonic: "T",
+  subdominant: "S",
+  dominant: "D",
+};
+
+/** The key's chords by ring and position: the block of seven, plus V and vii° of harmonic minor. */
+function blockInfo(k: Key): Map<string, BlockInfo> {
+  const block = diatonicBlock(k);
+  const info = new Map<string, BlockInfo>();
+  for (const { roman, function: fn, chord } of block.chords) {
+    info.set(blockKey(chord.ring, chord.position), {
+      roman,
+      ...(fn ? { function: fn } : {}),
+      harmonic: false,
+      chord,
+    });
+  }
+  if (block.harmonicMinor) {
+    const { dominant, leadingTone } = block.harmonicMinor;
+    info.set(blockKey("major", dominant.position), {
+      roman: "V",
+      harmonic: true,
+      chord: dominant,
+    });
+    info.set(blockKey("diminished", leadingTone.position), {
+      roman: "vii°",
+      harmonic: true,
+      chord: leadingTone,
+    });
+  }
+  return info;
+}
+
+const blockClasses = (info: BlockInfo | undefined): string[] =>
+  info
+    ? [
+        "is-block",
+        ...(info.function ? [`is-${info.function}`] : []),
+        ...(info.harmonic ? ["is-harmonic"] : []),
+      ]
+    : [];
+
+/** The step number (and function letter) written near a segment's outer edge. */
+function StepLabel({ info, radius, angle }: { info: BlockInfo; radius: number; angle: number }) {
+  const [x, y] = polar(radius, angle);
+  return (
+    <text className="circle__step" x={x} y={y} textAnchor="middle" dominantBaseline="central">
+      {info.roman}
+      {info.function && ` ${FUNCTION_LETTER[info.function]}`}
+    </text>
+  );
+}
+
 /** A segment's label: the main name, and further spellings in smaller type below. */
 function SegmentLabel({ names, x, y }: { names: readonly string[]; x: number; y: number }) {
   const [main, ...alternatives] = names;
@@ -90,12 +163,12 @@ interface SegmentProps {
   mode: KeyMode;
   radii: Radii;
   selected: boolean;
-  nearby: boolean;
+  info: BlockInfo | undefined;
   onSelect: () => void;
   register: (el: SVGGElement | null) => void;
 }
 
-function Segment({ position, mode, radii, selected, nearby, onSelect, register }: SegmentProps) {
+function Segment({ position, mode, radii, selected, info, onSelect, register }: SegmentProps) {
   const keys = keysAt(position, mode);
   const [r1, r2] = radii;
   const mid = angleOf(position);
@@ -103,7 +176,7 @@ function Segment({ position, mode, radii, selected, nearby, onSelect, register }
   const classes = [
     "circle__segment",
     `circle__segment--${mode}`,
-    nearby && "is-nearby",
+    ...blockClasses(info),
     selected && "is-selected",
   ]
     .filter(Boolean)
@@ -123,6 +196,7 @@ function Segment({ position, mode, radii, selected, nearby, onSelect, register }
     >
       <path d={sectorPath(r1, r2, mid - 15, mid + 15)} />
       <SegmentLabel names={keys.map(shortName)} x={x} y={y} />
+      {info && <StepLabel info={info} radius={r2 - 10} angle={mid} />}
     </g>
   );
 }
@@ -131,6 +205,7 @@ interface DiminishedSegmentProps {
   position: number;
   radii: Radii;
   selected: boolean;
+  info: BlockInfo | undefined;
   onSelect: () => void;
 }
 
@@ -140,13 +215,21 @@ interface DiminishedSegmentProps {
  * group: a click anywhere in the sector selects the position and keeps the
  * current mode, and the keyboard uses the major and minor segments.
  */
-function DiminishedSegment({ position, radii, selected, onSelect }: DiminishedSegmentProps) {
+function DiminishedSegment({ position, radii, selected, info, onSelect }: DiminishedSegmentProps) {
   const [r1, r2] = radii;
   const mid = angleOf(position);
-  const [x, y] = polar((r1 + r2) / 2, mid);
+  // The ring is narrow: with a step label the chord name moves inward to make room.
+  const [x, y] = polar((r1 + r2) / 2 - (info ? 7 : 0), mid);
   return (
     <g
-      className={`circle__segment circle__segment--diminished${selected ? " is-selected" : ""}`}
+      className={[
+        "circle__segment",
+        "circle__segment--diminished",
+        ...blockClasses(info),
+        selected && "is-selected",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       aria-hidden="true"
       data-position={position}
       data-ring="diminished"
@@ -154,6 +237,7 @@ function DiminishedSegment({ position, radii, selected, onSelect }: DiminishedSe
     >
       <path d={sectorPath(r1, r2, mid - 15, mid + 15)} />
       <SegmentLabel names={ringChords(position).diminished.map((c) => c.symbol)} x={x} y={y} />
+      {info && <StepLabel info={info} radius={r2 - 10} angle={mid} />}
     </g>
   );
 }
@@ -162,16 +246,27 @@ interface CircleOfFifthsProps {
   value: Key;
   onChange: (key: Key) => void;
   rings?: RingCount;
+  /** What a click on one of the key's chords does. Default: select its key. */
+  clickAction?: ClickAction;
+  onOpenChord?: (root: Note, quality: ChordQualityId) => void;
 }
 
 /**
  * The circle of fifths: major keys on the outer ring, their relative minors
  * inside it, the diminished chords innermost and the key signature outside.
- * The selected key and its neighbours (the six diatonic major and minor
- * chords) are highlighted. The key's name and signature are shown by the
- * panel next to the circle, so the hub is left empty.
+ * The selected key's seven chords are marked as a block on the rings, each
+ * with its step number and, for I, IV and V, its function (T, S, D). In a
+ * minor key V and vii° of harmonic minor are marked outside the block. The
+ * key's name and signature are shown by the panel next to the circle, so the
+ * hub is left empty.
  */
-export function CircleOfFifths({ value, onChange, rings = 3 }: CircleOfFifthsProps) {
+export function CircleOfFifths({
+  value,
+  onChange,
+  rings = 3,
+  clickAction = "key",
+  onOpenChord,
+}: CircleOfFifthsProps) {
   const segments = useRef(new Map<string, SVGGElement>());
   const radii = RING_RADII[rings];
   const diminishedRadii = radii.diminished;
@@ -179,10 +274,19 @@ export function CircleOfFifths({ value, onChange, rings = 3 }: CircleOfFifthsPro
   // Without the minor ring a minor key is shown by its relative major.
   const shownMode: KeyMode = radii.minor ? value.mode : "major";
   const hubRadius = Math.min(...Object.values(radii).map(([inner]) => inner));
-  const isNearby = (position: number) =>
-    [11, 0, 1].includes((position - selectedPosition + 12) % 12);
+  const block = blockInfo(value);
+
+  /** Open the key's chord on this ring and position, if it has one. */
+  function openChord(ring: Ring, position: number) {
+    const info = block.get(blockKey(ring, position));
+    if (info) onOpenChord?.(info.chord.root, ring);
+  }
 
   function select(position: number, mode: KeyMode, focus = false) {
+    if (clickAction === "chord" && !focus) {
+      openChord(mode, position);
+      return;
+    }
     const [first] = keysAt(position, mode);
     if (!first) return;
     onChange(first);
@@ -227,7 +331,7 @@ export function CircleOfFifths({ value, onChange, rings = 3 }: CircleOfFifthsPro
               mode={mode}
               radii={ringRadii}
               selected={position === selectedPosition && mode === shownMode}
-              nearby={isNearby(position)}
+              info={block.get(blockKey(mode, position))}
               onSelect={() => select(position, mode)}
               register={(el) => {
                 const id = segmentId(position, mode);
@@ -246,7 +350,12 @@ export function CircleOfFifths({ value, onChange, rings = 3 }: CircleOfFifthsPro
             position={position}
             radii={diminishedRadii}
             selected={position === selectedPosition}
-            onSelect={() => select(position, shownMode)}
+            info={block.get(blockKey("diminished", position))}
+            onSelect={() =>
+              clickAction === "chord"
+                ? openChord("diminished", position)
+                : select(position, shownMode)
+            }
           />
         ))}
 

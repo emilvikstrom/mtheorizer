@@ -1,12 +1,17 @@
 import { useState } from "react";
 import type { ChordQualityId, Key, Note } from "../theory";
-import { CircleOfFifths, type RingCount } from "./CircleOfFifths";
+import { CircleOfFifths, type ClickAction, type RingCount } from "./CircleOfFifths";
 import { KeyDetails } from "./KeyDetails";
 
 const RING_OPTIONS: readonly { count: RingCount; label: string }[] = [
   { count: 1, label: "Major" },
   { count: 2, label: "Major + minor" },
   { count: 3, label: "Major, minor + diminished" },
+];
+
+const CLICK_OPTIONS: readonly { action: ClickAction; label: string }[] = [
+  { action: "key", label: "Select key" },
+  { action: "chord", label: "Open chord" },
 ];
 
 /** Pick a key on the circle and see its signature, scale and chords. */
@@ -20,6 +25,8 @@ export function CircleOfFifthsView({
   onOpenChord: (root: Note, quality: ChordQualityId) => void;
 }) {
   const [rings, setRings] = useState<RingCount>(3);
+  const [clickAction, setClickAction] = useState<ClickAction>("key");
+  const minor = selected.mode === "minor";
   return (
     <div className="circle-view">
       <figure className="circle-view__figure">
@@ -36,7 +43,26 @@ export function CircleOfFifthsView({
             </button>
           ))}
         </div>
-        <CircleOfFifths value={selected} onChange={setSelected} rings={rings} />
+        <div className="circle-view__rings" role="group" aria-label="Clicking a chord">
+          {CLICK_OPTIONS.map(({ action, label }) => (
+            <button
+              key={action}
+              type="button"
+              className="toggle"
+              aria-pressed={clickAction === action}
+              onClick={() => setClickAction(action)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <CircleOfFifths
+          value={selected}
+          onChange={setSelected}
+          rings={rings}
+          clickAction={clickAction}
+          onOpenChord={onOpenChord}
+        />
         <figcaption className="circle-view__legend">
           <span>Clockwise: up a fifth, one more ♯</span>
           <span>Counterclockwise: down a fifth, one more ♭</span>
@@ -45,9 +71,17 @@ export function CircleOfFifthsView({
               Inside out: diminished (vii°), minor (relative), major. Tap a sector to pick its key
             </span>
           )}
-          <span className="legend legend--nearby">
-            The key's six diatonic major and minor chords
+          <span className="legend legend--block">
+            The key's seven chords, with step numbers (I–vii°)
           </span>
+          <span className="legend legend--tonic">T tonic (I)</span>
+          <span className="legend legend--subdominant">S subdominant (IV)</span>
+          <span className="legend legend--dominant">D dominant (V)</span>
+          {minor && (
+            <span className="legend legend--harmonic">
+              Dashed: V and vii° of harmonic minor, outside the block
+            </span>
+          )}
         </figcaption>
       </figure>
       <KeyDetails value={selected} onChange={setSelected} onOpenChord={onOpenChord} />
