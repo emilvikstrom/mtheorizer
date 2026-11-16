@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { CircleOfFifthsView } from "./components/CircleOfFifthsView";
 import { Lookup } from "./components/Lookup";
+import { SavedChoices } from "./components/SavedChoices";
 import { type TabItem, Tabs, panelId, tabId } from "./components/Tabs";
 import {
   type CircleRoute,
@@ -63,7 +64,10 @@ export function App() {
             }
           />
         ) : (
-          <Lookup route={route} onChange={navigate} />
+          <>
+            <SavedChoices route={route} onOpen={navigate} />
+            <Lookup route={route} onChange={navigate} />
+          </>
         )}
       </div>
     </main>
