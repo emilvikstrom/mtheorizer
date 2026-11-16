@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { chordNameFor, chordSymbolFor, chordSymbolSuffix, identifyQuality } from "./chordNaming";
+import {
+  chordFromSpec,
+  chordNameFor,
+  chordSymbolFor,
+  chordSymbolSuffix,
+  identifyQuality,
+  nearestQuality,
+} from "./chordNaming";
 import {
   CHORD_BASES,
   type ChordBase,
@@ -200,5 +207,47 @@ describe("every spec the builder allows", () => {
       symbols.set(symbol, key);
       names.set(name, key);
     }
+  });
+});
+
+describe("nearestQuality", () => {
+  it("is the quality itself for every named chord", () => {
+    for (const id of CHORD_QUALITY_IDS) expect(nearestQuality(specOf(id))).toBe(id);
+  });
+
+  it("drops the last modifiers of a free combination until it has a name", () => {
+    expect(nearestQuality(spec("major", "7", "flat5", "flat9"))).toBe("dominant7Flat5");
+    expect(nearestQuality(spec("minor", "7", "flat9"))).toBe("minor7");
+    expect(nearestQuality(spec("major", "7", "9", "flat13"))).toBe("dominant9");
+  });
+
+  it("gives a named quality for every spec the builder can reach", () => {
+    for (const s of reachableSpecs()) {
+      const id = nearestQuality(s);
+      expect(CHORD_QUALITIES[id]).toBeDefined();
+      if (identifyQuality(s)) expect(id).toBe(identifyQuality(s));
+    }
+  });
+});
+
+describe("chordFromSpec", () => {
+  it("builds the same chord as buildChord for every named quality", () => {
+    for (const id of CHORD_QUALITY_IDS) {
+      for (const root of ROOTS) {
+        const chord = chordFromSpec(root, specOf(id));
+        const expected = buildChord(root, id);
+        expect(chord.tones).toEqual(expected.tones);
+        expect(chord.name).toBe(expected.name);
+        expect(chord.symbol).toBe(expected.symbol);
+        expect(chord.quality?.id).toBe(id);
+      }
+    }
+  });
+
+  it("builds free combinations with spelled tones, a name and no named quality", () => {
+    const chord = chordFromSpec(C, spec("major", "7", "flat5", "flat9"));
+    expect(chord.symbol).toBe("C7♭5♭9");
+    expect(chord.quality).toBeUndefined();
+    expect(chord.tones.map((t) => formatNote(t.note))).toEqual(["C", "E", "G♭", "B♭", "D♭"]);
   });
 });

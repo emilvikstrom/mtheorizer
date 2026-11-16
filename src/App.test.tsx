@@ -52,35 +52,30 @@ describe("App", () => {
     expect(container.querySelector('[data-bass="true"]')?.getAttribute("data-midi")).toBe("67");
 
     // A seventh chord has a third inversion; the inversion picker adapts to the chord.
-    await user.click(screen.getByRole("radio", { name: "Dominant seventh" }));
+    await user.click(screen.getByRole("button", { name: "7" }));
     expect(
       within(screen.getByRole("group", { name: "Inversion" })).getAllByRole("radio"),
     ).toHaveLength(4);
   });
 
-  it("offers all 12 roots and every chord quality, grouped by family", () => {
+  it("offers all 12 roots and the seven base chords", () => {
     render(<App />);
     expect(within(screen.getByRole("group", { name: "Root" })).getAllByRole("radio")).toHaveLength(
       12,
     );
     expect(
-      within(screen.getByRole("group", { name: "Quality" })).getAllByRole("radio"),
-    ).toHaveLength(43);
-    expect(
-      within(screen.getByRole("group", { name: "Triads" })).getAllByRole("radio"),
+      within(screen.getByRole("group", { name: "Base chord" })).getAllByRole("radio"),
     ).toHaveLength(7);
-    expect(
-      within(screen.getByRole("group", { name: "Sevenths" })).getAllByRole("radio"),
-    ).toHaveLength(10);
   });
 
-  it("shows each quality as a chord symbol on the chosen root", async () => {
+  it("shows each base chord as a symbol on the chosen root", async () => {
     const user = userEvent.setup();
     render(<App />);
     const symbolOf = (name: string) =>
       screen.getByRole("radio", { name }).closest("label")?.textContent;
     expect(symbolOf("Major")).toBe("C");
-    expect(symbolOf("Half-diminished seventh")).toBe("Cm7♭5");
+    expect(symbolOf("Suspended fourth")).toBe("Csus4");
+    expect(symbolOf("Power chord")).toBe("C5");
 
     // Each chord gets its own root spelling: D♭ major but C♯ minor and C♯°.
     await user.click(screen.getByRole("radio", { name: "C♯/D♭" }));
@@ -89,11 +84,135 @@ describe("App", () => {
     expect(symbolOf("Diminished")).toBe("C♯°");
   });
 
+  describe("chord builder", () => {
+    const quality = (name: string) => screen.queryByRole("button", { name });
+    const group = (name: string) => screen.queryByRole("group", { name });
+    const heading = () => screen.getByRole("heading", { level: 2 });
+
+    it("offers only the qualities that fit the chord as it looks now", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      // A plain major chord: no 9, 11 or 13 until there is a seventh.
+      expect(quality("7")).toBeInTheDocument();
+      expect(quality("9")).not.toBeInTheDocument();
+      expect(quality("♭9")).not.toBeInTheDocument();
+
+      await user.click(quality("7") as HTMLElement);
+      expect(quality("9")).toBeInTheDocument();
+      expect(quality("♭9")).toBeInTheDocument();
+      expect(quality("maj7")).not.toBeInTheDocument(); // one seventh at a time
+      expect(quality("add9")).not.toBeInTheDocument(); // added tones are for chords without a seventh
+      expect(quality("6")).not.toBeInTheDocument();
+
+      // On a minor chord ♭5 would make it diminished, so it is not offered.
+      await user.click(screen.getByRole("radio", { name: "Minor" }));
+      expect(quality("♭5")).not.toBeInTheDocument();
+      expect(quality("♯9")).not.toBeInTheDocument();
+
+      // On a diminished chord the seventh is either 7 or °7, and maj7 is not offered.
+      await user.click(quality("7") as HTMLElement); // off again
+      await user.click(screen.getByRole("radio", { name: "Diminished" }));
+      expect(quality("°7")).toBeInTheDocument();
+      expect(quality("maj7")).not.toBeInTheDocument();
+
+      // Csus4 has the eleventh as its fourth.
+      await user.click(screen.getByRole("radio", { name: "Suspended fourth" }));
+      await user.click(quality("7") as HTMLElement);
+      expect(quality("11")).not.toBeInTheDocument();
+      expect(quality("13")).toBeInTheDocument();
+    });
+
+    it("has no qualities on a power chord, and hides groups with nothing to offer", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      expect(group("Altered")).toBeInTheDocument();
+      await user.click(screen.getByRole("radio", { name: "Diminished" }));
+      expect(group("Sixth")).not.toBeInTheDocument();
+      expect(group("Altered")).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole("radio", { name: "Power chord" }));
+      for (const name of ["Seventh", "Sixth", "Extensions", "Altered", "Added"]) {
+        expect(group(name)).not.toBeInTheDocument();
+      }
+      expect(screen.getByText("A power chord has no qualities to add.")).toBeInTheDocument();
+      expect(chordNotes()).toEqual(["C", "G"]);
+    });
+
+    it("builds named chords from toggle buttons and names them", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(quality("7") as HTMLElement);
+      expect(quality("7")).toHaveAttribute("aria-pressed", "true");
+      expect(heading()).toHaveTextContent("C dominant seventh");
+      expect(window.location.hash).toBe("#/C/dominant7?on=piano");
+
+      await user.click(quality("♯9") as HTMLElement);
+      expect(heading()).toHaveTextContent("C dominant seventh sharp nine");
+      expect(window.location.hash).toBe("#/C/dominant7Sharp9?on=piano");
+
+      await user.click(screen.getByRole("radio", { name: "Minor" }));
+      expect(quality("♯9")).not.toBeInTheDocument();
+      expect(heading()).toHaveTextContent("C minor seventh");
+
+      await user.click(quality("7") as HTMLElement); // toggled off again
+      expect(quality("7")).toHaveAttribute("aria-pressed", "false");
+      expect(heading()).toHaveTextContent("C minor");
+    });
+
+    it("removes what depended on a quality with it", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(quality("7") as HTMLElement);
+      await user.click(quality("9") as HTMLElement);
+      await user.click(quality("♭13") as HTMLElement);
+      expect(heading()).toHaveTextContent("C dominant ninth flat thirteen");
+
+      await user.click(quality("7") as HTMLElement);
+      expect(heading()).toHaveTextContent("C major");
+      expect(quality("9")).not.toBeInTheDocument();
+      expect(quality("♭13")).not.toBeInTheDocument();
+    });
+
+    it("builds a free combination and keeps it while the choice is made here", async () => {
+      const user = userEvent.setup();
+      const { container } = render(<App />);
+      await user.click(quality("7") as HTMLElement);
+      await user.click(quality("♭5") as HTMLElement);
+      await user.click(quality("♭9") as HTMLElement);
+      expect(heading()).toHaveTextContent("C7♭5♭9");
+      expect(chordNotes()).toEqual(["C", "E", "G♭", "B♭", "D♭"]);
+      expect(highlightedKeys(container)).toHaveLength(5);
+      // The link can only name the nearest named chord, C7♭5.
+      expect(window.location.hash).toBe("#/C/dominant7Flat5?on=piano");
+
+      // It follows the root, and the inversions are those of the built chord.
+      await user.click(screen.getByRole("radio", { name: "D" }));
+      expect(heading()).toHaveTextContent("D7♭5♭9");
+      expect(
+        within(screen.getByRole("group", { name: "Inversion" })).getAllByRole("radio"),
+      ).toHaveLength(4);
+    });
+
+    it("shows the named chord of a link, not a free chord built earlier", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(quality("7") as HTMLElement);
+      await user.click(quality("♭5") as HTMLElement);
+      await user.click(quality("♭9") as HTMLElement);
+      expect(heading()).toHaveTextContent("C7♭5♭9");
+
+      await user.click(screen.getByRole("radio", { name: "D" }));
+      await user.click(screen.getByRole("button", { name: "Open C7♭5 (Piano)" }));
+      expect(heading()).toHaveTextContent("C dominant seventh flat five");
+      expect(quality("♭9")).toHaveAttribute("aria-pressed", "false");
+    });
+  });
+
   it("shows a seventh chord with four tones", async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);
     await user.click(screen.getByRole("radio", { name: "A♯/B♭" }));
-    await user.click(screen.getByRole("radio", { name: "Dominant seventh" }));
+    await user.click(screen.getByRole("button", { name: "7" }));
 
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("B♭ dominant seventh");
     expect(chordNotes()).toEqual(["B♭", "D", "F", "A♭"]);
@@ -107,7 +226,8 @@ describe("App", () => {
     expect(container.querySelectorAll("[data-midi]")).toHaveLength(24);
 
     await user.click(screen.getByRole("radio", { name: "B" }));
-    await user.click(screen.getByRole("radio", { name: "Dominant thirteenth" }));
+    await user.click(screen.getByRole("button", { name: "7" }));
+    await user.click(screen.getByRole("button", { name: "13" }));
     expect(chordNotes()).toEqual(["B", "D♯", "F♯", "A", "C♯", "G♯"]);
     expect(container.querySelectorAll("[data-midi]")).toHaveLength(36);
     expect(highlightedKeys(container)).toEqual([
@@ -323,7 +443,7 @@ describe("App", () => {
 
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("C major scale");
       expect(scaleNotes()).toEqual(["C", "D", "E", "F", "G", "A", "B"]);
-      expect(screen.queryByRole("group", { name: "Quality" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("group", { name: "Qualities" })).not.toBeInTheDocument();
       expect(
         within(screen.getByRole("group", { name: "Scale" })).getAllByRole("radio"),
       ).toHaveLength(13);
@@ -361,7 +481,8 @@ describe("App", () => {
     it("comes back to the same seventh chord after looking at its scale", async () => {
       const user = userEvent.setup();
       render(<App />);
-      await user.click(screen.getByRole("radio", { name: "Minor seventh" }));
+      await user.click(screen.getByRole("radio", { name: "Minor" }));
+      await user.click(screen.getByRole("button", { name: "7" }));
       await user.click(screen.getByRole("radio", { name: "Scale" }));
       expect(screen.getByRole("radio", { name: "Natural minor (Aeolian)" })).toBeChecked();
 
@@ -449,13 +570,15 @@ describe("App", () => {
       const user = userEvent.setup();
       const { unmount } = render(<App />);
       await user.click(screen.getByRole("radio", { name: "C♯/D♭" }));
-      await user.click(screen.getByRole("radio", { name: "Minor seventh" }));
+      await user.click(screen.getByRole("radio", { name: "Minor" }));
+      await user.click(screen.getByRole("button", { name: "7" }));
       expect(window.location.hash).toBe("#/Cs/minor7?on=piano");
       unmount();
 
       render(<App />);
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("C♯ minor seventh");
-      expect(screen.getByRole("radio", { name: "Minor seventh" })).toBeChecked();
+      expect(screen.getByRole("radio", { name: "Minor" })).toBeChecked();
+      expect(screen.getByRole("button", { name: "7" })).toHaveAttribute("aria-pressed", "true");
     });
 
     it("opens a link to D♭ major", () => {
@@ -613,7 +736,7 @@ describe("App", () => {
       render(<App />);
       await user.click(screen.getByRole("radio", { name: "C♯/D♭" }));
       await user.click(spelling().getByRole("radio", { name: "C♯" }));
-      await user.click(screen.getByRole("radio", { name: "Dominant seventh" }));
+      await user.click(screen.getByRole("button", { name: "7" }));
       expect(chordNotes()[0]).toBe("C♯");
       expect(screen.getByRole("radio", { name: "Major" }).closest("label")?.textContent).toBe("C♯");
     });

@@ -187,7 +187,34 @@ body {
   color: var(--on-accent);
 }
 
-/* Chord quality picker: one row of chord symbols per family. */
+/* Chord builder: a row of base chords, then toggle buttons per family of qualities. */
+
+.builder {
+  display: grid;
+  gap: 20px;
+}
+
+.picker__options--bases {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.builder__qualities:focus,
+.quality-group:focus {
+  outline: none;
+}
+
+.builder__qualities:focus-visible,
+.quality-group:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.builder__none {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
 
 .quality-groups {
   display: grid;
@@ -202,8 +229,8 @@ body {
 }
 
 .quality-group__name {
-  /* Centred on the first row of chips, which are 40px high. */
-  line-height: 40px;
+  /* Centred on the first row of buttons, which are 44px high. */
+  line-height: 44px;
   font-size: 0.85rem;
   color: var(--muted);
 }
@@ -214,10 +241,37 @@ body {
   gap: 6px;
 }
 
-.quality-group__options span {
-  min-width: 4rem;
-  min-height: 40px;
+.quality-toggle {
+  min-width: 3.5rem;
+  min-height: 44px;
   padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 120ms,
+    border-color 120ms;
+}
+
+.quality-toggle:hover {
+  border-color: var(--muted);
+}
+
+.quality-toggle:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.quality-toggle[aria-pressed="true"] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
 }
 
 @media (max-width: 640px) {
@@ -228,6 +282,10 @@ body {
 
   .quality-group__name {
     line-height: normal;
+  }
+
+  .picker__options--bases {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .picker__options--roots {

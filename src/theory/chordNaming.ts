@@ -1,5 +1,11 @@
-import { CHORD_QUALITY_IDS, type ChordQualityId } from "./chords";
-import { type ChordModifier, type ChordSpec, normalizeSpec, specOf } from "./chordSpec";
+import { CHORD_QUALITIES, CHORD_QUALITY_IDS, type Chord, type ChordQualityId } from "./chords";
+import {
+  type ChordModifier,
+  type ChordSpec,
+  buildChordFromSpec,
+  normalizeSpec,
+  specOf,
+} from "./chordSpec";
 import { type Note, formatNote } from "./notes";
 
 /**
@@ -187,4 +193,33 @@ const NAMED_BY_KEY = new Map<string, ChordQualityId>(
 export function identifyQuality(spec: ChordSpec): ChordQualityId | undefined {
   const { base, qualities } = normalizeSpec(spec);
   return NAMED_BY_KEY.get(`${base}:${qualities.join(",")}`);
+}
+
+/**
+ * The named chord quality closest to a spec: the spec itself when it has a name,
+ * otherwise the spec with its last modifiers dropped until it does (C7♭5♭9 →
+ * C7♭5). Every base chord is named, so there is always an answer. Links can only
+ * name the 43 qualities until M6-05, so they use this.
+ */
+export function nearestQuality(spec: ChordSpec): ChordQualityId {
+  const { base, qualities } = normalizeSpec(spec);
+  const kept = [...qualities]; // in canonical order, so the last ones are dropped first
+  for (;;) {
+    const id = identifyQuality({ base, qualities: kept });
+    if (id !== undefined) return id;
+    kept.pop();
+  }
+}
+
+/** The chord a spec describes on `root`: tones, name and symbol, ready to show and play. */
+export function chordFromSpec(root: Note, spec: ChordSpec): Chord {
+  const { spec: normalized, tones } = buildChordFromSpec(root, spec);
+  const id = identifyQuality(normalized);
+  return {
+    root,
+    ...(id ? { quality: CHORD_QUALITIES[id] } : {}),
+    tones,
+    name: `${formatNote(root)} ${chordNameFor(normalized)}`,
+    symbol: chordSymbolFor(root, normalized),
+  };
 }
