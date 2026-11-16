@@ -927,3 +927,99 @@ body {
 .play__button:focus-visible {
   background: color-mix(in srgb, currentColor 12%, transparent);
 }
+
+/* Recent and favorite choices */
+
+.saved {
+  display: grid;
+  gap: 12px;
+}
+
+.saved__group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.saved__heading {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.saved__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.saved__item {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.saved__open,
+.saved__pin,
+.saved__clear {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.saved__open {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 10px;
+  min-height: 36px;
+}
+
+.saved__open[aria-current="true"] {
+  font-weight: 700;
+  box-shadow: inset 0 -3px 0 var(--focus);
+}
+
+.saved__meta {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.saved__pin {
+  padding: 6px 10px;
+  min-height: 36px;
+  min-width: 36px;
+  border-left: 1px solid var(--border);
+}
+
+.saved__open:hover,
+.saved__pin:hover,
+.saved__clear:hover {
+  background: var(--border);
+}
+
+.saved__open:focus-visible,
+.saved__pin:focus-visible,
+.saved__clear:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+.saved__clear {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-decoration: underline;
+}
