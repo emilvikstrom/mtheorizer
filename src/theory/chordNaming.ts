@@ -198,8 +198,9 @@ export function identifyQuality(spec: ChordSpec): ChordQualityId | undefined {
 /**
  * The named chord quality closest to a spec: the spec itself when it has a name,
  * otherwise the spec with its last modifiers dropped until it does (C7♭5♭9 →
- * C7♭5). Every base chord is named, so there is always an answer. Links can only
- * name the 43 qualities until M6-05, so they use this.
+ * C7♭5). Every base chord is named, so there is always an answer. Used where
+ * only a named chord can say something, such as which spelling of the root has
+ * the fewest accidentals.
  */
 export function nearestQuality(spec: ChordSpec): ChordQualityId {
   const { base, qualities } = normalizeSpec(spec);

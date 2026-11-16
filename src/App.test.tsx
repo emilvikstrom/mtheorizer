@@ -144,11 +144,11 @@ describe("App", () => {
       await user.click(quality("7") as HTMLElement);
       expect(quality("7")).toHaveAttribute("aria-pressed", "true");
       expect(heading()).toHaveTextContent("C dominant seventh");
-      expect(window.location.hash).toBe("#/C/dominant7?on=piano");
+      expect(window.location.hash).toBe("#/C/major?with=7&on=piano");
 
       await user.click(quality("♯9") as HTMLElement);
       expect(heading()).toHaveTextContent("C dominant seventh sharp nine");
-      expect(window.location.hash).toBe("#/C/dominant7Sharp9?on=piano");
+      expect(window.location.hash).toBe("#/C/major?with=7,sharp9&on=piano");
 
       await user.click(screen.getByRole("radio", { name: "Minor" }));
       expect(quality("♯9")).not.toBeInTheDocument();
@@ -182,8 +182,7 @@ describe("App", () => {
       expect(heading()).toHaveTextContent("C7♭5♭9");
       expect(chordNotes()).toEqual(["C", "E", "G♭", "B♭", "D♭"]);
       expect(highlightedKeys(container)).toHaveLength(5);
-      // The link can only name the nearest named chord, C7♭5.
-      expect(window.location.hash).toBe("#/C/dominant7Flat5?on=piano");
+      expect(window.location.hash).toBe("#/C/major?with=7,flat5,flat9&on=piano");
 
       // It follows the root, and the inversions are those of the built chord.
       await user.click(screen.getByRole("radio", { name: "D" }));
@@ -193,7 +192,7 @@ describe("App", () => {
       ).toHaveLength(4);
     });
 
-    it("shows the named chord of a link, not a free chord built earlier", async () => {
+    it("opens a recent free combination as the same chord", async () => {
       const user = userEvent.setup();
       render(<App />);
       await user.click(quality("7") as HTMLElement);
@@ -202,9 +201,37 @@ describe("App", () => {
       expect(heading()).toHaveTextContent("C7♭5♭9");
 
       await user.click(screen.getByRole("radio", { name: "D" }));
-      await user.click(screen.getByRole("button", { name: "Open C7♭5 (Piano)" }));
-      expect(heading()).toHaveTextContent("C dominant seventh flat five");
-      expect(quality("♭9")).toHaveAttribute("aria-pressed", "false");
+      expect(heading()).toHaveTextContent("D7♭5♭9");
+      await user.click(screen.getByRole("button", { name: "Open C7♭5♭9 (Piano)" }));
+      expect(heading()).toHaveTextContent("C7♭5♭9");
+      expect(quality("♭9")).toHaveAttribute("aria-pressed", "true");
+      expect(window.location.hash).toBe("#/C/major?with=7,flat5,flat9&on=piano");
+    });
+
+    it("keeps a free combination when switching tabs and back", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(quality("7") as HTMLElement);
+      await user.click(quality("♭5") as HTMLElement);
+      await user.click(quality("♭9") as HTMLElement);
+
+      await user.click(screen.getByRole("tab", { name: "Circle of fifths" }));
+      await user.click(screen.getByRole("tab", { name: "Chords & scales" }));
+      expect(heading()).toHaveTextContent("C7♭5♭9");
+      expect(window.location.hash).toBe("#/C/major?with=7,flat5,flat9&on=piano");
+    });
+
+    it("shows an opened free combination in an inversion and on the guitar", async () => {
+      const user = userEvent.setup();
+      window.history.replaceState(null, "", "#/C/major?with=7,flat5,flat9&inv=2&on=piano");
+      render(<App />);
+      expect(heading()).toHaveTextContent("C7♭5♭9");
+      expect(screen.getByRole("radio", { name: "2nd inversion" })).toBeChecked();
+
+      await user.click(screen.getByRole("radio", { name: "Guitar" }));
+      expect(window.location.hash).toBe("#/C/major?with=7,flat5,flat9&on=guitar");
+      expect(heading()).toHaveTextContent("C7♭5♭9");
+      expect(screen.queryByRole("img", { name: /^Piano keyboard/ })).not.toBeInTheDocument();
     });
   });
 
@@ -572,7 +599,7 @@ describe("App", () => {
       await user.click(screen.getByRole("radio", { name: "C♯/D♭" }));
       await user.click(screen.getByRole("radio", { name: "Minor" }));
       await user.click(screen.getByRole("button", { name: "7" }));
-      expect(window.location.hash).toBe("#/Cs/minor7?on=piano");
+      expect(window.location.hash).toBe("#/Cs/minor?with=7&on=piano");
       unmount();
 
       render(<App />);
@@ -586,6 +613,32 @@ describe("App", () => {
       render(<App />);
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("D♭ major");
       expect(chordNotes()).toEqual(["D♭", "F", "A♭"]);
+    });
+
+    it("opens a link to a chord built from a base chord and qualities", () => {
+      open("#/C/minor?with=7,9");
+      render(<App />);
+      expect(chordNotes()).toEqual(["C", "E♭", "G", "B♭", "D"]);
+      expect(screen.getByRole("radio", { name: "Minor" })).toBeChecked();
+      expect(screen.getByRole("button", { name: "9" })).toHaveAttribute("aria-pressed", "true");
+    });
+
+    it("opens a free combination and one that does not fit is normalized", () => {
+      open("#/C/major?with=7,flat5,flat9");
+      const { unmount } = render(<App />);
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("C7♭5♭9");
+      unmount();
+
+      open("#/C/minor?with=flat5,9");
+      render(<App />);
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("C minor");
+    });
+
+    it("opens a link from before the chord builder", () => {
+      open("#/C/dominant7Sharp9");
+      render(<App />);
+      expect(screen.getByRole("button", { name: "♯9" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "7" })).toHaveAttribute("aria-pressed", "true");
     });
 
     it("falls back to C major for a broken link", () => {

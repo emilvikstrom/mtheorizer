@@ -1,20 +1,34 @@
-import { formatRoute, type LookupRoute, parseRoute } from "./route";
+import {
+  formatLegacyChordRoute,
+  formatRoute,
+  type LookupRoute,
+  parseRoute,
+  parseRouteStrict,
+} from "./route";
 
 /**
  * Recent and favourite choices. A choice is stored as its link (`#/Db/major?on=guitar`),
- * so the whole selection (note, type, instrument, inversion, guitar options) comes
- * back with one click, and stays valid as the link format grows.
+ * so the whole selection (note, chord, instrument, inversion, guitar options) comes
+ * back with one click. Links saved before the chord builder (`#/C/dominant7`) are
+ * still read and are stored again in the current form.
  */
 
 export const MAX_RECENT = 8;
 export const RECENT_KEY = "mtheorizer.recent";
 export const FAVORITES_KEY = "mtheorizer.favorites";
 
-/** The stored link of a lookup choice, or undefined for anything that is not one. */
+/**
+ * The stored link of a lookup choice in its current form, or undefined for
+ * anything that is not one. A link that is not written exactly the way the app
+ * writes it (apart from the older chord names) is rejected.
+ */
 export function choiceOf(hash: string): string | undefined {
   if (!hash.startsWith("#/")) return undefined;
-  const route = parseRoute(hash);
-  return route.page === "circle" || formatRoute(route) !== hash ? undefined : hash;
+  const route = parseRouteStrict(hash);
+  if (!route || route.page === "circle") return undefined;
+  const current = formatRoute(route);
+  const legacy = route.page === "chord" ? formatLegacyChordRoute(route) : undefined;
+  return current === hash || legacy === hash ? current : undefined;
 }
 
 export const hashOf = (route: LookupRoute): string => formatRoute(route);

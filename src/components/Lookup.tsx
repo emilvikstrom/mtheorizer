@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { ChordInfo } from "./ChordInfo";
 import { ChordBuilder } from "./ChordBuilder";
 import { Fretboard } from "./Fretboard";
@@ -8,7 +8,6 @@ import { PlayButtons } from "./PlayButtons";
 import { RootPicker } from "./RootPicker";
 import {
   type ChordRoute,
-  formatRoute,
   guitarOptions,
   type Instrument,
   type LookupRoute,
@@ -40,7 +39,6 @@ import {
   chordShapes,
   commonSpellings,
   formatNote,
-  identifyQuality,
   nearestQuality,
   noteEquals,
   pitchClass,
@@ -93,7 +91,7 @@ const SCALE_LEGEND = { root: "Tonic", tone: "Scale tone" };
 /** The root as the app would spell it by itself for this chord or scale. */
 function preferredRoot(route: LookupRoute, pc: number): Note {
   return route.page === "chord"
-    ? preferredRootSpelling(pc, route.quality)
+    ? preferredRootSpelling(pc, nearestQuality(route.spec))
     : preferredTonicSpelling(pc, SCALES[route.scaleId]);
 }
 
@@ -112,37 +110,13 @@ interface LookupProps {
   onChange: (route: LookupRoute) => void;
 }
 
-/**
- * A chord built from qualities that has no name among the 43 (C7♭5♭9). Links can
- * only name those until M6-05, so the route holds the nearest named chord and
- * this holds the real one, for as long as the route is still the link it was
- * made with (`hash`). Any other navigation, such as a recent choice or a link,
- * shows the named chord of the route.
- */
-interface FreeChord {
-  readonly spec: ChordSpec;
-  readonly hash: string;
-}
-
 /** Look up a chord or a scale and see it on the piano or the guitar neck. */
-export function Lookup({ route, onChange: navigateTo }: LookupProps) {
+export function Lookup({ route, onChange }: LookupProps) {
   const { root, instrument } = route;
   const pc = pitchClass(root);
 
-  const [free, setFree] = useState<FreeChord | undefined>(undefined);
-  const freeSpec =
-    route.page === "chord" && free?.hash === formatRoute(route) ? free.spec : undefined;
-  const chordSpec = route.page === "chord" ? (freeSpec ?? specOf(route.quality)) : undefined;
-  // The free chord follows the choices made here (root, instrument, inversion) so it is not lost.
-  const onChange = (next: LookupRoute) => {
-    if (freeSpec && next.page === "chord") setFree({ spec: freeSpec, hash: formatRoute(next) });
-    navigateTo(next);
-  };
   const build = (spec: ChordSpec) => {
-    if (route.page !== "chord") return;
-    const next = follow(route, { ...route, quality: nearestQuality(spec) });
-    setFree(identifyQuality(spec) ? undefined : { spec, hash: formatRoute(next) });
-    navigateTo(next);
+    if (route.page === "chord") onChange(follow(route, { ...route, spec }));
   };
 
   // Switching to a scale and back returns to the same chord and inversion.
@@ -158,7 +132,7 @@ export function Lookup({ route, onChange: navigateTo }: LookupProps) {
         follow(route, {
           page: "scale",
           root,
-          scaleId: CHORD_QUALITIES[route.quality].keyScale.id,
+          scaleId: CHORD_QUALITIES[nearestQuality(route.spec)].keyScale.id,
           instrument,
           ...guitarOptions(route),
         }),
@@ -167,12 +141,12 @@ export function Lookup({ route, onChange: navigateTo }: LookupProps) {
     }
     const before = lastChord.current;
     const chord: ChordRoute =
-      before && CHORD_QUALITIES[before.quality].keyScale.id === route.scaleId
+      before && CHORD_QUALITIES[nearestQuality(before.spec)].keyScale.id === route.scaleId
         ? { ...before, root, instrument, ...guitarOptions(route) }
         : {
             page: "chord",
             root,
-            quality: TRIAD_FOR_SCALE[route.scaleId],
+            spec: specOf(TRIAD_FOR_SCALE[route.scaleId]),
             inversion: 0,
             instrument,
             ...guitarOptions(route),
@@ -257,12 +231,12 @@ export function Lookup({ route, onChange: navigateTo }: LookupProps) {
         {rootAndSpelling}
         {route.page === "chord" ? (
           <>
-            {chordSpec && <ChordBuilder root={root} spec={chordSpec} onChange={build} />}
+            <ChordBuilder root={root} spec={route.spec} onChange={build} />
             {instrumentPicker}
             {guitarPickers}
             {instrument === "piano" && (
               <InversionPicker
-                chord={chordFromSpec(root, chordSpec ?? specOf(route.quality))}
+                chord={chordFromSpec(root, route.spec)}
                 value={route.inversion}
                 onChange={(inversion) => onChange({ ...route, inversion })}
               />
@@ -283,7 +257,7 @@ export function Lookup({ route, onChange: navigateTo }: LookupProps) {
       </section>
 
       {route.page === "chord" ? (
-        <ChordView route={route} spec={chordSpec ?? specOf(route.quality)} />
+        <ChordView route={route} spec={route.spec} />
       ) : (
         <ScaleView route={route} />
       )}
