@@ -453,6 +453,31 @@ describe("App", () => {
     expect(window.location.hash).toBe("#/B/diminished?on=piano");
   });
 
+  it("finds a chord from pressed keys and opens it in the chord tab", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("tab", { name: "What chord is this?" }));
+    expect(window.location.hash).toBe("#/identify");
+
+    // The pressed keys survive a visit to another tab.
+    await user.click(screen.getByRole("button", { name: "E4" }));
+    await user.click(screen.getByRole("button", { name: "G4" }));
+    await user.click(screen.getByRole("tab", { name: "Circle of fifths" }));
+    await user.click(screen.getByRole("tab", { name: "What chord is this?" }));
+    expect(screen.getByRole("button", { name: "E4" })).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(screen.getByRole("button", { name: "C5" }));
+    await user.click(screen.getByRole("button", { name: /^C\/E/ }));
+
+    expect(screen.getByRole("tab", { name: "Chords & scales" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(chordNotes()).toEqual(["C", "E", "G"]);
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("C/E");
+    expect(window.location.hash).toBe("#/C/major?on=piano&inv=1");
+  });
+
   it("shows B major across the octave break", async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);

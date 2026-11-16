@@ -34,6 +34,7 @@ import {
  *   #/Cs/minor?with=7&on=guitar    C♯ minor seventh on the guitar
  *   #/A/scale/naturalMinor?on=piano  scale
  *   #/circle/Bb/major              circle of fifths with B♭ major selected
+ *   #/identify                     "What chord is this?" (the keys you pick are not in the link)
  *
  * The chord is a base chord (`major`, `minor`, `diminished`, `augmented`, `sus2`,
  * `sus4` or `power`) and the qualities in `with`. Qualities that do not fit the
@@ -74,7 +75,11 @@ export interface CircleRoute {
   readonly key: Key;
 }
 
-export type Route = LookupRoute | CircleRoute;
+export interface IdentifyRoute {
+  readonly page: "identify";
+}
+
+export type Route = LookupRoute | CircleRoute | IdentifyRoute;
 
 const MAX_INVERSION = 3;
 const STORAGE_KEY = "mtheorizer.instrument";
@@ -120,6 +125,8 @@ export const defaultChordRoute = (instrument: Instrument = "piano"): ChordRoute 
   inversion: 0,
   instrument,
 });
+
+export const defaultIdentifyRoute = (): IdentifyRoute => ({ page: "identify" });
 
 export const defaultCircleRoute = (): CircleRoute => ({
   page: "circle",
@@ -169,6 +176,8 @@ export function formatRoute(route: Route): string {
       return `#/${formatRouteNote(route.root)}/scale/${route.scaleId}?on=${route.instrument}${formatGuitarOptions(route)}`;
     case "circle":
       return `#/circle/${formatRouteNote(route.key.tonic)}/${route.key.mode}`;
+    case "identify":
+      return "#/identify";
   }
 }
 
@@ -250,6 +259,8 @@ function parseLink(
   const query = new URLSearchParams(queryAt === -1 ? "" : trimmed.slice(queryAt + 1));
   const parts = path.split("/").filter(Boolean).map(safeDecode);
 
+  if (parts[0] === "identify") return { page: "identify" };
+
   if (parts[0] === "circle") {
     const k = parseCircleKey(parts[1], parts[2]);
     return k ? { page: "circle", key: k } : strict ? undefined : defaultCircleRoute();
@@ -312,7 +323,7 @@ const currentHash = () => window.location.hash;
 /** Show `route`: adds a history entry, so the back button returns to the previous view. */
 export function navigate(route: Route) {
   const hash = formatRoute(route);
-  if (route.page !== "circle") rememberInstrument(route.instrument);
+  if (route.page === "chord" || route.page === "scale") rememberInstrument(route.instrument);
   if (hash === window.location.hash) return;
   window.history.pushState(null, "", hash);
   for (const listener of listeners) listener();
