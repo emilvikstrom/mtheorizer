@@ -73,15 +73,17 @@ Resultat:
 
 ## M6 – Ackordbyggare ⏳
 
-Mål: Ackordväljaren blir en byggare. I stället för att välja bland färdiga ackordtyper väljer man vilka toner ackordet ska ha, funktion för funktion, och appen namnger resultatet.
+Mål: Ackordväljaren ersätts av en byggare. Man väljer ett grundackord (C, Cm, C°, C+, Csus2, Csus4 eller C5) och lägger på kvaliteter, och appen namnger resultatet.
 
-- En rad per funktion: ters (dur, moll, sus2, sus4, ingen), kvint (♭5, ren, ♯5, ingen), sext, septima (♭7, maj7, °7), nona (♭9, 9, ♯9), undecima (11, ♯11) och tredecima (♭13, 13).
-- De 43 färdiga ackorden blir snabbval som sätter byggarens val, så inget försvinner. Fria kombinationer som C7♭5♭9 går också att bygga.
-- Teorimodulen får en `ChordSpec` och namngivning (symbol och namn) som är tabelltestad mot alla färdiga ackord. Tonerna stavas som förut via `transpose`.
+- Kvaliteterna är septima (7, maj7, °7), sext (6), utvidgningar (9, 11, 13), altererade toner (♭5, ♭9, ♯9, ♯11, ♭13) och tillagda toner (add2, add4, add9, add11).
+- Bara de kvaliteter som passar ackordet som det ser ut nu visas. På Cm visas inte ♭5 (det blir C°), på C° visas °7 men inte maj7, på Csus4 visas inte 11, C5 har inga kvaliteter, och 9, 11 och 13 visas först när en septima är vald.
+- Alla 43 nuvarande ackordtyper går att bygga (C+ med 7 blir C7♯5), och deras namn används när kombinationen har ett. Fria kombinationer som C7♭5♭9 går också.
+- Den nuvarande grupperade ackordväljaren tas bort.
+- Teorimodulen får en `ChordSpec`, regler för vilka kvaliteter som är tillgängliga och namngivning (symbol och namn), tabelltestat mot alla 43 typer. Tonerna stavas som förut via `transpose`.
 - Ackord bygger vidare på samma piano, gitarr, ljud och omvändningar, och får delbara länkar.
 - Därefter åt andra hållet: skriv in en ackordsymbol (`F#m7b5/C`) eller klicka in toner och se vilket ackord de bildar.
 
-Uppgifter: M6-01–M6-04 ligger under **Nästa**, resten under **Senare** i [BACKLOG.md](BACKLOG.md).
+Uppgifter: M6-01–M6-05 ligger under **Nästa**, resten under **Senare** i [BACKLOG.md](BACKLOG.md).
 
 ## M7 – Utbyggd kvintcirkel ⏳
 
@@ -103,14 +105,14 @@ Poängen är att de sju ackorden i en tonart alltid bildar samma lilla *block* p
 | Mitten | ii · vi · iii (Dm · Am · Em) |
 | Innerst | vii° (B°, under C) |
 
-Man hittar alltså tonartens ackord genom att titta på tre kolumner och inte räkna ut dem. Vrider man blocket ett steg medurs är man i G-dur (IV = C, I = G, V = D). Det förklarar också varför kvintcirkeln används för att modulera: grannarna delar nästan alla sina ackord.
+Man hittar alltså tonartens ackord genom att titta på tre kolumner och inte räkna ut dem. I moll gäller blocket för naturlig moll. Dominanten och ledtonsackordet ur harmonisk moll (E och G♯° i a-moll) ligger utanför blocket och markeras för sig. Vrider man blocket ett steg medurs är man i G-dur (IV = C, I = G, V = D). Det förklarar också varför kvintcirkeln används för att modulera: grannarna delar nästan alla sina ackord.
 
 Andra varianter som finns och som vi kan ta med:
 - **Roterande stegring:** en ring med I, ii, iii … som man vrider så att I pekar på vald tonart.
 - **Septimaringar:** samma hjul med septimackord (Cmaj7, Am7, Bø7), och en dominantring (C7 → F7 → B♭7) som visar kvintfall, den vanligaste ackordrörelsen.
-- **Moduskarta:** en rad per modus. C lydisk har samma förtecken som G-dur, C jonisk som C-dur, C mixolydisk som F-dur och så vidare nedåt till lokrisk. Varje modus är samma cirkel förskjuten, och raderna visar hur "ljus" eller "mörk" en modus är. Kräver M3.
+- **Moduskarta:** en rad per modus. C lydisk har samma förtecken som G-dur, C jonisk som C-dur, C mixolydisk som F-dur och så vidare nedåt till lokrisk. Varje modus är samma cirkel förskjuten, och raderna visar hur "ljus" eller "mörk" en modus är. Bygger på kyrkotonarterna från M3.
 - **Camelot-hjulet:** samma ringar med nummer 1A–12B som DJ:ar använder för att mixa låtar i kompatibla tonarter.
-- **Kvintcirkeln som inte stänger sig:** tolv rena kvinter blir något större än sju oktaver (cirka 23,5 cent, den pytagoreiska kommat), därför är instrument temperade. Man kan lyssna på skillnaden.
+- **Kvintcirkeln som inte stänger sig:** tolv rena kvinter blir något större än sju oktaver (cirka 23,5 cent, det pytagoreiska kommat), därför är instrument temperade. Man kan lyssna på skillnaden.
 
 Uppgifter: M7-01–M7-04 under **Nästa**, resten under **Senare**.
 
@@ -124,9 +126,9 @@ Mål: Gå från att slå upp enskilda ackord till att förstå hur de hänger ih
 - **Tritonussubstitution:** G7 byts mot D♭7. Båda innehåller tritonen B–F (som bara byter roll), och D♭7 → C ger en kromatisk basgång. Standard inom jazz.
 - **Kadenser:** de små avslutsformlerna: autentisk (V–I), plagal (IV–I), halv (slutar på V) och bedräglig (V–vi).
 - **Stämledning (voice leading):** hur man går mellan två ackord med så liten rörelse som möjligt. C till Am behöver bara flytta G till A.
-- **Ackord–skala-teori:** vilka skalor som passar över ett ackord (Cmaj7: jonisk eller lydisk, C7: mixolydisk eller alterad). Kräver M3.
+- **Ackord–skala-teori:** vilka skalor som passar över ett ackord (Cmaj7: jonisk eller lydisk, C7: mixolydisk eller alterad). Bygger på skalorna från M3.
 - **Modulering och pivotackord:** ackord som finns i två tonarter och därför kan byta mellan dem. C och G delar C, Em, G och Am.
-- **Symmetriska strukturer:** ett dim7-ackord delar oktaven i fyra lika delar, så C°7, E♭°7, G♭°7 och A°7 har samma toner. Förstorade treklanger, helton- och oktatonisk skala är symmetriska på liknande sätt.
+- **Symmetriska strukturer:** ett dim7-ackord delar oktaven i fyra lika delar, så C°7, E♭°7, G♭°7 och A°7 spelas på samma tangenter. Tonerna stavas ändå olika (C°7 har B𝄫 där A°7 har A), och vilken stavning som är rätt avgörs av ackordets funktion i tonarten. Förstorade treklanger, helton- och oktatonisk skala är symmetriska på liknande sätt.
 - **Kromatiska klassiker:** det neapolitanska sextackordet (♭II i första omvändning) och de övermåttliga sextackorden, där det tyska (A♭–C–E♭–F♯ i C) låter som A♭7 men stavas annorlunda och därför är ett bra exempel på vår regel att alltid stava toner.
 - **Tonnetz (neo-Riemannsk teori):** ett nät där treklanger är trianglar, och C-dur når Cm, Am och Em med ett enda tonflyttande steg (P, R och L). Experimentellt.
 - **Negativ harmoni:** ett ackord speglas runt axeln mellan grundton och kvint. C-dur blir C-moll. Experimentellt.
