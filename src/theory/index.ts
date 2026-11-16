@@ -3,6 +3,7 @@ export * from "./chordSpec";
 export * from "./chords";
 export * from "./fretboard";
 export * from "./guitarShapes";
+export * from "./identify";
 export * from "./intervals";
 export * from "./keys";
 export * from "./notes";

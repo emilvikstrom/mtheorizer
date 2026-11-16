@@ -10,6 +10,9 @@
   --accent-tone: #1864ab;
   --on-accent: #ffffff;
   --focus: #1864ab;
+  --block: color-mix(in srgb, var(--accent-tone) 22%, var(--surface));
+  --subdominant: #2b8a3e;
+  --dominant: #a61e4d;
   --key-white: #ffffff;
   --key-black: #22201e;
   --key-stroke: #3a3632;
@@ -40,6 +43,8 @@
     --black-button: #0b0a09;
     --black-button-text: #f2efeb;
     --focus: #74c0fc;
+    --subdominant: #69db7c;
+    --dominant: #f783ac;
     --key-stroke: #000000;
     --neck-board: #2e2924;
     --neck-fret: #6e665e;
@@ -548,7 +553,6 @@ body {
   height: auto;
   margin: 0 auto;
   user-select: none;
-  --nearby: color-mix(in srgb, var(--accent-tone) 22%, var(--surface));
 }
 
 .circle__segment {
@@ -571,8 +575,27 @@ body {
   fill: color-mix(in srgb, var(--accent-tone) 12%, var(--surface));
 }
 
-.circle__segment.is-nearby path {
-  fill: var(--nearby);
+.circle__segment.is-block path {
+  fill: var(--block);
+}
+
+/* Function marks: a thicker outline, and always the letter T, S or D as well. */
+.circle__segment.is-subdominant path {
+  stroke: var(--subdominant);
+  stroke-width: 4;
+}
+
+.circle__segment.is-dominant path {
+  stroke: var(--dominant);
+  stroke-width: 4;
+}
+
+/* V and vii° of harmonic minor: outside the block, so dashed. */
+.circle__segment.is-harmonic path {
+  fill: var(--surface);
+  stroke: var(--text);
+  stroke-width: 3;
+  stroke-dasharray: 7 5;
 }
 
 .circle__segment.is-selected path {
@@ -607,6 +630,13 @@ body {
   font-size: 15px;
 }
 
+.circle__step {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
 .circle__alt {
   font-size: 0.7em;
   font-weight: 500;
@@ -614,7 +644,8 @@ body {
 }
 
 .circle__segment.is-selected .circle__label,
-.circle__segment.is-selected .circle__alt {
+.circle__segment.is-selected .circle__alt,
+.circle__segment.is-selected .circle__step {
   fill: var(--on-accent);
 }
 
@@ -654,9 +685,31 @@ body {
   color: var(--muted);
 }
 
-.legend--nearby::before {
-  background: color-mix(in srgb, var(--accent-tone) 22%, var(--surface));
+.legend--block::before {
+  background: var(--block);
   border: 1px solid var(--border);
+}
+
+.legend--tonic::before {
+  background: var(--accent-root);
+}
+
+.legend--subdominant::before {
+  background: transparent;
+  border: 3px solid var(--subdominant);
+  box-sizing: border-box;
+}
+
+.legend--dominant::before {
+  background: transparent;
+  border: 3px solid var(--dominant);
+  box-sizing: border-box;
+}
+
+.legend--harmonic::before {
+  background: transparent;
+  border: 2px dashed var(--text);
+  box-sizing: border-box;
 }
 
 /* Key details */
