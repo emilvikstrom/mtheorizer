@@ -104,6 +104,82 @@ describe("CircleOfFifthsView", () => {
     expect(heading()).toHaveTextContent("A major");
   });
 
+  describe("rings", () => {
+    const diminished = () =>
+      Array.from(document.querySelectorAll<SVGGElement>(".circle__segment--diminished"));
+
+    it("shows three rings by default, with the diminished chords innermost", () => {
+      render(<Harness />);
+      expect(
+        within(screen.getByRole("group", { name: "Rings" })).getByRole("button", {
+          name: "Major, minor + diminished",
+        }),
+      ).toHaveAttribute("aria-pressed", "true");
+      const sectors = diminished();
+      expect(sectors).toHaveLength(12);
+      expect(sectors[0]).toHaveTextContent("B°");
+      expect(sectors[1]).toHaveTextContent("F♯°");
+      expect(sectors[11]).toHaveTextContent("E°");
+    });
+
+    it("shows both names at the positions with two", () => {
+      render(<Harness />);
+      const sectors = diminished();
+      expect(sectors[5]).toHaveTextContent("A♯°B♭°");
+      expect(sectors[6]).toHaveTextContent("E♯°F°");
+      expect(sectors[7]).toHaveTextContent("C°B♯°");
+      expect(screen.getByRole("radio", { name: "B major / C♭ major" })).toBeInTheDocument();
+    });
+
+    it("selects the position when you click a diminished sector, keeping the mode", async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+      await user.click(screen.getByRole("radio", { name: "A minor" }));
+      await user.click(diminished()[2] as Element);
+      expect(heading()).toHaveTextContent("B minor");
+
+      await user.click(screen.getByRole("radio", { name: "C major" }));
+      await user.click(diminished()[2] as Element);
+      expect(heading()).toHaveTextContent("D major");
+    });
+
+    it("hides the diminished ring with two rings", async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+      await user.click(
+        within(screen.getByRole("group", { name: "Rings" })).getByRole("button", {
+          name: "Major + minor",
+        }),
+      );
+      expect(diminished()).toHaveLength(0);
+      expect(screen.getAllByRole("radio")).toHaveLength(24);
+    });
+
+    it("shows only major keys with one ring, a minor key by its relative major", async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+      await user.click(screen.getByRole("radio", { name: "A minor" }));
+      await user.click(
+        within(screen.getByRole("group", { name: "Rings" })).getByRole("button", {
+          name: "Major",
+        }),
+      );
+      expect(diminished()).toHaveLength(0);
+      expect(screen.getAllByRole("radio")).toHaveLength(12);
+      expect(screen.getByRole("radio", { name: "C major" })).toHaveAttribute(
+        "aria-checked",
+        "true",
+      );
+      expect(heading()).toHaveTextContent("A minor");
+
+      screen.getByRole("radio", { name: "C major" }).focus();
+      await user.keyboard("{ArrowDown}");
+      expect(heading()).toHaveTextContent("A minor");
+      await user.keyboard("{ArrowRight}");
+      expect(heading()).toHaveTextContent("G major");
+    });
+  });
+
   it("moves around the circle with the arrow keys", async () => {
     const user = userEvent.setup();
     render(<Harness />);
