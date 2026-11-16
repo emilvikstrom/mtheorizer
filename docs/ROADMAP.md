@@ -73,15 +73,17 @@ Resultat:
 
 ## M6 – Ackordbyggare ⏳
 
-Mål: Ackordväljaren får en byggare. Utöver att välja bland färdiga ackordtyper kan man välja vilka toner ackordet ska ha, funktion för funktion, och appen namnger resultatet.
+Mål: Ackordväljaren ersätts av en byggare. Man väljer ett grundackord (C, Cm eller C°) och lägger på kvaliteter, och appen namnger resultatet.
 
-- En rad per funktion: ters (dur, moll, sus2, sus4, ingen), kvint (♭5, ren, ♯5, ingen), sext, septima (♭7, maj7, °7), nona (♭9, 9, ♯9), undecima (11, ♯11), tredecima (♭13, 13) och tillagd ton inom oktaven (2, 4). Ett val per funktion, så C7♭9♯9 går inte att bygga.
-- Den grupperade väljaren med de 43 färdiga ackorden finns kvar som förval, och byggaren fälls ut under den ("Customize"). Fria kombinationer som C7♭5♭9 går också att bygga och visas som "Custom" i väljaren.
-- Teorimodulen får en `ChordSpec` och namngivning (symbol och namn) som är tabelltestad mot alla färdiga ackord. Tonerna stavas som förut via `transpose`.
+- Kvaliteterna är septima (7, maj7, °7), sext (6), utvidgningar (9, 11, 13), altererade toner (♭5, ♯5, ♭9, ♯9, ♯11, ♭13), ters ersatt (sus2, sus4, no3) och tillagda toner (add2, add4, add9, add11).
+- Bara de kvaliteter som passar ackordet som det ser ut nu visas. På Cm visas inte ♭5 (det blir C°), på C° visas °7 men inte maj7, och 9, 11 och 13 visas först när en septima är vald.
+- Överstigande, sus och kvintackord byggs från C (C + ♯5 = C+). Alla 43 nuvarande ackordtyper går att bygga, och deras namn används när kombinationen har ett. Fria kombinationer som C7♭5♭9 går också.
+- Den nuvarande grupperade ackordväljaren tas bort.
+- Teorimodulen får en `ChordSpec`, regler för vilka kvaliteter som är tillgängliga och namngivning (symbol och namn), tabelltestat mot alla 43 typer. Tonerna stavas som förut via `transpose`.
 - Ackord bygger vidare på samma piano, gitarr, ljud och omvändningar, och får delbara länkar.
 - Därefter åt andra hållet: skriv in en ackordsymbol (`F#m7b5/C`) eller klicka in toner och se vilket ackord de bildar.
 
-Uppgifter: M6-01–M6-04 ligger under **Nästa**, resten under **Senare** i [BACKLOG.md](BACKLOG.md).
+Uppgifter: M6-01–M6-05 ligger under **Nästa**, resten under **Senare** i [BACKLOG.md](BACKLOG.md).
 
 ## M7 – Utbyggd kvintcirkel ⏳
 

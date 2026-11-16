@@ -19,16 +19,26 @@ _Inget just nu._
 
 _Ackordbyggaren (M6) först, sedan utbyggd kvintcirkel (M7)._
 
-- [ ] **M6-01** Datamodell för ackord byggda av val: `ChordSpec` med en plats per funktion: ters (dur, moll, sus2, sus4, ingen), kvint (♭5, ren, ♯5, ingen), sext (6), septima (♭7, maj7, °7), nona (♭9, 9, ♯9), undecima (11, ♯11), tredecima (♭13, 13) och tillagd ton inom oktaven (2, 4). `buildChordFromSpec(root, spec)` ger samma `Chord` som `buildChord`, med stavade toner via `transpose` och roller som förut
-  - Acceptans: alla 43 befintliga ackordtyper har en motsvarande spec (`specOf(qualityId)`) och ger exakt samma toner och roller som idag, inklusive flaggan `optional`, tabelltestat på alla 12 grundtoner. Fria kombinationer som C7♭5♭9 ger rätt stavade toner
-  - Regler för `optional`, som idag är skrivna för hand per ackordtyp: kvinten är obligatorisk i treklanger, kvintackord och när den är ♭5 eller ♯5, men valfri i ren form när ackordet har fyra toner eller fler. Nonan är valfri bara när undecima eller tredecima finns. Undecima är valfri bara när tredecima finns (m13). Durters med tredecima utelämnar undecima (C13), mollters behåller den (Cm13)
-  - Avgränsning: ett val per funktion, så alterade ackord med både ♭9 och ♯9 (C7♭9♯9) går inte att bygga. Tillagd 2 och 4 (add2, add4) ligger i en egen plats bredvid tersen, medan 9 och 11 ligger ovanför oktaven (add9, add11). Sext 6 och septima °7 ger samma tangent och kan inte väljas samtidigt
-- [ ] **M6-02** Namngivning: `chordSymbolFor(root, spec)` och `chordNameFor(spec)` ger ackordsymbol och namn för varje spec (Cm7♭5, C7♯9, C13, Csus4(add9)), och `identifyQuality(spec)` hittar motsvarande färdiga ackordtyp om det finns
-  - Acceptans: alla 43 ackordtyper ger exakt sin nuvarande symbol och sitt nuvarande namn när de går via spec. Reglerna (när "add" skrivs, när ♯9 står inom parentes, att 9/11/13 innebär en septima) är tabelltestade, och motsägelsefulla val ger ett tydligt namn eller tas bort av normaliseringen i M6-03
-- [ ] **M6-03** Byggar-UI: den grupperade ackordväljaren finns kvar som förval, och under den fälls en byggare ut ("Customize") med en rad per funktion (Third, Fifth, Sixth, Seventh, Ninth, Eleventh, Thirteenth, Added) som segmentknappar. Byggaren visar alltid valet i väljaren, och en ändring i byggaren som inte motsvarar en färdig typ visas som "Custom" i väljaren. Ackordsymbolen och tonerna uppdateras direkt
-  - Acceptans: alla färdiga ackord går att nå både via väljaren och genom att bygga dem, och ger samma resultat. Val som utesluter varandra stängs av (sus och ters, undecima på durters markeras som dissonant). Byggaren fungerar med tangentbord och skärmläsare (radiogrupper med etiketter) och på mobil. Befintliga tester för ackordväljaren uppdateras
-- [ ] **M6-04** Fria ackord i länk, ljud och vyer: ett byggt ackord som inte är en färdig typ får en delbar länk (`#/C/custom?3=min&5=dim&7=min`), och gamla länkar (`#/Db/major`) fungerar som förut. Omvändningar, uppspelning, piano och gitarrhals fungerar för alla specar
-  - Acceptans: rundtur länk → spec → länk för alla färdiga ackord och ett urval fria. Gitarrvyn visar ett tydligt meddelande ("No playable shape in this position") när greppsökningen inte hittar något för ett ovanligt ackord, i stället för tom hals. Valet sparas som förut när man byter flik
+- [ ] **M6-01** Datamodell: ett ackord är ett grundackord plus kvaliteter. `ChordSpec` har en bas (`major`, `minor`, `diminished`) och en mängd kvaliteter: septima (`7`, `maj7`, `°7`), sext (`6`), utvidgningar (`9`, `11`, `13`), altererade toner (`♭5`, `♯5`, `♭9`, `♯9`, `♯11`, `♭13`), ters ersatt (`sus2`, `sus4`, `no3`) och tillagda toner (`add2`, `add4`, `add9`, `add11`). `buildChordFromSpec(root, spec)` ger en `Chord` med stavade toner via `transpose` och roller som förut
+  - Acceptans: alla 43 befintliga ackordtyper har en spec (`specOf(qualityId)`) och ger exakt samma toner och roller som idag, inklusive flaggan `optional`, tabelltestat på alla 12 grundtoner. Fria kombinationer som C7♭5♭9 ger rätt stavade toner
+  - Tre grundackord: C, Cm och C°. Överstigande, sus och kvintackord byggs från C (C + ♯5 = C+, C + sus4 = Csus4, C + no3 = C5). På C° ger `7` det halvförminskade Cm7♭5 och `°7` det förminskade C°7
+  - Regler för `optional`, som idag är skrivna för hand per ackordtyp: kvinten är obligatorisk i treklanger, kvintackord och när den är ♭5 eller ♯5, men valfri i ren form när ackordet har fyra toner eller fler. Nonan är valfri bara när 11 eller 13 finns. Undecima är valfri bara när 13 finns (Cm13). Med durters utelämnar 13 undecima (C13), med mollters behålls den (Cm13)
+  - De nuvarande typerna i `chords.ts` blir ett internt namnregister som M6-03 slår upp i. De finns inte längre som en lista att välja i
+- [ ] **M6-02** Tillgängliga kvaliteter: `availableQualities(spec)` ger de kvaliteter som går att lägga till på ackordet som det ser ut nu. Allt annat visas inte i byggaren. Reglerna är data med tabelltester:
+  - Septima: `7` och `maj7` på C och Cm, `7` och `°7` på C°. Bara en septima i taget
+  - `6`: på C och Cm utan septima (6 på C° är samma tangent som °7)
+  - `9`, `11`, `13`: när en septima finns, och `9` även med `6` (C6/9). Utan septima visas `add9` och `add11` i stället
+  - `♭5` och `♯5`: bara på C (på Cm blir ♭5 C° och ♯5 är samma tangent som ♭6). `♭13` visas inte med `♯5`, och `♯11` inte med `♭5`
+  - `♭9`: med `7` på C och Cm. `♯9`: med `7` på C utan sus (på Cm är ♯9 samma tangent som molltersen). `♯11`: på C med septima. `♭13`: med `7` på C och Cm
+  - `sus2`, `sus4`, `no3`: bara på C, en i taget. `sus4` döljer `11`, `add4` och `add11`, och `sus2` döljer `add2`
+  - Tillagda toner (`add2`, `add4`, `add9`, `add11`): på C och Cm utan septima och utan 6, inte på C°
+  - Acceptans: alla 43 typer går att nå genom att börja från ett grundackord och bara välja bland det som visas. Att ta bort en kvalitet tar också bort det som berodde på den (utan `7` försvinner `9`, `11`, `13`, `♭9`, `♯9`, `♯11` och `♭13`), och den normaliseringen är testad
+- [ ] **M6-03** Namngivning: `chordSymbolFor(root, spec)` och `chordNameFor(spec)` ger ackordsymbol och namn för varje spec (Cm7♭5, C7♯9, C13, Csus4(add9)), och `identifyQuality(spec)` hittar motsvarande namngivna typ om det finns
+  - Acceptans: alla 43 typer ger exakt sin nuvarande symbol och sitt nuvarande namn när de går via spec. Reglerna (när "add" skrivs, när ♯9 står inom parentes, att 9/11/13 innebär en septima) är tabelltestade för alla kombinationer som `availableQualities` tillåter
+- [ ] **M6-04** Byggar-UI som ersätter ackordväljaren: grundtonsväljaren som förut, en rad med grundackorden (C, Cm, C° med vald grundton) och under den kvaliteterna som knappar att slå av och på, grupperade (Seventh, Sixth, Extensions, Altered, Suspended, Added). Bara det som `availableQualities` ger visas, och en grupp utan något tillgängligt döljs helt. Ackordsymbolen, tonerna, pianot och gitarren uppdateras direkt
+  - Acceptans: alla 43 typer går att bygga med klick, och den gamla ackordväljaren (`ChordQualityPicker`) är borttagen. Knapparna är växlingsknappar (`aria-pressed`) med etiketter, och när en knapp försvinner för att ett val ändrats hamnar fokus på gruppen i stället för att tappas. Fungerar i 375 px bredd. Testerna för ackordväljaren skrivs om för byggaren
+- [ ] **M6-05** Byggda ackord i länk, ljud och vyer: länken beskriver grundackord och kvaliteter (`#/C/minor?with=7,9`), och gamla länkar (`#/Db/major`, `#/C/dominant7Sharp9`) öppnar samma ackord i byggaren. Omvändningar, uppspelning, piano och gitarrhals fungerar för alla specar
+  - Acceptans: rundtur länk → spec → länk för alla 43 typer och ett urval fria. Ogiltiga kombinationer i länken normaliseras som i M6-02. Gitarrvyn visar ett tydligt meddelande ("No playable shape in this position") när greppsökningen inte hittar något för ett ovanligt ackord, i stället för tom hals. Valet sparas som förut när man byter flik
 - [ ] **M7-01** Teorimodul för kvintcirkelns ringar: `ringChords(position)` ger durackord (ytterst), relativ moll (mitten) och förminskat ackord (innerst, vii° i durtonarten och ii° i mollen) för varje position, och `diatonicBlock(key)` ger de sju diatoniska ackorden som positioner på ringarna (IV I V ytterst, ii vi iii i mitten, vii° innerst). Byggs på `diatonicTriads`, `circlePosition` och `harmonicMinorDominant` i `keys.ts` i stället för som ett parallellt API
   - Acceptans: blocket får samma form för alla 12 durtonarter och för de relativa molltonarterna (förskjutningarna är desamma, bara mittpunkten flyttas). Stavningen följer tonartens förtecken (B° i C-dur, F♯° i G-dur, C° i D♭-dur). Tabelltestat på alla positioner
   - Harmonisk moll: V (E i a-moll) och vii° (G♯°) ligger utanför blocket (E i yttre ringen fyra positioner medurs, G♯° i inre ringen tre positioner medurs). `diatonicBlock` ger dem separat med sina positioner så att M7-03 kan markera dem för sig
@@ -47,12 +57,12 @@ Idéer i ungefärlig prioritetsordning inom varje grupp. Bryt ner och flytta upp
 
 ### M6 – Ackordbyggare, fortsättning
 
-- [ ] **M6-05** Skriv ackordsymbol i ett sökfält: `parseChordSymbol("F#m7b5/C")` ger rot, spec och bas, och fältet hoppar till det ackordet
+- [ ] **M6-06** Skriv ackordsymbol i ett sökfält: `parseChordSymbol("F#m7b5/C")` ger rot, spec och bas, och fältet hoppar till det ackordet
   - Acceptans: alla symboler som `chordSymbolFor` ger går att läsa tillbaka (rundtur för alla 43 typer × 12 grundtoner), samt vanliga varianter (Cmaj7, CM7, C△7, Cmin7, C-7, Cø, Cdim, C+). Felaktig inmatning ger ett begripligt felmeddelande. Snedackord ger omvändning när basen är en ackordton
-- [ ] **M6-06** Identifiera ackord: `identifyChords(tones)` tar en uppsättning toner och ger alla ackordnamn som passar, bäst först (färre utelämnade toner och enklare namn först, snedackord när basen inte är grundton)
+- [ ] **M6-07** Identifiera ackord: `identifyChords(tones)` tar en uppsättning toner och ger alla ackordnamn som passar, bäst först (färre utelämnade toner och enklare namn först, snedackord när basen inte är grundton)
   - Acceptans: tonklasserna 0, 3, 6 och 9 ger C°7, D♯°7, F♯°7 och A°7 som likvärdiga alternativ, och C, E, G och A ger både C6 och Am7/C. Tabelltestat för alla ackordtyper på alla grundtoner. Indata är tonklasser (0–11), så grundtonen stavas med `preferredRootSpelling` (D♯°7 med två förtecken före E♭°7 med sex, eftersom E♭°7 innehåller B𝄫 och D𝄫)
-- [ ] **M6-07** "What chord is this?": klicka på pianotangenter (eller bandpositioner på gitarren) och se vilka ackord tonerna bildar, med ett klick för att öppna förslaget i ackordfliken
-  - Acceptans: bygger på M6-06. Tangenterna kan stängas av igen, och förslagen uppdateras direkt. Tomt val och ett enda val visar en vägledande text
+- [ ] **M6-08** "What chord is this?": klicka på pianotangenter (eller bandpositioner på gitarren) och se vilka ackord tonerna bildar, med ett klick för att öppna förslaget i ackordfliken
+  - Acceptans: bygger på M6-07. Tangenterna kan stängas av igen, och förslagen uppdateras direkt. Tomt val och ett enda val visar en vägledande text
 
 ### M7 – Utbyggd kvintcirkel, fortsättning
 
@@ -130,7 +140,7 @@ Ljud och in/ut:
 
 - [ ] **X-17** Bättre ljud: val av klang (sinus, triangel, "plockad"), tempo och volym för uppspelningen, och att pianot och gitarren lyser upp tonerna medan de klingar
   - Acceptans: `playback.ts` planerar fortfarande med en ren och testad funktion, och klangerna väljs utan att uppspelningen ändrar sig. Inställningarna minns. Referensstämning (A4 = 440 Hz) går att ändra
-- [ ] **X-18** Web MIDI: spela på ett anslutet MIDI-keyboard och se tonerna på pianot, och (med M6-06) vilket ackord de bildar
+- [ ] **X-18** Web MIDI: spela på ett anslutet MIDI-keyboard och se tonerna på pianot, och (med M6-07) vilket ackord de bildar
   - Acceptans: knappen visas bara när webbläsaren har Web MIDI, åtkomst begärs först vid klick, och att koppla från mitt i en session ger ett lugnt meddelande. MIDI-in ger ingen ändring av valet förrän användaren väljer det
 - [ ] **X-19** Dela och exportera: knappar för att kopiera länken, kopiera tonerna som text ("C–E♭–G") och spara diagrammet som PNG eller SVG
   - Acceptans: använder Web Share när det finns och kopiering annars. Exporterade bilder har tonnamn och titel och fungerar i både ljust och mörkt tema
