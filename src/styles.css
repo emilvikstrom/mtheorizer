@@ -664,6 +664,62 @@ body {
   stroke: var(--border);
 }
 
+/* The step ring turns to the key; its labels turn back so they stay upright. */
+.circle__wheel {
+  /* The reference box starts at the viewBox's origin, which is the circle's centre. */
+  transform-box: view-box;
+  transform-origin: 0 0;
+  transform: rotate(var(--turn, 0deg));
+  transition: transform 0.6s ease-in-out;
+  pointer-events: none;
+}
+
+.circle__wheel-slot path {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.circle__wheel-slot.is-step path {
+  fill: var(--block);
+}
+
+.circle__wheel-slot.is-subdominant path {
+  stroke: var(--subdominant);
+  stroke-width: 3;
+}
+
+.circle__wheel-slot.is-dominant path {
+  stroke: var(--dominant);
+  stroke-width: 3;
+}
+
+.circle__wheel-slot.is-tonic path {
+  fill: var(--accent-root);
+  stroke: var(--accent-root);
+}
+
+.circle__wheel-label {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: rotate(calc(-1 * var(--turn, 0deg)));
+  transition: transform 0.6s ease-in-out;
+}
+
+.circle__wheel-slot.is-tonic .circle__wheel-label {
+  fill: var(--on-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .circle__wheel,
+  .circle__wheel-label {
+    transition: none;
+  }
+}
+
 .circle__center-name {
   font-size: 22px;
   font-weight: 700;

@@ -25,6 +25,7 @@ export function CircleOfFifthsView({
   onOpenChord: (root: Note, quality: ChordQualityId) => void;
 }) {
   const [rings, setRings] = useState<RingCount>(3);
+  const [stepRing, setStepRing] = useState(true);
   const [clickAction, setClickAction] = useState<ClickAction>("key");
   const minor = selected.mode === "minor";
   return (
@@ -42,6 +43,14 @@ export function CircleOfFifthsView({
               {label}
             </button>
           ))}
+          <button
+            type="button"
+            className="toggle"
+            aria-pressed={stepRing}
+            onClick={() => setStepRing(!stepRing)}
+          >
+            Step ring
+          </button>
         </div>
         <div className="circle-view__rings" role="group" aria-label="Clicking a chord">
           {CLICK_OPTIONS.map(({ action, label }) => (
@@ -60,6 +69,7 @@ export function CircleOfFifthsView({
           value={selected}
           onChange={setSelected}
           rings={rings}
+          stepRing={stepRing}
           clickAction={clickAction}
           onOpenChord={onOpenChord}
         />
@@ -69,6 +79,11 @@ export function CircleOfFifthsView({
           {rings === 3 && (
             <span>
               Inside out: diminished (vii°), minor (relative), major. Tap a sector to pick its key
+            </span>
+          )}
+          {stepRing && (
+            <span>
+              Step ring in the middle: turned so that I (i in minor) sits on the key's tonic
             </span>
           )}
           <span className="legend legend--block">
