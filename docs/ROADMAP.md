@@ -73,11 +73,11 @@ Resultat:
 
 ## M6 – Ackordbyggare ⏳
 
-Mål: Ackordväljaren ersätts av en byggare. Man väljer ett grundackord (C, Cm eller C°) och lägger på kvaliteter, och appen namnger resultatet.
+Mål: Ackordväljaren ersätts av en byggare. Man väljer ett grundackord (C, Cm, C°, C+, Csus2, Csus4 eller C5) och lägger på kvaliteter, och appen namnger resultatet.
 
-- Kvaliteterna är septima (7, maj7, °7), sext (6), utvidgningar (9, 11, 13), altererade toner (♭5, ♯5, ♭9, ♯9, ♯11, ♭13), ters ersatt (sus2, sus4, no3) och tillagda toner (add2, add4, add9, add11).
-- Bara de kvaliteter som passar ackordet som det ser ut nu visas. På Cm visas inte ♭5 (det blir C°), på C° visas °7 men inte maj7, och 9, 11 och 13 visas först när en septima är vald.
-- Överstigande, sus och kvintackord byggs från C (C + ♯5 = C+). Alla 43 nuvarande ackordtyper går att bygga, och deras namn används när kombinationen har ett. Fria kombinationer som C7♭5♭9 går också.
+- Kvaliteterna är septima (7, maj7, °7), sext (6), utvidgningar (9, 11, 13), altererade toner (♭5, ♭9, ♯9, ♯11, ♭13) och tillagda toner (add2, add4, add9, add11).
+- Bara de kvaliteter som passar ackordet som det ser ut nu visas. På Cm visas inte ♭5 (det blir C°), på C° visas °7 men inte maj7, på Csus4 visas inte 11, C5 har inga kvaliteter, och 9, 11 och 13 visas först när en septima är vald.
+- Alla 43 nuvarande ackordtyper går att bygga (C+ med 7 blir C7♯5), och deras namn används när kombinationen har ett. Fria kombinationer som C7♭5♭9 går också.
 - Den nuvarande grupperade ackordväljaren tas bort.
 - Teorimodulen får en `ChordSpec`, regler för vilka kvaliteter som är tillgängliga och namngivning (symbol och namn), tabelltestat mot alla 43 typer. Tonerna stavas som förut via `transpose`.
 - Ackord bygger vidare på samma piano, gitarr, ljud och omvändningar, och får delbara länkar.
