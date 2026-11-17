@@ -9,6 +9,7 @@ import {
   diatonicBlock,
   diatonicTriads,
   dominantKey,
+  fifthsFall,
   formatKey,
   harmonicMinorDominant,
   key,
@@ -21,7 +22,15 @@ import {
   secondaryDominants,
   subdominantKey,
 } from "./keys";
-import { type Note, formatNote, formatNoteAscii, mod12, parseNote, pitchClass } from "./notes";
+import {
+  type Note,
+  formatNote,
+  formatNoteAscii,
+  mod12,
+  noteEquals,
+  parseNote,
+  pitchClass,
+} from "./notes";
 
 const k = (tonic: string, mode: KeyMode = "major") => key(parseNote(tonic), mode);
 const ascii = (key: Key) => `${formatNoteAscii(key.tonic)} ${key.mode}`;
@@ -628,4 +637,70 @@ describe("degreeWheel", () => {
       expect(shape(x)).toEqual(shape(k("C", x.mode)));
     }
   });
+});
+
+describe("fifthsFall", () => {
+  const ALL_KEYS: Key[] = CIRCLE_OF_FIFTHS.flat().flatMap((tonic) => {
+    const major = key(tonic, "major");
+    return [major, relativeKey(major)];
+  });
+  const symbols = (x: Key) => fifthsFall(x).map((s) => s.chord.symbol);
+  const romans = (x: Key) => fifthsFall(x).map((s) => s.roman);
+
+  it.each([
+    ["C", "major", ["Am", "Dm", "G", "C"]],
+    ["G", "major", ["Em", "Am", "D", "G"]],
+    ["Bb", "major", ["Gm", "Cm", "F", "B♭"]],
+    ["Db", "major", ["B♭m", "E♭m", "A♭", "D♭"]],
+    ["F#", "major", ["D♯m", "G♯m", "C♯", "F♯"]],
+    ["A", "minor", ["B°", "E", "Am"]],
+    ["C#", "minor", ["D♯°", "G♯", "C♯m"]],
+    ["Eb", "minor", ["F°", "B♭", "E♭m"]],
+  ] as const)("is %s %s: %j", (tonic, mode, expected) => {
+    expect(symbols(k(tonic, mode))).toEqual(expected);
+  });
+
+  it("is vi ii V I in a major key and ii° V i in a minor key", () => {
+    expect(romans(k("C"))).toEqual(["vi", "ii", "V", "I"]);
+    expect(romans(k("A", "minor"))).toEqual(["ii°", "V", "i"]);
+  });
+
+  it.each(ALL_KEYS.map((x) => [ascii(x), x] as const))(
+    "%s: every root is a fifth below the one before and the chain ends on the tonic",
+    (_name, x) => {
+      const steps = fifthsFall(x);
+      steps.slice(1).forEach((step, i) => {
+        const before = steps[i];
+        // Down a fifth: the earlier root is a fifth above the later one.
+        expect(mod12(pitchClass(before?.chord.root ?? x.tonic) - pitchClass(step.chord.root))).toBe(
+          7,
+        );
+        // One step counterclockwise on the circle.
+        expect(step.position).toBe(mod12((before?.position ?? 0) - 1));
+      });
+      const last = steps[steps.length - 1];
+      expect(last && noteEquals(last.chord.root, x.tonic)).toBe(true);
+      // The tonic's own slot: a minor key sits at its relative major's position, its root a quarter
+      // turn further round (A minor is at 0, A at 3).
+      expect(last?.position).toBe(mod12(pitchClass(x.tonic) * 7));
+      expect(last?.position).toBe(mod12(circlePosition(x) + (x.mode === "minor" ? 3 : 0)));
+    },
+  );
+
+  it.each(ALL_KEYS.map((x) => [ascii(x), x] as const))(
+    "%s: the chords are spelled as the key's triads, V being major in minor",
+    (_name, x) => {
+      const triads = diatonicTriads(x);
+      for (const step of fifthsFall(x)) {
+        const triad = triads.find((t) => noteEquals(t.notes[0] ?? x.tonic, step.chord.root));
+        expect(triad).toBeDefined();
+        if (x.mode === "minor" && step.roman === "V") {
+          expect(step.chord.symbol).toBe(harmonicMinorDominant(x)?.symbol);
+        } else {
+          expect(step.chord.symbol).toBe(triad?.symbol);
+          expect(step.roman).toBe(triad?.roman);
+        }
+      }
+    },
+  );
 });

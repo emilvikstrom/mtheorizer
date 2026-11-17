@@ -1,5 +1,13 @@
-import { useState } from "react";
-import type { ChordQualityId, ChordSize, Key, Note } from "../theory";
+import { useEffect, useState } from "react";
+import { audioSupported, planProgression, playNotes, stopPlayback } from "../audio/playback";
+import {
+  type ChordQualityId,
+  type ChordSize,
+  type Key,
+  type Note,
+  chordOnKeyboard,
+  fifthsFall,
+} from "../theory";
 import { CircleOfFifths, type ClickAction, type RingCount } from "./CircleOfFifths";
 import { KeyDetails } from "./KeyDetails";
 import { ModeMap } from "./ModeMap";
@@ -34,7 +42,16 @@ export function CircleOfFifthsView({
   const [stepRing, setStepRing] = useState(true);
   const [chordSize, setChordSize] = useState<ChordSize>("triads");
   const [clickAction, setClickAction] = useState<ClickAction>("key");
+  const [fall, setFall] = useState(false);
   const minor = selected.mode === "minor";
+  const chain = fifthsFall(selected);
+
+  // The chain stops sounding when the key changes, when it is hidden and when the view is left.
+  useEffect(() => () => stopPlayback(), [selected, fall]);
+
+  const playFall = () =>
+    playNotes(planProgression(chain.map(({ chord }) => chordOnKeyboard(chord).map((t) => t.midi))));
+
   return (
     <>
       <div className="circle-view">
@@ -86,6 +103,26 @@ export function CircleOfFifthsView({
               </button>
             ))}
           </div>
+          <div className="circle-view__rings" role="group" aria-label="Falling fifths">
+            <button
+              type="button"
+              className="toggle"
+              aria-pressed={fall}
+              onClick={() => setFall(!fall)}
+            >
+              Falling fifths
+            </button>
+            {fall && audioSupported() && (
+              <button
+                type="button"
+                className="play__button"
+                aria-label={`Play falling fifths in ${chain.map(({ chord }) => chord.symbol).join(", ")}`}
+                onClick={playFall}
+              >
+                ▶ Play
+              </button>
+            )}
+          </div>
           <CircleOfFifths
             value={selected}
             onChange={setSelected}
@@ -93,9 +130,19 @@ export function CircleOfFifthsView({
             stepRing={stepRing}
             chordSize={chordSize}
             clickAction={clickAction}
+            fifthsFall={fall}
             onOpenChord={onOpenChord}
           />
           <figcaption className="circle-view__legend">
+            {fall && (
+              <span className="legend legend--fall">
+                Falling fifths, numbered in the order they are played:{" "}
+                {chain.map(({ roman, chord }) => `${roman} ${chord.symbol}`).join(" → ")}. Each root
+                is a fifth below the one before, one step counterclockwise. That is the most common
+                chord movement: the root of one chord is the fifth of the next, so they share a
+                note, and each chord pulls toward the next like a dominant to its tonic
+              </span>
+            )}
             <span>Clockwise: up a fifth, one more ♯</span>
             <span>Counterclockwise: down a fifth, one more ♭</span>
             {rings === 3 && (

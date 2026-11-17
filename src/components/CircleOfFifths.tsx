@@ -11,6 +11,7 @@ import {
   circlePosition,
   degreeWheel,
   diatonicBlock,
+  fifthsFall,
   formatKey,
   formatNote,
   keySignature,
@@ -348,6 +349,64 @@ function StepRing({ value, outer }: { value: Key; outer: number }) {
   );
 }
 
+/** Radius of the arrows of the falling fifths, outside the key signatures. */
+const R_FALL = 291;
+const FALL_BADGE = 8;
+
+/**
+ * The chain of falling fifths (vi ii V I, or ii° V i) as numbered badges on
+ * the rim joined by arrows that run counterclockwise: down a fifth, one
+ * position at a time. The numbers give the order, so the chain does not rest
+ * on colour alone.
+ */
+function FifthsFall({ value }: { value: Key }) {
+  const steps = fifthsFall(value);
+  // The arrows stop short of the badges, which are about 2° wide each.
+  const gap = 4;
+  return (
+    <g className="circle__fall" data-testid="fifths-fall">
+      <defs>
+        <marker
+          id="circle-fall-arrowhead"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="6"
+          markerHeight="6"
+          orient="auto"
+        >
+          <path d="M 0 0 L 10 5 L 0 10 z" className="circle__fall-head" />
+        </marker>
+      </defs>
+      {steps.slice(1).map((step, i) => {
+        const from = steps[i];
+        if (!from) return null;
+        const a0 = angleOf(from.position) - gap;
+        const a1 = angleOf(step.position) + gap;
+        return (
+          <path
+            key={`${from.position}-${step.position}`}
+            className="circle__fall-arrow"
+            d={`M ${point(R_FALL, a0)} A ${R_FALL} ${R_FALL} 0 0 0 ${point(R_FALL, a1)}`}
+            markerEnd="url(#circle-fall-arrowhead)"
+          />
+        );
+      })}
+      {steps.map((step, i) => {
+        const [x, y] = polar(R_FALL, angleOf(step.position));
+        return (
+          <g key={step.position} className="circle__fall-badge" data-order={i + 1}>
+            <circle cx={x} cy={y} r={FALL_BADGE} />
+            <text x={x} y={y} textAnchor="middle" dominantBaseline="central">
+              {i + 1}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
 /** `degrees` folded into the range -180…180. */
 const mod12Degrees = (degrees: number) => ((((degrees + 180) % 360) + 360) % 360) - 180;
 
@@ -361,6 +420,8 @@ interface CircleOfFifthsProps {
   chordSize?: ChordSize;
   /** What a click on one of the key's chords does. Default: select its key. */
   clickAction?: ClickAction;
+  /** Mark the chain of falling fifths (vi ii V I) with numbered badges and arrows. Default: off. */
+  fifthsFall?: boolean;
   onOpenChord?: (root: Note, quality: ChordQualityId) => void;
 }
 
@@ -380,6 +441,7 @@ export function CircleOfFifths({
   stepRing = false,
   chordSize = "triads",
   clickAction = "key",
+  fifthsFall: showFall = false,
   onOpenChord,
 }: CircleOfFifthsProps) {
   const segments = useRef(new Map<string, SVGGElement>());
@@ -499,6 +561,12 @@ export function CircleOfFifths({
       </g>
 
       {stepRing && <StepRing value={value} outer={hubRadius - 4} />}
+
+      {showFall && (
+        <g aria-hidden="true">
+          <FifthsFall value={value} />
+        </g>
+      )}
     </svg>
   );
 }

@@ -1680,3 +1680,29 @@ body {
   color: inherit;
   cursor: pointer;
 }
+
+/* Falling fifths: numbered badges and counterclockwise arrows on the rim of the circle. */
+
+.circle__fall-arrow {
+  fill: none;
+  stroke: var(--accent-root);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.circle__fall-head {
+  fill: var(--accent-root);
+}
+
+.circle__fall-badge circle {
+  fill: var(--accent-root);
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+
+.circle__fall-badge text {
+  fill: var(--on-accent);
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+}
