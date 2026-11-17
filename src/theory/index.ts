@@ -11,6 +11,7 @@ export * from "./intervals";
 export * from "./keys";
 export * from "./modes";
 export * from "./notes";
+export * from "./pivotChords";
 export * from "./progressions";
 export * from "./scales";
 export * from "./temperament";
