@@ -14,6 +14,7 @@ export * from "./notes";
 export * from "./pivotChords";
 export * from "./progressions";
 export * from "./scales";
+export * from "./staff";
 export * from "./temperament";
 export * from "./tritoneSubstitution";
 export * from "./voicing";

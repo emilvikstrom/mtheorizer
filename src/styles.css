@@ -2092,3 +2092,55 @@ body {
 .compare__actions .play__button {
   min-height: 2.75rem;
 }
+
+/* Notation: the chord or scale on a staff */
+
+.notation {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.notation__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.notation__hint {
+  margin: 0;
+  color: var(--muted);
+}
+
+.staff {
+  margin: 0;
+}
+
+.staff__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: var(--text);
+}
+
+.staff__line,
+.staff__ledger {
+  stroke: var(--key-stroke);
+  stroke-width: 1;
+}
+
+.staff__clef,
+.staff__signature,
+.staff__accidental {
+  fill: var(--text);
+  font-family: "Noto Music", "Bravura Text", "Apple Symbols", "Segoe UI Symbol", "Symbola", serif;
+}
+
+.staff__head {
+  fill: var(--surface);
+  stroke: var(--accent-ink-tone);
+  stroke-width: 2;
+}
+
+.staff__note--root .staff__head {
+  stroke: var(--accent-ink-root);
+}
