@@ -2,12 +2,15 @@
   --bg: #f7f5f2;
   --surface: #ffffff;
   --text: #1d1b19;
-  --muted: #6b6560;
+  --muted: #625c57;
   --border: #d9d4ce;
   --black-button: #2b2926;
   --black-button-text: #f7f5f2;
   --accent-root: #c2410c;
   --accent-tone: #1864ab;
+  /* The accents as text, borders and outlines on the page: lighter in the dark theme. */
+  --accent-ink-root: var(--accent-root);
+  --accent-ink-tone: var(--accent-tone);
   --on-accent: #ffffff;
   --focus: #1864ab;
   --block: color-mix(in srgb, var(--accent-tone) 22%, var(--surface));
@@ -17,13 +20,15 @@
   --key-black: #22201e;
   --key-stroke: #3a3632;
   --key-octave: #8a847e;
+  --key-ring: #1d1b19;
+  --mark-ring: var(--surface);
   --neck-board: #eadfce;
   --neck-fret: #a9a097;
   --neck-string: #6b6560;
   --neck-nut: #3a3632;
   --neck-inlay: #d3c6b3;
 
-  color-scheme: light dark;
+  color-scheme: light;
   font-family:
     system-ui,
     -apple-system,
@@ -33,25 +38,28 @@
   line-height: 1.4;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #161514;
-    --surface: #211f1d;
-    --text: #f2efeb;
-    --muted: #a39d96;
-    --border: #3d3a36;
-    --black-button: #0b0a09;
-    --black-button-text: #f2efeb;
-    --focus: #74c0fc;
-    --subdominant: #69db7c;
-    --dominant: #f783ac;
-    --key-stroke: #000000;
-    --neck-board: #2e2924;
-    --neck-fret: #6e665e;
-    --neck-string: #a39d96;
-    --neck-nut: #d9d4ce;
-    --neck-inlay: #45403a;
-  }
+/* The theme is set on <html> by the script in index.html and by ThemeSwitch. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #161514;
+  --surface: #211f1d;
+  --text: #f2efeb;
+  --muted: #a39d96;
+  --border: #3d3a36;
+  --black-button: #0b0a09;
+  --black-button-text: #f2efeb;
+  --accent-ink-root: #ff9566;
+  --accent-ink-tone: #6db3f2;
+  --focus: #74c0fc;
+  --subdominant: #69db7c;
+  --dominant: #f783ac;
+  --key-stroke: #000000;
+  --neck-board: #2e2924;
+  --neck-fret: #6e665e;
+  --neck-string: #a39d96;
+  --neck-nut: #d9d4ce;
+  --neck-inlay: #45403a;
+  --mark-ring: #f2efeb;
 }
 
 *,
@@ -83,6 +91,18 @@ body {
 .app__tagline {
   margin: 4px 0 0;
   color: var(--muted);
+}
+
+.app__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.theme-switch .picker {
+  margin: 0;
 }
 
 /* Pickers: radio buttons styled as a segmented control. */
@@ -331,13 +351,13 @@ body {
   gap: 2px;
   padding: 12px 14px;
   border: 1px solid var(--border);
-  border-left: 6px solid var(--accent-tone);
+  border-left: 6px solid var(--accent-ink-tone);
   border-radius: 10px;
   background: var(--surface);
 }
 
 .tone--root {
-  border-left-color: var(--accent-root);
+  border-left-color: var(--accent-ink-root);
 }
 
 .chord-info__tones--scale {
@@ -427,8 +447,13 @@ body {
 }
 
 .key--bass rect {
-  stroke: var(--text, #111);
+  stroke: var(--key-ring);
   stroke-width: 4;
+}
+
+/* A ring that is dark on a white key would vanish on a black one. */
+.key--black.key--bass rect {
+  stroke: var(--key-white);
 }
 
 .key__label {
@@ -518,7 +543,7 @@ body {
 
 .tabs__tab[aria-selected="true"] {
   color: var(--text);
-  border-bottom-color: var(--accent-root);
+  border-bottom-color: var(--accent-ink-root);
 }
 
 .tabs__tab:focus-visible {
@@ -830,8 +855,8 @@ body {
 }
 
 .toggle[aria-pressed="true"] {
-  border-color: var(--accent-root);
-  color: var(--accent-root);
+  border-color: var(--accent-ink-root);
+  color: var(--accent-ink-root);
   font-weight: 700;
 }
 
@@ -1099,7 +1124,7 @@ body {
 }
 
 .fret-dot circle {
-  stroke: var(--surface);
+  stroke: var(--mark-ring);
   stroke-width: 1.5;
 }
 
@@ -1470,18 +1495,18 @@ body {
 
 /* The selected tonic's column is outlined, so it does not depend on colour alone. */
 .mode-map__selected {
-  border-right: 2px solid var(--accent-tone);
-  border-left: 2px solid var(--accent-tone);
+  border-right: 2px solid var(--accent-ink-tone);
+  border-left: 2px solid var(--accent-ink-tone);
   background: var(--block);
 }
 
 .mode-map__table thead .mode-map__selected {
-  border-top: 2px solid var(--accent-tone);
+  border-top: 2px solid var(--accent-ink-tone);
   font-weight: 700;
 }
 
 .mode-map__table tbody tr:last-child .mode-map__selected {
-  border-bottom: 2px solid var(--accent-tone);
+  border-bottom: 2px solid var(--accent-ink-tone);
 }
 
 .mode-map__cell {

@@ -145,7 +145,8 @@ Mål: Appen blir även ett träningsverktyg: stava ackord och skalor själv, hö
 - ✅ Lint och formattering med ESLint och Prettier, i Docker-bygget (X-03).
 - ✅ Visning på gitarrhals som alternativ till pianot (X-07), fyra band i taget med spelbara ackordgrepp och skallägen (G-01). Andra stämningar och vänsterhänt hals finns (G-02). Fingersättning, varianter av grepp och kvintackord med dämpade strängar finns också (G-03–G-05).
 - ✅ Tonvisning: tangenter och band kan visa tonnamn, intervall (R, ♭3, 5, ♭7), steg eller ingenting, där facit visas på begäran (X-10).
-- ⏳ Förslag på gränssnitt: mörkt tema (X-09), senaste och favoriter (X-11), jämför två ackord (X-12), notskrift (X-13), tillgänglighet (X-14) och mobilanpassning (X-15).
+- ✅ Mörkt tema med växel (System, Light, Dark) som kommer ihåg valet och sätts före första ritningen (X-09).
+- ⏳ Förslag på gränssnitt: senaste och favoriter (X-11), jämför två ackord (X-12), notskrift (X-13), tillgänglighet (X-14) och mobilanpassning (X-15).
 - ⏳ Språk och notnamn: svenska/engelska och B/H, solfège och Nashville-nummer (X-16).
 - ⏳ Ljud och in/ut: fler klanger och tempo (X-17), Web MIDI (X-18), dela och exportera (X-19).
 - ⏳ Fler instrument: ukulele, bas, mandolin och banjo (G-06).
