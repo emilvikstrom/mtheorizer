@@ -12,6 +12,7 @@ export * from "./modes";
 export * from "./notes";
 export * from "./progressions";
 export * from "./scales";
+export * from "./temperament";
 export * from "./tritoneSubstitution";
 export * from "./voicing";
 export * from "./voiceLeading";
