@@ -4,6 +4,7 @@ import {
   type Key,
   type Note,
   borrowedChords,
+  secondaryDominants,
   circlePosition,
   diatonicTriads,
   dominantKey,
@@ -165,6 +166,42 @@ export function KeyDetails({ value, onChange, onOpenChord }: KeyDetailsProps) {
           </ol>
         </div>
       )}
+
+      <div className="key-details__section">
+        <h3 className="key-details__heading">Secondary dominants</h3>
+        <p className="key-details__text">
+          A dominant seventh aimed at another chord of the key, as D7 leads to G in C major. The
+          notes outside {formatKey(value)} are marked with a dot. Click one to open it.
+        </p>
+        <ol className="triads" aria-label="Secondary dominants">
+          {secondaryDominants(value).map((dominant) => (
+            <li key={dominant.target}>
+              <button
+                type="button"
+                className="triad triad--secondary"
+                aria-label={`Open ${dominant.symbol} in Chords & scales, ${dominant.roman}, resolves to ${dominant.targetSymbol}${
+                  dominant.foreign.length > 0
+                    ? `, with ${dominant.foreign.map((n) => formatNote(n)).join(" and ")} from outside the key`
+                    : ", all notes in the key"
+                }`}
+                onClick={() => {
+                  const root = dominant.notes[0];
+                  if (root) onOpenChord(root, "dominant7");
+                }}
+              >
+                <span className="triad__roman">{dominant.roman}</span>
+                <span className="triad__symbol">{dominant.symbol}</span>
+                <span className="triad__function">→ {dominant.targetSymbol}</span>
+                <span className="triad__foreign" aria-hidden="true">
+                  {dominant.foreign.length > 0
+                    ? `● ${dominant.foreign.map((n) => formatNote(n)).join(" ")}`
+                    : "in key"}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </div>
 
       <div className="key-details__section">
         <h3 className="key-details__heading">Related keys</h3>
