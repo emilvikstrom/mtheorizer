@@ -6,6 +6,7 @@ import { Fretboard } from "./Fretboard";
 import { OptionPicker, type PickerOption } from "./OptionPicker";
 import { Piano } from "./Piano";
 import { PlayButtons } from "./PlayButtons";
+import { ShareExport } from "./ShareExport";
 import { RootPicker } from "./RootPicker";
 import {
   type ChordRoute,
@@ -351,6 +352,7 @@ function ChordView({ route, spec }: { route: ChordRoute; spec: ChordSpec }) {
     <>
       <ChordInfo chord={chord} symbol={inversionSymbol(chord, inversion)} />
       <PlayButtons midis={keys.map((k) => k.midi)} kind="chord" name={chord.name} />
+      <ShareExport key={chord.name} title={chord.name} notes={chord.tones.map((t) => t.note)} />
       <InstrumentView
         instrument={instrument}
         name={chord.name}
@@ -374,6 +376,7 @@ function ScaleView({ route }: { route: ScaleRoute }) {
     <>
       <ScaleInfo scale={scale} />
       <PlayButtons midis={keys.map((k) => k.midi)} kind="scale" name={scale.name} />
+      <ShareExport key={scale.name} title={scale.name} notes={scale.tones.map((t) => t.note)} />
       <InstrumentView
         instrument={route.instrument}
         name={scale.name}
