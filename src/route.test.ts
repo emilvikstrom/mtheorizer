@@ -134,6 +134,12 @@ describe("parseRoute", () => {
     expect(parseRouteStrict("#/identify")).toEqual({ page: "identify" });
   });
 
+  it("links to the key-signature quiz", () => {
+    expect(formatRoute({ page: "quiz" })).toBe("#/quiz");
+    expect(parseRoute("#/quiz")).toEqual({ page: "quiz" });
+    expect(parseRouteStrict("#/quiz")).toEqual({ page: "quiz" });
+  });
+
   it("falls back to C major on the circle for a bad circle link", () => {
     for (const hash of ["#/circle", "#/circle/Cs/foo", "#/circle/Ds/major", "#/circle/H/minor"]) {
       expectSame(parseRoute(hash), defaultCircleRoute());
