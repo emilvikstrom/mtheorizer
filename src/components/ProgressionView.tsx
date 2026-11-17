@@ -27,6 +27,7 @@ import {
 } from "../theory";
 import { OptionPicker } from "./OptionPicker";
 import { RootPicker } from "./RootPicker";
+import { SoundSettings } from "./SoundSettings";
 
 interface ProgressionViewProps {
   tonic: Note;
@@ -177,6 +178,7 @@ export function ProgressionView({ tonic, id, onChange, onOpenChord }: Progressio
             >
               ▶ Play progression
             </button>
+            <SoundSettings />
           </div>
         )}
       </section>

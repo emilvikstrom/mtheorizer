@@ -110,6 +110,62 @@ describe("CircleOfFifthsView", () => {
     });
   });
 
+  describe("secondary dominants", () => {
+    const list = () => screen.getByRole("list", { name: "Secondary dominants" });
+    const column = (selector: string) =>
+      within(list())
+        .getAllByRole("listitem")
+        .map((item) => item.querySelector(selector)?.textContent);
+
+    it("shows C major's secondary dominants with the chord each one leads to", () => {
+      render(<Harness />);
+      expect(column(".triad__roman")).toEqual(["V7/ii", "V7/iii", "V7/IV", "V7/V", "V7/vi"]);
+      expect(column(".triad__symbol")).toEqual(["A7", "B7", "C7", "D7", "E7"]);
+      expect(column(".triad__function")).toEqual(["→ Dm", "→ Em", "→ F", "→ G", "→ Am"]);
+    });
+
+    it("writes out the notes from outside the key, not only by styling", () => {
+      render(<Harness />);
+      expect(column(".triad__foreign")).toEqual(["● C♯", "● D♯ F♯", "● B♭", "● F♯", "● G♯"]);
+      expect(
+        screen.getByRole("button", {
+          name: "Open D7 in Chords & scales, V7/V, resolves to G, with F♯ from outside the key",
+        }),
+      ).toBeInTheDocument();
+    });
+
+    it("says when a secondary dominant has only notes of the key", async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+      await user.click(screen.getByRole("radio", { name: "A minor" }));
+      expect(column(".triad__roman")).toEqual(["V7/III", "V7/iv", "V7/v", "V7/VI", "V7/VII"]);
+      expect(column(".triad__foreign")[0]).toBe("in key");
+      expect(
+        screen.getByRole("button", {
+          name: "Open G7 in Chords & scales, V7/III, resolves to C, all notes in the key",
+        }),
+      ).toBeInTheDocument();
+    });
+
+    it("follows the key's spelling", async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+      await user.click(screen.getByRole("radio", { name: "F♯ major / G♭ major" }));
+      expect(column(".triad__symbol")).toEqual(["D♯7", "E♯7", "F♯7", "G♯7", "A♯7"]);
+    });
+
+    it("opens a secondary dominant as a dominant seventh", async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+      await user.click(
+        screen.getByRole("button", {
+          name: "Open D7 in Chords & scales, V7/V, resolves to G, with F♯ from outside the key",
+        }),
+      );
+      expect(opened).toHaveBeenLastCalledWith(note("D"), "dominant7");
+    });
+  });
+
   it("has 12 major and 12 minor keys", () => {
     render(<Harness />);
     const circle = screen.getByRole("radiogroup", { name: /Circle of fifths/ });
