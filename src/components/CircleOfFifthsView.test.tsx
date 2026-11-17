@@ -21,6 +21,15 @@ import { CircleOfFifthsView } from "./CircleOfFifthsView";
 
 const opened = vi.fn();
 
+// Sound is not played in tests; the view's calls are what is checked.
+const audio = vi.hoisted(() => ({ play: vi.fn(() => 0), stop: vi.fn() }));
+vi.mock("../audio/playback", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../audio/playback")>()),
+  audioSupported: () => true,
+  playNotes: audio.play,
+  stopPlayback: audio.stop,
+}));
+
 function Harness() {
   const [selected, setSelected] = useState<Key>(key(note("C"), "major"));
   return <CircleOfFifthsView value={selected} onChange={setSelected} onOpenChord={opened} />;
@@ -543,6 +552,101 @@ describe("CircleOfFifthsView", () => {
       expect(turn()).toBe("-60deg");
       await user.click(screen.getByRole("radio", { name: "G major" }));
       expect(turn()).toBe("30deg");
+    });
+  });
+
+  describe("falling fifths", () => {
+    const badges = (container: HTMLElement) =>
+      Array.from(container.querySelectorAll<SVGGElement>(".circle__fall-badge")).map((b) => ({
+        order: b.dataset.order,
+        text: b.textContent,
+      }));
+    const toggle = () => screen.getByRole("button", { name: "Falling fifths" });
+
+    it("is hidden until it is switched on", async () => {
+      const user = userEvent.setup();
+      const { container } = render(<Harness />);
+      expect(toggle()).toHaveAttribute("aria-pressed", "false");
+      expect(container.querySelector(".circle__fall")).toBeNull();
+      expect(screen.queryByRole("button", { name: /^Play falling fifths/ })).toBeNull();
+
+      await user.click(toggle());
+      expect(toggle()).toHaveAttribute("aria-pressed", "true");
+      expect(container.querySelectorAll(".circle__fall-arrow")).toHaveLength(3);
+    });
+
+    it("numbers vi ii V I in C major and explains the movement", async () => {
+      const user = userEvent.setup();
+      const { container } = render(<Harness />);
+      await user.click(toggle());
+      expect(badges(container)).toEqual([
+        { order: "1", text: "1" },
+        { order: "2", text: "2" },
+        { order: "3", text: "3" },
+        { order: "4", text: "4" },
+      ]);
+      const note = container.querySelector(".legend--fall")?.textContent ?? "";
+      expect(note).toContain("vi Am → ii Dm → V G → I C");
+      expect(note).toContain("counterclockwise");
+      expect(note).toContain("fifth of the next");
+    });
+
+    it("puts the badges on the circle slots of the roots, one step counterclockwise each", async () => {
+      const user = userEvent.setup();
+      const { container } = render(<Harness />);
+      await user.click(toggle());
+      const centers = Array.from(container.querySelectorAll(".circle__fall-badge circle")).map(
+        (c) => {
+          const x = Number(c.getAttribute("cx"));
+          const y = Number(c.getAttribute("cy"));
+          return Math.round((Math.atan2(y, x) * 180) / Math.PI + 90 + 360) % 360;
+        },
+      );
+      // A (3), D (2), G (1), C (0): 90°, 60°, 30°, 0° clockwise from the top.
+      expect(centers).toEqual([90, 60, 30, 0]);
+    });
+
+    it("shows ii° V i in a minor key", async () => {
+      const user = userEvent.setup();
+      const { container } = render(<Harness />);
+      await user.click(screen.getByRole("radio", { name: "A minor" }));
+      await user.click(toggle());
+      expect(badges(container)).toHaveLength(3);
+      expect(container.querySelectorAll(".circle__fall-arrow")).toHaveLength(2);
+      expect(container.querySelector(".legend--fall")?.textContent).toContain(
+        "ii° B° → V E → i Am",
+      );
+    });
+
+    it("plays the chain and stops when the key changes or it is hidden", async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+      await user.click(toggle());
+      audio.play.mockClear();
+      audio.stop.mockClear();
+
+      await user.click(screen.getByRole("button", { name: "Play falling fifths in Am, Dm, G, C" }));
+      expect(audio.play).toHaveBeenCalledTimes(1);
+      // One chord per step of the chain, each starting at its own time.
+      const plan = (audio.play.mock.calls[0] as unknown as [{ start: number }[]])[0];
+      expect(new Set(plan.map((n) => n.start)).size).toBe(4);
+
+      audio.stop.mockClear();
+      await user.click(screen.getByRole("radio", { name: "G major" }));
+      expect(audio.stop).toHaveBeenCalled();
+
+      audio.stop.mockClear();
+      await user.click(toggle());
+      expect(audio.stop).toHaveBeenCalled();
+    });
+
+    it("stops when the view is left", async () => {
+      const user = userEvent.setup();
+      const { unmount } = render(<Harness />);
+      await user.click(toggle());
+      audio.stop.mockClear();
+      unmount();
+      expect(audio.stop).toHaveBeenCalled();
     });
   });
 });
