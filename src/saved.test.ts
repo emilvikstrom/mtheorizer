@@ -12,6 +12,7 @@ import {
   toggleFavorite,
 } from "./saved";
 import { parseRoute } from "./route";
+import { note, specOf } from "./theory";
 
 describe("addRecent", () => {
   it("puts the newest first and drops duplicates", () => {
@@ -70,6 +71,9 @@ describe("round trip", () => {
     const guitar = parseRoute("#/E/scale/dorian?on=guitar&tuning=dropD&hand=left");
     if (guitar.page !== "scale") throw new Error("expected a scale");
     expect(routeOf(hashOf(guitar))).toEqual(guitar);
+    // What a chord is compared with is not part of the saved choice.
+    const compared = { ...route, vs: { root: note("A"), spec: specOf("minor") } };
+    expect(hashOf(compared)).toBe(hashOf(route));
   });
 });
 
