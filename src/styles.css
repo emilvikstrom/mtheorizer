@@ -1706,3 +1706,38 @@ body {
   font-weight: 700;
   pointer-events: none;
 }
+
+/* The tritone substitute under a dominant seventh. */
+.tritone {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-radius: 8px;
+}
+
+.tritone__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.tritone__text {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.tritone__notes {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tritone__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tritone__actions .play__button {
+  min-height: 2.75rem;
+}

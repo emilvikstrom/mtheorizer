@@ -9,6 +9,7 @@ import { PlayButtons } from "./PlayButtons";
 import { ShareExport } from "./ShareExport";
 import { RootPicker } from "./RootPicker";
 import { ToneDisplayPicker } from "./ToneDisplayPicker";
+import { TritoneSubstitute } from "./TritoneSubstitute";
 import {
   type ChordRoute,
   displayOptions,
@@ -292,7 +293,12 @@ export function Lookup({ route, onChange }: LookupProps) {
       </section>
 
       {route.page === "chord" ? (
-        <ChordView route={route} spec={route.spec} display={shown} />
+        <ChordView
+          route={route}
+          spec={route.spec}
+          display={shown}
+          onOpenRoot={(newRoot) => onChange({ ...route, root: newRoot, inversion: 0 })}
+        />
       ) : (
         <ScaleView route={route} display={shown} />
       )}
@@ -371,10 +377,12 @@ function ChordView({
   route,
   spec,
   display,
+  onOpenRoot,
 }: {
   route: ChordRoute;
   spec: ChordSpec;
   display: ToneDisplay;
+  onOpenRoot: (root: Note) => void;
 }) {
   const { root, instrument } = route;
   const chord = useMemo(() => chordFromSpec(root, spec), [root, spec]);
@@ -400,6 +408,7 @@ function ChordView({
         left={route.left === true}
         display={display}
       />
+      <TritoneSubstitute chord={chord} onOpen={onOpenRoot} />
     </>
   );
 }
