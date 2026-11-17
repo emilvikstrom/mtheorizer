@@ -25,8 +25,6 @@ Idéer i ungefärlig prioritetsordning inom varje grupp. Bryt ner och flytta upp
 
 ### M6 – Ackordbyggare, fortsättning
 
-- [ ] **M6-06b** Sökfält för ackordsymboler: ett textfält ovanför byggaren som läser `parseChordSymbol` (M6-06) och hoppar till ackordet (grundton, grundackord, kvaliteter och omvändning när basen är en ackordton)
-  - Acceptans: felmeddelandet från parsern visas under fältet (`aria-live`) medan man skriver och ackordet ändras först när symbolen är giltig. Fältet visar ackordets egen symbol när valet ändras på annat håll. En bas som inte är en ackordton (C/D) förklaras i stället för att tyst ignoreras. Fungerar i 375 px bredd. Bygger på M6-04 och helst M6-05, eftersom fria kombinationer annars bara länkas som närmaste namngivna typ
 - [ ] **M6-08b** Gitarren i "What chord is this?": klicka på bandpositioner (sträng + band) på halsen och se samma förslag som på pianot
   - Acceptans: bygger på M6-08. Tonhöjderna räknas ur stämningen (`TUNINGS`), den lägsta klingande tonen skickas som `bass` till `identifyChords`, och förslag öppnas i ackordfliken som från pianot. En sträng kan bara ha en tryckt position, och tangenterna och positionerna kan stängas av igen
 
@@ -115,6 +113,7 @@ Instrument och kvalitet:
 
 ## Klart
 
+- [x] **M6-06b** Sökfält för ackordsymboler ovanför byggaren (`ChordSymbolField`): man skriver en symbol (`F#m7b5/C`) och ackordet öppnas med grundton, kvaliteter och omvändning när basen är en ackordton. Felmeddelandet från `parseChordSymbol` står under fältet (`aria-live`, `aria-invalid`) och ackordet ändras först när symbolen är giltig. En bas som inte är en ackordton (C/D) förklaras och ackordet öppnas i grundläge. Fältet visar ackordets egen symbol när valet ändras på annat håll _(2026-11-16)_
 - [x] **M8-06** Kadenser i progressionsvyn: autentisk (V–I), plagal (IV–I), halv (I–V) och bedräglig (V–vi) i tonartens läge, som data i `progressions.ts` (`CADENCES`, `cadenceChords`). I moll är V dur (harmonisk moll) och den bedrägliga går till ♭VI. Varje kadens har en förklaringsrad och en egen uppspelningsknapp som använder `planProgression`. Tabelltestat för alla 15 dur- och 15 molltonarter på kvintcirkeln, rätt stavade _(2026-11-16)_
 - [x] **M8-01** Vanliga ackordföljder i valfri tonart: I–V–vi–IV, I–vi–IV–V, ii7–V7–Imaj7, Pachelbels kanon, 12-takts blues (dur) och i–♭VI–♭III–♭VII (moll) som data i `src/theory/progressions.ts` (`progressionChords`, `progressionKey`). Stavas ur tonartens skala och är tabelltestade i alla 15 tonarter på kvintcirkeln (A♭–E♭–Fm–D♭ i A♭-dur). Ny flik **Progressions** med stegnummer, uppspelning av hela följden (`planProgression`), klick på ett ackord öppnar det i ackordfliken och länken `#/progression/Ab/pop` _(2026-11-16)_
 - [x] **M6-08** "What chord is this?" på pianot: en egen flik (`#/identify`) där man trycker på tangenter (C4–B5, knappar med `aria-pressed`, Enter/mellanslag) och ser vilka ackord tonerna bildar. Den lägsta tangenten skickas som `bass` till `identifyChords`, så C–E–G–A ger både C6 och Am7/C. Förslagen (de 12 enklaste) uppdateras direkt, visar toner och utelämnade toner, och ett klick öppnar ackordet i ackordfliken i rätt omvändning (`matchInversion`). Tomt val och ett enda val ger en vägledande text, och "Clear keys" rensar. Tangenterna sparas när man byter flik. Gitarren är utbruten som M6-08b _(2026-11-16)_
