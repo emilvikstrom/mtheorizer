@@ -101,6 +101,25 @@ export function planProgression(
 
 let context: AudioContext | undefined;
 
+/** The tones that are sounding or scheduled, so that they can be cut off. */
+const active = new Set<{ osc: OscillatorNode; gain: GainNode }>();
+
+/** Cuts off everything that is playing or about to play. Does nothing when nothing is. */
+export function stopPlayback(): void {
+  if (!context) return;
+  const now = context.currentTime;
+  for (const { osc, gain } of active) {
+    try {
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setTargetAtTime(0, now, 0.02);
+      osc.stop(now + 0.1);
+    } catch {
+      // A tone that has already ended cannot be stopped again.
+    }
+  }
+  active.clear();
+}
+
 /** Whether this browser can play sound through Web Audio. */
 export function audioSupported(): boolean {
   return typeof window !== "undefined" && typeof window.AudioContext === "function";
@@ -147,6 +166,9 @@ export function playNotes(
     }
     osc.start(at);
     osc.stop(at + duration + 0.05);
+    const tone = { osc, gain };
+    active.add(tone);
+    osc.onended = () => active.delete(tone);
     total = Math.max(total, start + duration);
   }
   return total;

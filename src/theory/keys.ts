@@ -562,3 +562,47 @@ export function degreeWheel(k: Key): { position: number; steps: readonly WheelSt
   });
   return { position, steps };
 }
+
+// --- Falling fifths ---------------------------------------------------------
+
+/** One chord of a chain that falls a fifth at a time. */
+export interface FifthsFallStep {
+  /** Step number in the key: vi ii V I, or ii° V i in a minor key. */
+  readonly roman: string;
+  readonly chord: Chord;
+  /** Where the chord's root sits on the circle of fifths (C at 0, G at 1 …). */
+  readonly position: number;
+}
+
+const TRIAD_QUALITY_ID: Partial<Record<TriadQuality, ChordQualityId>> = {
+  major: "major",
+  minor: "minor",
+  diminished: "diminished",
+};
+
+/**
+ * The chain that ends on the tonic by falling a fifth at a time, the most common
+ * root movement: vi–ii–V–I in a major key (A–D–G–C in C) and ii°–V–i in a minor
+ * key (B–E–A in A minor), where V is major as in harmonic minor. Each root is
+ * a fifth below the one before it, which is one step counterclockwise on the
+ * circle, so the positions run down by one. Spelled from the key's own scale.
+ */
+export function fifthsFall(k: Key): FifthsFallStep[] {
+  const triads = diatonicTriads(k);
+  const degrees = k.mode === "major" ? [6, 2, 5, 1] : [2, 5, 1];
+  return degrees.flatMap((degree): FifthsFallStep[] => {
+    const triad = triads.find((t) => t.degree === degree);
+    const root = triad?.notes[0];
+    const qualityId = triad && TRIAD_QUALITY_ID[triad.quality];
+    if (!triad || !root || !qualityId) return [];
+    const harmonicDominant =
+      k.mode === "minor" && degree === 5 ? harmonicMinorDominant(k) : undefined;
+    return [
+      {
+        roman: harmonicDominant ? "V" : triad.roman,
+        chord: harmonicDominant ?? buildChord(root, qualityId),
+        position: mod12(pitchClass(root) * 7),
+      },
+    ];
+  });
+}

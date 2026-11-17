@@ -7,6 +7,7 @@ import {
   planPlayback,
   planProgression,
   playNotes,
+  stopPlayback,
 } from "./playback";
 import { DEFAULT_AUDIO_SETTINGS, TIMBRES } from "./settings";
 
@@ -145,6 +146,7 @@ interface FakeOsc {
 // playNotes keeps its AudioContext for the whole page, so every test shares one fake.
 const oscillators: FakeOsc[] = [];
 const peaks: number[] = [];
+const cancelled: number[] = [];
 let filters = 0;
 
 class FakeContext {
@@ -167,6 +169,8 @@ class FakeContext {
       gain: {
         setValueAtTime: vi.fn(),
         exponentialRampToValueAtTime: (level: number) => peaks.push(level),
+        cancelScheduledValues: (time: number) => cancelled.push(time),
+        setTargetAtTime: vi.fn(),
       },
       connect: (n: unknown) => n,
     };
@@ -185,8 +189,12 @@ describe("playNotes", () => {
   beforeEach(() => {
     oscillators.length = 0;
     peaks.length = 0;
+    cancelled.length = 0;
     filters = 0;
     vi.stubGlobal("AudioContext", FakeContext);
+    // Tones left over from earlier tests are not part of what a test stops.
+    stopPlayback();
+    cancelled.length = 0;
   });
   afterEach(() => vi.unstubAllGlobals());
 
@@ -238,5 +246,28 @@ describe("playNotes", () => {
     peaks.length = 0;
     playNotes(planPlayback([60], "together"), { ...DEFAULT_AUDIO_SETTINGS, volume: 0.5 });
     expect(Math.max(...peaks)).toBeCloseTo(loud / 2, 9);
+  });
+
+  it("stopPlayback cuts off every tone that plays or is scheduled, and only once", () => {
+    playNotes(
+      planProgression([
+        [60, 64, 67],
+        [65, 69, 72],
+      ]),
+    );
+    expect(oscillators).toHaveLength(6);
+    stopPlayback();
+    expect(cancelled).toHaveLength(6);
+    // Each oscillator got a second stop, now, after its planned one.
+    expect(oscillators.every((o) => o.stop.mock.calls.length === 2)).toBe(true);
+    stopPlayback();
+    expect(cancelled).toHaveLength(6);
+  });
+
+  it("stopPlayback forgets tones that have already ended", () => {
+    playNotes(planPlayback([60, 64], "together"));
+    for (const o of oscillators) (o as unknown as { onended: () => void }).onended();
+    stopPlayback();
+    expect(cancelled).toHaveLength(0);
   });
 });
