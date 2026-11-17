@@ -85,6 +85,20 @@ describe("App", () => {
   });
 
   describe("chord builder", () => {
+    it("opens the chord that is typed in the chord symbol field", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      const field = screen.getByRole("textbox", { name: "Chord symbol" });
+      await user.clear(field);
+      await user.type(field, "Dm7b5");
+      await waitFor(() => expect(window.location.hash).toBe("#/D/diminished?with=7&on=piano"));
+      expect(chordNotes()).toEqual(["D", "F", "A♭", "C"]);
+      // Changing the chord with the builder updates the field.
+      await user.click(screen.getByRole("radio", { name: "Major" }));
+      // The builder keeps the seventh and drops what no longer fits: D7.
+      expect(field).toHaveValue("D7");
+    });
+
     const quality = (name: string) => screen.queryByRole("button", { name });
     const group = (name: string) => screen.queryByRole("group", { name });
     const heading = () => screen.getByRole("heading", { level: 2 });

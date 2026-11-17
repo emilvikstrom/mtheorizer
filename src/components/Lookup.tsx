@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { ChordInfo } from "./ChordInfo";
 import { ChordBuilder } from "./ChordBuilder";
+import { ChordSymbolField } from "./ChordSymbolField";
 import { Fretboard } from "./Fretboard";
 import { OptionPicker, type PickerOption } from "./OptionPicker";
 import { Piano } from "./Piano";
@@ -231,6 +232,14 @@ export function Lookup({ route, onChange }: LookupProps) {
         {rootAndSpelling}
         {route.page === "chord" ? (
           <>
+            <ChordSymbolField
+              root={root}
+              spec={route.spec}
+              inversion={route.inversion}
+              onJump={(newRoot, spec, inversion) =>
+                onChange({ ...route, root: newRoot, spec, inversion })
+              }
+            />
             <ChordBuilder root={root} spec={route.spec} onChange={build} />
             {instrumentPicker}
             {guitarPickers}
