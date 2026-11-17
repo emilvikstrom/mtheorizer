@@ -281,6 +281,50 @@ export function borrowedChords(k: Key): BorrowedChord[] {
     }));
 }
 
+/** A dominant seventh that points at another chord of the key: D7 → G in C major (V7/V). */
+export interface SecondaryDominant {
+  /** Scale degree of the chord it resolves to, 2–7 (never the tonic: V7/I is just V7). */
+  readonly target: number;
+  /** Roman numeral with the target: V7/V, V7/ii, V7/vi. */
+  readonly roman: string;
+  /** The chord it resolves to, e.g. "G" or "Am". */
+  readonly targetSymbol: string;
+  readonly notes: readonly Note[];
+  /** Chord symbol of the dominant seventh, e.g. "D7". */
+  readonly symbol: string;
+  /**
+   * Notes that are not in the key's scale: F♯ in D7 (C major). Empty only for
+   * V7/III in a minor key, where the chord (B♭7 in C minor) is the diatonic VII7.
+   */
+  readonly foreign: readonly Note[];
+}
+
+/**
+ * The secondary dominants of a key: a dominant seventh a perfect fifth above
+ * each diatonic major or minor chord except the tonic. In C major that is
+ * D7 (V7/V), E7 (V7/vi), A7 (V7/ii), B7 (V7/iii) and C7 (V7/IV). The
+ * diminished chord on the seventh degree is not tonicised, so it has none.
+ * Roots are spelled a fifth up from the target (B7 for Em, never C♭7), and
+ * the notes outside the key are listed, since they are what colours the chord.
+ */
+export function secondaryDominants(k: Key): SecondaryDominant[] {
+  const scale = new Set(keyScale(k).map((n) => formatNote(n)));
+  return diatonicTriads(k)
+    .filter((t) => t.degree !== 1 && (t.quality === "major" || t.quality === "minor"))
+    .map((t) => {
+      const root = transpose(t.notes[0] ?? k.tonic, PERFECT_FIFTH);
+      const notes = buildChord(root, "dominant7").tones.map((tone) => tone.note);
+      return {
+        target: t.degree,
+        roman: `V7/${t.roman}`,
+        targetSymbol: t.symbol,
+        notes,
+        symbol: chordSymbol(root, "dominant7"),
+        foreign: notes.filter((n) => !scale.has(formatNote(n))),
+      };
+    });
+}
+
 export interface DiatonicSeventh {
   /** Scale degree, 1–7. */
   readonly degree: number;

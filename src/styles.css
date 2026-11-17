@@ -930,6 +930,22 @@ body {
   text-align: center;
 }
 
+/* Secondary dominants: dotted, with the notes from outside the key written out. */
+.triad--secondary {
+  border-style: dotted;
+  border-width: 2px;
+}
+
+.triad--secondary .triad__function {
+  text-align: center;
+}
+
+.triad__foreign {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-align: center;
+}
+
 .related {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
