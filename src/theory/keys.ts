@@ -234,6 +234,53 @@ export function harmonicMinorDominant(k: Key): Chord | undefined {
   return k.mode === "minor" ? buildChord(transpose(k.tonic, PERFECT_FIFTH), "major") : undefined;
 }
 
+/** A diatonic chord of the parallel key, used in this key (modal interchange). */
+export interface BorrowedChord {
+  /** Scale degree in the parallel key, 1–7. */
+  readonly degree: number;
+  /** Roman numeral relative to this key: ♭III, iv, ♭VI, ♭VII, ii°, I, ii, IV. */
+  readonly roman: string;
+  readonly quality: TriadQuality;
+  readonly notes: readonly Note[];
+  /** Chord symbol, e.g. "A♭" or "Fm". */
+  readonly symbol: string;
+  /** The key the chord comes from: C minor for A♭ in C major. */
+  readonly origin: Key;
+}
+
+/** Degrees borrowed from the parallel minor in a major key: ii°, ♭III, iv, ♭VI, ♭VII. */
+const BORROWED_FROM_MINOR: readonly number[] = [2, 3, 4, 6, 7];
+/**
+ * Degrees borrowed from the parallel major in a minor key: I (the "Picardy"
+ * major tonic), ii and IV. The major V is left out, since harmonic minor
+ * already gives it (see `harmonicMinorDominant`).
+ */
+const BORROWED_FROM_MAJOR: readonly number[] = [1, 2, 4];
+
+/**
+ * Chords borrowed from the parallel key (same tonic, other mode): from C minor
+ * into C major (D°, E♭, Fm, A♭ and B♭), and from C major into C minor (C, Dm and
+ * F). Only chords that the key does not already have are included. The origin
+ * is spelled from this key's own tonic, so D♭ major borrows from D♭ minor
+ * (with B𝄫) rather than from the enharmonic C♯ minor.
+ */
+export function borrowedChords(k: Key): BorrowedChord[] {
+  const fromMinor = k.mode === "major";
+  const origin = key(k.tonic, fromMinor ? "minor" : "major");
+  const degrees = fromMinor ? BORROWED_FROM_MINOR : BORROWED_FROM_MAJOR;
+  const own = new Set(diatonicTriads(k).map((t) => t.symbol));
+  return diatonicTriads(origin)
+    .filter((t) => degrees.includes(t.degree) && !own.has(t.symbol))
+    .map((t) => ({
+      degree: t.degree,
+      roman: fromMinor && [3, 6, 7].includes(t.degree) ? `♭${t.roman}` : t.roman,
+      quality: t.quality,
+      notes: t.notes,
+      symbol: t.symbol,
+      origin,
+    }));
+}
+
 export interface DiatonicSeventh {
   /** Scale degree, 1–7. */
   readonly degree: number;

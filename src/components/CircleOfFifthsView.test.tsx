@@ -56,6 +56,60 @@ describe("CircleOfFifthsView", () => {
     expect(opened).toHaveBeenLastCalledWith(note("D"), "diminished");
   });
 
+  describe("borrowed chords", () => {
+    const borrowedSymbols = () =>
+      within(screen.getByRole("list", { name: "Borrowed chords" }))
+        .getAllByRole("listitem")
+        .map((item) => item.querySelector(".triad__symbol")?.textContent);
+
+    it("shows C major borrowing from C minor, with the origin on each chord", () => {
+      render(<Harness />);
+      expect(borrowedSymbols()).toEqual(["D°", "E♭", "Fm", "A♭", "B♭"]);
+      const items = within(screen.getByRole("list", { name: "Borrowed chords" })).getAllByRole(
+        "listitem",
+      );
+      expect(items.map((item) => item.querySelector(".triad__roman")?.textContent)).toEqual([
+        "ii°",
+        "♭III",
+        "iv",
+        "♭VI",
+        "♭VII",
+      ]);
+      expect(items.every((item) => item.textContent?.includes("C minor"))).toBe(true);
+    });
+
+    it("shows a minor key borrowing from the parallel major", async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+      await user.click(screen.getByRole("radio", { name: "A minor" }));
+      expect(borrowedSymbols()).toEqual(["A", "Bm", "D"]);
+    });
+
+    it("follows the key and its spelling", async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+      await user.click(screen.getByRole("radio", { name: "D♭ major / C♯ major" }));
+      expect(borrowedSymbols()).toEqual(["E♭°", "F♭", "G♭m", "B𝄫", "C♭"]);
+    });
+
+    it("opens a borrowed chord, spelled as in the key", async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+      await user.click(
+        screen.getByRole("button", {
+          name: "Open A♭ in Chords & scales, borrowed from C minor",
+        }),
+      );
+      expect(opened).toHaveBeenLastCalledWith(note("A", -1), "major");
+      await user.click(
+        screen.getByRole("button", {
+          name: "Open Fm in Chords & scales, borrowed from C minor",
+        }),
+      );
+      expect(opened).toHaveBeenLastCalledWith(note("F"), "minor");
+    });
+  });
+
   it("has 12 major and 12 minor keys", () => {
     render(<Harness />);
     const circle = screen.getByRole("radiogroup", { name: /Circle of fifths/ });

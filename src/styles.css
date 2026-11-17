@@ -487,7 +487,9 @@ body {
 
 .tabs {
   display: flex;
-  gap: 4px;
+  /* Four tabs do not fit on one line on a phone: wrap them instead of widening the page. */
+  flex-wrap: wrap;
+  gap: 0 4px;
   border-bottom: 1px solid var(--border);
   margin-top: -8px;
 }
@@ -502,6 +504,12 @@ body {
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .tabs__tab {
+    padding-inline: 10px;
+  }
 }
 
 .tabs__tab:hover {
@@ -911,6 +919,15 @@ body {
   min-height: 1.3em;
   font-size: 0.7rem;
   color: var(--muted);
+}
+
+/* Chords borrowed from the parallel key: dashed, so they read apart from the key's own chords. */
+.triad--borrowed {
+  border-style: dashed;
+}
+
+.triad--borrowed .triad__function {
+  text-align: center;
 }
 
 .related {
