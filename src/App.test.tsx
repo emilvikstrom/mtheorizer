@@ -525,6 +525,36 @@ describe("App", () => {
     expect(highlightedKeys(container)).toEqual(["71:root", "75:third", "78:fifth"]);
   });
 
+  describe("tritone substitute", () => {
+    it("shows the substitute under a dominant seventh and opens it", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      expect(screen.queryByRole("heading", { name: "Tritone substitute" })).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "7" }));
+      expect(screen.getByRole("heading", { name: "Tritone substitute" })).toBeInTheDocument();
+      const text = screen.getByText(/can stand in for C7/);
+      expect(text).toHaveTextContent("F♯7");
+      expect(text).toHaveTextContent("E–B♭");
+      expect(text).toHaveTextContent("A♯–E");
+
+      await user.click(screen.getByRole("button", { name: "Open F♯7" }));
+      expect(window.location.hash).toBe("#/Fs/major?with=7&on=piano");
+      expect(chordNotes()).toEqual(["F♯", "A♯", "C♯", "E"]);
+      // The substitute has a substitute of its own: the original.
+      expect(screen.getByRole("button", { name: "Open C7" })).toBeInTheDocument();
+    });
+
+    it("disappears once the chord is more than a plain dominant seventh", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole("button", { name: "7" }));
+      expect(screen.getByRole("heading", { name: "Tritone substitute" })).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "♯9" }));
+      expect(screen.queryByRole("heading", { name: "Tritone substitute" })).not.toBeInTheDocument();
+    });
+  });
+
   describe("scales", () => {
     it("switches to the major scale on the same root", async () => {
       const user = userEvent.setup();
