@@ -7,6 +7,7 @@ import { ChordSymbolField } from "./ChordSymbolField";
 import { Fretboard } from "./Fretboard";
 import { OptionPicker, type PickerOption } from "./OptionPicker";
 import { Piano } from "./Piano";
+import { Notation } from "./Staff";
 import { PlayButtons } from "./PlayButtons";
 import { ShareExport } from "./ShareExport";
 import { RootPicker } from "./RootPicker";
@@ -61,6 +62,7 @@ import {
   scaleHighlights,
   scaleOnKeyboard,
   scalePositions,
+  scaleSignature,
   specOf,
   spellScale,
 } from "../theory";
@@ -454,6 +456,7 @@ function ChordView({
         left={route.left === true}
         display={display}
       />
+      <Notation tones={keys} kind="chord" name={chord.name} hidden={display === "none"} />
       <ChordCompare
         root={root}
         spec={spec}
@@ -499,6 +502,13 @@ function ScaleView({
         tuning={tuning}
         left={route.left === true}
         display={display}
+      />
+      <Notation
+        tones={keys}
+        kind="scale"
+        signature={scaleSignature(scale)}
+        name={scale.name}
+        hidden={display === "none"}
       />
       <ChordsThatFit scale={scale} onOpen={onOpenChord} />
     </>
