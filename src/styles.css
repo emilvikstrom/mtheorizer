@@ -1603,3 +1603,51 @@ body {
 .share__status--error {
   color: var(--dominant);
 }
+
+/* Sound settings: a collapsed box next to the listen buttons. */
+
+.sound {
+  flex-basis: 100%;
+  font-size: 0.9rem;
+}
+
+.sound__summary {
+  cursor: pointer;
+  width: fit-content;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+}
+
+.sound__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+  padding: 0.5rem 0 0.25rem;
+}
+
+.sound__field {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.sound__field select,
+.sound__field input {
+  font: inherit;
+  min-height: 2.75rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sound__reset {
+  font: inherit;
+  min-height: 2.75rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}

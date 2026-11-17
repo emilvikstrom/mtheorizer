@@ -90,8 +90,8 @@ Gränssnitt:
 
 Ljud och in/ut:
 
-- [ ] **X-17** Bättre ljud: val av klang (sinus, triangel, "plockad"), tempo och volym för uppspelningen, och att pianot och gitarren lyser upp tonerna medan de klingar
-  - Acceptans: `playback.ts` planerar fortfarande med en ren och testad funktion, och klangerna väljs utan att uppspelningen ändrar sig. Inställningarna minns. Referensstämning (A4 = 440 Hz) går att ändra
+- [ ] **X-17b** Pianot och gitarren lyser upp tonerna medan de klingar
+  - Acceptans: uppspelningen ger en tidslinje (`ScheduledNote` med start och längd, efter tempo) som vyerna följer, och markeringen försvinner när tonen tystnar eller när man byter ackord. Respekterar `prefers-reduced-motion`. Ingen ändring av `Piano`- och `Fretboard`-etiketterna
 - [ ] **X-18** Web MIDI: spela på ett anslutet MIDI-keyboard och se tonerna på pianot, och (med M6-07) vilket ackord de bildar
   - Acceptans: knappen visas bara när webbläsaren har Web MIDI, åtkomst begärs först vid klick, och att koppla från mitt i en session ger ett lugnt meddelande. MIDI-in ger ingen ändring av valet förrän användaren väljer det
 
@@ -107,6 +107,7 @@ Instrument och kvalitet:
 
 ## Klart
 
+- [x] **X-17** Bättre ljud: en ruta "Sound settings" vid uppspelningsknapparna (ackord, skala och ackordföljd) med klang (sinus, triangel, plockad), tempo (50–200 %), volym och referensstämning (A4, 400–480 Hz, standard 440). `planPlayback` och `planProgression` är oförändrade och rena; klang, tempo (`applyTempo`), stämning (`midiToFrequency(midi, reference)`) och volym tillämpas först när tonerna spelas, och ljudkuvertet per klang (`envelopeFor`) är en ren, testad funktion. Inställningarna ligger i `src/audio/settings.ts`, sparas i localStorage med try/catch och döljs helt när webbläsaren saknar Web Audio. Tabelltestat för flera referensstämningar. Att pianot och gitarren lyser upp tonerna medan de klingar är utbrutet som X-17b _(2026-11-17)_
 - [x] **X-19** Dela och exportera under ackord och skalor (`ShareExport`, hjälplogik i `src/share.ts`): "Share link" med Web Share när webbläsaren har det och "Copy link" annars, "Copy notes" ger tonerna som text ("C–E♭–G"), och "Save SVG" och "Save PNG" sparar diagrammet med titel och tonnamn. Bilden bär egna färger (bakgrund och text från aktuellt tema) och egna stilar, så den ser lika ut överallt. Bekräftelser och fel står i en `aria-live`-rad. PNG ritas via canvas utan nya beroenden _(2026-11-17)_
 - [x] **M8-04** Lånade ackord (modal interchange) i `keys.ts`: `borrowedChords(key)` ger ii°, ♭III, iv, ♭VI och ♭VII ur parallellmollen i en durtonart (C-dur: D°, E♭, Fm, A♭, B♭) och I, ii och IV ur parallelldur i moll (C-moll: C, Dm, F), med ursprungstonarten angiven. Den stavas från tonartens egen grundton, så D♭-dur lånar ur D♭-moll (med B𝄫) och inte ur C♯-moll. Dur V hör till harmonisk moll och räknas inte som lånat. Tabelltestat för alla 15 dur- och 15 molltonarter på kvintcirkeln. Visas som egen sektion "Borrowed chords" under de diatoniska treklangerna i tonartspanelen, och ett klick öppnar ackordet i ackordfliken _(2026-11-17)_
 - [x] **X-22** Sidan var 7 px bredare än en 375 px-skärm på alla flikar. Orsaken var flikraden: fyra flikar i en rad som inte radbröts tvingade hela sidan bredare. Flikarna radbryts nu (och har tätare marginaler under 480 px), och alla flikar, gitarr, skalor, fria ackord, moduskartan och progressionerna är uppmätta utan sidoscroll vid både 375 och 320 px (iframe med fast bredd i dev-servern, eftersom jsdom inte mäter layout) _(2026-11-17)_
