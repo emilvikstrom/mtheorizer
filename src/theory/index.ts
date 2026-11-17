@@ -7,6 +7,7 @@ export * from "./guitarShapes";
 export * from "./identify";
 export * from "./intervals";
 export * from "./keys";
+export * from "./modes";
 export * from "./notes";
 export * from "./progressions";
 export * from "./scales";
