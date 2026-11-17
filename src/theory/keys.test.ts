@@ -18,9 +18,10 @@ import {
   parallelKey,
   ringChords,
   relativeKey,
+  secondaryDominants,
   subdominantKey,
 } from "./keys";
-import { formatNoteAscii, parseNote, pitchClass } from "./notes";
+import { type Note, formatNote, formatNoteAscii, mod12, parseNote, pitchClass } from "./notes";
 
 const k = (tonic: string, mode: KeyMode = "major") => key(parseNote(tonic), mode);
 const ascii = (key: Key) => `${formatNoteAscii(key.tonic)} ${key.mode}`;
@@ -213,6 +214,119 @@ describe("harmonicMinorDominant", () => {
       harmonicMinorDominant(k("G#", "minor"))?.tones.map((t) => formatNoteAscii(t.note)),
     ).toEqual(["D#", "F##", "A#"]);
     expect(harmonicMinorDominant(k("C"))).toBeUndefined();
+  });
+});
+
+describe("secondaryDominants", () => {
+  const show = (x: Key) =>
+    secondaryDominants(x).map(
+      (d) =>
+        `${d.roman} ${d.symbol}→${d.targetSymbol} [${d.foreign.map((n) => formatNote(n)).join(" ")}]`,
+    );
+
+  // Written out by hand for keys with plain, flat-heavy, sharp-heavy and minor scales.
+  const TABLE: readonly (readonly [string, KeyMode, readonly string[]])[] = [
+    [
+      "C",
+      "major",
+      [
+        "V7/ii A7→Dm [C♯]",
+        "V7/iii B7→Em [D♯ F♯]",
+        "V7/IV C7→F [B♭]",
+        "V7/V D7→G [F♯]",
+        "V7/vi E7→Am [G♯]",
+      ],
+    ],
+    [
+      "Db",
+      "major",
+      [
+        "V7/ii B♭7→E♭m [D]",
+        "V7/iii C7→Fm [E G]",
+        "V7/IV D♭7→G♭ [C♭]",
+        "V7/V E♭7→A♭ [G]",
+        "V7/vi F7→B♭m [A]",
+      ],
+    ],
+    [
+      "F#",
+      "major",
+      [
+        "V7/ii D♯7→G♯m [F𝄪]",
+        "V7/iii E♯7→A♯m [G𝄪 B♯]",
+        "V7/IV F♯7→B [E]",
+        "V7/V G♯7→C♯ [B♯]",
+        "V7/vi A♯7→D♯m [C𝄪]",
+      ],
+    ],
+    [
+      "A",
+      "minor",
+      [
+        "V7/III G7→C []",
+        "V7/iv A7→Dm [C♯]",
+        "V7/v B7→Em [D♯ F♯]",
+        "V7/VI C7→F [B♭]",
+        "V7/VII D7→G [F♯]",
+      ],
+    ],
+    [
+      "Eb",
+      "minor",
+      [
+        "V7/III D♭7→G♭ []",
+        "V7/iv E♭7→A♭m [G]",
+        "V7/v F7→B♭m [A C]",
+        "V7/VI G♭7→C♭ [F♭]",
+        "V7/VII A♭7→D♭ [C]",
+      ],
+    ],
+  ];
+
+  it.each(TABLE)("%s %s", (tonic, mode, expected) => {
+    expect(show(k(tonic, mode))).toEqual(expected);
+  });
+
+  it("gives the dominant seventh in the spelling of its notes", () => {
+    const d = secondaryDominants(k("C"))[3];
+    expect(d?.notes.map((n) => formatNote(n))).toEqual(["D", "F♯", "A", "C"]);
+    expect(d?.target).toBe(5);
+  });
+
+  // For every key on the circle: the chord on each degree but the tonic and the
+  // diminished one is aimed at by a dominant seventh a fifth above it, which in
+  // a major key is degrees 6, 7, 1, 2 and 3 of the scale and in a minor key 7, 1, 2, 3 and 4.
+  const KEYS = Array.from({ length: 12 }, (_, position) => position).flatMap((position) =>
+    (["major", "minor"] as const).flatMap((mode) =>
+      keysAt(position, mode).map((x) => [formatKey(x), x] as const),
+    ),
+  );
+
+  it.each(KEYS)("every secondary dominant of %s is a fifth above its target", (_name, x) => {
+    const scale = keyScale(x).map((n) => formatNote(n));
+    const rootDegrees = x.mode === "major" ? [5, 6, 0, 1, 2] : [6, 0, 1, 2, 3];
+    const roots = rootDegrees.map((i) => scale[i]);
+    const result = secondaryDominants(x);
+    expect(result).toHaveLength(5);
+    expect(result.map((d) => formatNote(d.notes[0] as Note))).toEqual(roots);
+    expect(result.map((d) => d.symbol)).toEqual(roots.map((r) => `${r}7`));
+    // Each one resolves to a chord the key has, and never to the tonic.
+    const triads = new Set(diatonicTriads(x).map((t) => t.symbol));
+    for (const d of result) {
+      expect(d.target).toBeGreaterThan(1);
+      expect(triads.has(d.targetSymbol)).toBe(true);
+      expect(d.notes).toHaveLength(4);
+      // The chord's third is the leading tone of the target: a semitone below its root.
+      const targetRoot = diatonicTriads(x)[d.target - 1]?.notes[0] as Note;
+      expect(pitchClass(d.notes[1] as Note)).toBe(mod12(pitchClass(targetRoot) - 1));
+    }
+  });
+
+  it("only V7/III of a minor key is fully diatonic", () => {
+    for (const [, x] of KEYS) {
+      const plain = secondaryDominants(x).filter((d) => d.foreign.length === 0);
+      expect(plain.map((d) => d.roman)).toEqual(x.mode === "minor" ? ["V7/III"] : []);
+    }
   });
 });
 
