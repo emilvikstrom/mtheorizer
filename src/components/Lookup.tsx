@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChordInfo } from "./ChordInfo";
+import { ChordsThatFit, ScalesThatFit } from "./ChordScaleFit";
 import { ChordBuilder } from "./ChordBuilder";
 import { ChordSymbolField } from "./ChordSymbolField";
 import { Fretboard } from "./Fretboard";
@@ -87,6 +88,8 @@ const TRIAD_FOR_SCALE: Record<ScaleId, ChordQualityId> = {
   lydian: "major",
   mixolydian: "major",
   locrian: "diminished",
+  lydianDominant: "major",
+  altered: "diminished",
   majorPentatonic: "major",
   minorPentatonic: "minor",
   minorBlues: "minor",
@@ -298,9 +301,33 @@ export function Lookup({ route, onChange }: LookupProps) {
           spec={route.spec}
           display={shown}
           onOpenRoot={(newRoot) => onChange({ ...route, root: newRoot, inversion: 0 })}
+          onOpenScale={(scaleId) =>
+            onChange({
+              page: "scale",
+              root,
+              scaleId,
+              instrument,
+              ...guitarOptions(route),
+              ...displayOptions(route),
+            })
+          }
         />
       ) : (
-        <ScaleView route={route} display={shown} />
+        <ScaleView
+          route={route}
+          display={shown}
+          onOpenChord={(chordRoot, quality) =>
+            onChange({
+              page: "chord",
+              root: chordRoot,
+              spec: specOf(quality),
+              inversion: 0,
+              instrument,
+              ...guitarOptions(route),
+              ...displayOptions(route),
+            })
+          }
+        />
       )}
     </>
   );
@@ -378,11 +405,13 @@ function ChordView({
   spec,
   display,
   onOpenRoot,
+  onOpenScale,
 }: {
   route: ChordRoute;
   spec: ChordSpec;
   display: ToneDisplay;
   onOpenRoot: (root: Note) => void;
+  onOpenScale: (scaleId: ScaleId) => void;
 }) {
   const { root, instrument } = route;
   const chord = useMemo(() => chordFromSpec(root, spec), [root, spec]);
@@ -409,11 +438,20 @@ function ChordView({
         display={display}
       />
       <TritoneSubstitute chord={chord} onOpen={onOpenRoot} />
+      <ScalesThatFit chord={chord} onOpen={onOpenScale} />
     </>
   );
 }
 
-function ScaleView({ route, display }: { route: ScaleRoute; display: ToneDisplay }) {
+function ScaleView({
+  route,
+  display,
+  onOpenChord,
+}: {
+  route: ScaleRoute;
+  display: ToneDisplay;
+  onOpenChord: (root: Note, quality: ChordQualityId) => void;
+}) {
   const scale = spellScale(route.root, route.scaleId);
   const tones = scaleHighlights(scale);
   const keys = scaleOnKeyboard(scale);
@@ -434,6 +472,7 @@ function ScaleView({ route, display }: { route: ScaleRoute; display: ToneDisplay
         left={route.left === true}
         display={display}
       />
+      <ChordsThatFit scale={scale} onOpen={onOpenChord} />
     </>
   );
 }

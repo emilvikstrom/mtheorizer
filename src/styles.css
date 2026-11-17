@@ -1766,3 +1766,66 @@ body {
 .tritone__actions .play__button {
   min-height: 2.75rem;
 }
+
+/* "Scales that fit" under a chord and "Chords that fit" under a scale. */
+.fit {
+  display: grid;
+  min-width: 0;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-radius: 8px;
+}
+
+.fit__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.fit__text {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.fit__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fit__list .play__button,
+.fit__chord {
+  min-height: 2.75rem;
+}
+
+.fit__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fit__table th,
+.fit__table td {
+  padding: 0.25rem 0.35rem;
+  text-align: left;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+}
+
+.fit__table thead th {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.fit__chord {
+  padding: 0.4rem 0.6rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .fit {
+    padding: 0.75rem;
+  }
+}

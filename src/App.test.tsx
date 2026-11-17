@@ -555,6 +555,41 @@ describe("App", () => {
     });
   });
 
+  describe("chords and scales that fit", () => {
+    it("opens a scale that fits the chord, on the same root", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole("button", { name: "7" }));
+      expect(screen.getByRole("heading", { name: "Scales that fit" })).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "C Lydian dominant" }));
+      expect(window.location.hash).toBe("#/C/scale/lydianDominant?on=piano");
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
+        "C lydian dominant scale",
+      );
+      expect(scaleNotes()).toEqual(["C", "D", "E", "F♯", "G", "A", "B♭"]);
+    });
+
+    it("opens a chord built on a degree of the scale", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole("radio", { name: "Scale" }));
+      expect(screen.getByRole("heading", { name: "Chords that fit" })).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "Am7" }));
+      expect(window.location.hash).toBe("#/A/minor?with=7&on=piano");
+      expect(chordNotes()).toEqual(["A", "C", "E", "G"]);
+    });
+
+    it("leaves the section out for scales with fewer than seven tones", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole("radio", { name: "Scale" }));
+      await user.click(screen.getByRole("radio", { name: "Major pentatonic" }));
+      expect(screen.queryByRole("heading", { name: "Chords that fit" })).not.toBeInTheDocument();
+    });
+  });
+
   describe("scales", () => {
     it("switches to the major scale on the same root", async () => {
       const user = userEvent.setup();
@@ -566,7 +601,7 @@ describe("App", () => {
       expect(screen.queryByRole("group", { name: "Qualities" })).not.toBeInTheDocument();
       expect(
         within(screen.getByRole("group", { name: "Scale" })).getAllByRole("radio"),
-      ).toHaveLength(13);
+      ).toHaveLength(15);
       expect(
         within(screen.getByRole("group", { name: "Tonic" })).getAllByRole("radio"),
       ).toHaveLength(12);
