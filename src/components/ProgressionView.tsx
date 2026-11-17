@@ -1,6 +1,9 @@
 import type { CSSProperties } from "react";
 import { audioSupported, planProgression, playNotes } from "../audio/playback";
 import {
+  CADENCES,
+  CADENCE_IDS,
+  type Cadence,
   type ChordQualityId,
   type KeyMode,
   type Note,
@@ -9,10 +12,12 @@ import {
   type ProgressionId,
   chordOnKeyboard,
   commonSpellings,
+  type Key,
   formatKey,
   formatNote,
   keyScale,
   keysAt,
+  cadenceChords,
   circlePosition,
   noteEquals,
   pitchClass,
@@ -35,6 +40,50 @@ interface ProgressionViewProps {
 function keySpellings(pc: number, mode: KeyMode): Note[] {
   return commonSpellings(pc).filter((n) =>
     keysAt(circlePosition({ tonic: n, mode }), mode).some((k) => noteEquals(k.tonic, n)),
+  );
+}
+
+/** The four cadences in the key of the shown progression, each with its own play button. */
+function Cadences({ k }: { k: Key }) {
+  const play = (cadence: Cadence) =>
+    playNotes(
+      planProgression(
+        cadenceChords(cadence, k).map(({ chord }) => chordOnKeyboard(chord).map((t) => t.midi)),
+      ),
+    );
+  return (
+    <section className="cadences" aria-labelledby="cadences-title">
+      <h3 id="cadences-title" className="cadences__title">
+        Cadences in {formatKey(k)}
+      </h3>
+      <ul className="cadences__list">
+        {CADENCE_IDS.map((cid) => {
+          const cadence = CADENCES[cid];
+          const chords = cadenceChords(cadence, k);
+          return (
+            <li key={cid} className="cadence">
+              <p className="cadence__name">{cadence.name}</p>
+              <p className="cadence__chords">
+                {chords.map(({ step }) => step.roman).join("–")}
+                {": "}
+                {chords.map(({ chord }) => chord.symbol).join(" → ")}
+              </p>
+              <p className="cadence__description">{cadence.description}</p>
+              {audioSupported() && (
+                <button
+                  type="button"
+                  className="play__button"
+                  aria-label={`Play ${cadence.name.toLowerCase()} cadence in ${formatKey(k)}`}
+                  onClick={() => play(cadence)}
+                >
+                  ▶ Play
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -131,6 +180,8 @@ export function ProgressionView({ tonic, id, onChange, onOpenChord }: Progressio
           </div>
         )}
       </section>
+
+      <Cadences k={k} />
     </div>
   );
 }

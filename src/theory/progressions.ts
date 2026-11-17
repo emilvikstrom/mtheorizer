@@ -122,7 +122,10 @@ export interface ProgressionChord {
 }
 
 /** The chords of `progression` in `k`, spelled from the key's scale. */
-export function progressionChords(progression: Progression, k: Key): ProgressionChord[] {
+export function progressionChords(
+  progression: Pick<Progression, "steps">,
+  k: Key,
+): ProgressionChord[] {
   const scale = keyScale(k);
   return progression.steps.map((s) => {
     const root = scale[s.degree - 1];
@@ -140,3 +143,63 @@ export function progressionKey(progression: Progression, pc: number): Key {
 /** The same key with another tonic spelling (for a choice of C♯ or D♭). */
 export const progressionKeyOn = (progression: Progression, tonic: Note): Key =>
   key(tonic, progression.mode);
+
+export const CADENCE_IDS = ["authentic", "plagal", "half", "deceptive"] as const;
+
+export type CadenceId = (typeof CADENCE_IDS)[number];
+
+export interface Cadence {
+  readonly id: CadenceId;
+  /** E.g. "Authentic". */
+  readonly name: string;
+  /** The chords in major and in minor; in minor V is the major dominant of harmonic minor. */
+  readonly steps: Record<KeyMode, readonly ProgressionStep[]>;
+  /** One line on what the ending sounds like. */
+  readonly description: string;
+}
+
+const dominant = step(5, "major", "V");
+const subdominantMinor = step(4, "minor", "iv");
+
+export const CADENCES: Record<CadenceId, Cadence> = {
+  authentic: {
+    id: "authentic",
+    name: "Authentic",
+    steps: {
+      major: [V, I],
+      minor: [dominant, step(1, "minor", "i")],
+    },
+    description: "V–I: the dominant resolves to the tonic, the strongest full stop.",
+  },
+  plagal: {
+    id: "plagal",
+    name: "Plagal",
+    steps: {
+      major: [IV, I],
+      minor: [subdominantMinor, step(1, "minor", "i")],
+    },
+    description: 'IV–I: the "Amen" cadence, softer than the authentic one.',
+  },
+  half: {
+    id: "half",
+    name: "Half",
+    steps: {
+      major: [I, V],
+      minor: [step(1, "minor", "i"), dominant],
+    },
+    description: "Ends on V: a comma rather than a full stop, so the phrase asks for more.",
+  },
+  deceptive: {
+    id: "deceptive",
+    name: "Deceptive",
+    steps: {
+      major: [V, vi],
+      minor: [dominant, step(6, "major", "♭VI")],
+    },
+    description: "V–vi: the dominant promises the tonic and lands on the relative minor instead.",
+  },
+};
+
+/** The chords of `cadence` in `k`, spelled from the key's scale. */
+export const cadenceChords = (cadence: Cadence, k: Key): ProgressionChord[] =>
+  progressionChords({ steps: cadence.steps[k.mode] }, k);
