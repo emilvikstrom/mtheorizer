@@ -1969,3 +1969,43 @@ body {
     padding: 0.75rem;
   }
 }
+
+/* Pivot chords: modulating to another key */
+.pivots__pick {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  margin: 0 0 8px;
+}
+
+.pivots__select {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+
+.pivots__select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.pivots__steps {
+  display: grid;
+  gap: 10px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pivots__step {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.pivots__route {
+  margin: 0 0 6px;
+}
