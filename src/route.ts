@@ -16,6 +16,8 @@ import {
   type ProgressionId,
   SCALES,
   type ScaleId,
+  STRING_INSTRUMENT_IDS,
+  type StringInstrumentId,
   TUNING_IDS,
   type TuningId,
   circlePosition,
@@ -51,9 +53,13 @@ import { DEFAULT_TONE_DISPLAY, type ToneDisplay, isToneDisplay } from "./toneLab
  * Notes are a letter plus `s` (sharp) or `b` (flat). `#` is read as a sharp too.
  */
 
-export type Instrument = "piano" | "guitar";
+/** The piano, or a fretted instrument: `on=guitar`, `on=ukulele`, `on=bass`, `on=bass5`, `on=mandolin`. */
+export type Instrument = "piano" | StringInstrumentId;
 
-/** How the guitar is shown. Left out of the route when it is the default (standard tuning, right-handed). */
+/**
+ * How the neck is shown. Left out of the route when it is the default (standard tuning, right-handed).
+ * Only the guitar has a choice of tuning; the other instruments have one each.
+ */
 export interface GuitarOptions {
   readonly tuning?: TuningId;
   readonly left?: boolean;
@@ -119,7 +125,7 @@ const SHOW_STORAGE_KEY = "mtheorizer.show";
 // --- Remembered instrument --------------------------------------------------
 
 const isInstrument = (value: unknown): value is Instrument =>
-  value === "piano" || value === "guitar";
+  value === "piano" || (STRING_INSTRUMENT_IDS as readonly unknown[]).includes(value);
 
 /** The instrument used last time, for links that do not say. */
 export function storedInstrument(): Instrument {
@@ -204,9 +210,10 @@ export function formatRouteNote(n: Note): string {
 
 function formatGuitarOptions(route: LookupRoute): string {
   const show = route.show ? `&show=${route.show}` : "";
-  if (route.instrument !== "guitar") return show;
+  if (route.instrument === "piano") return show;
   const { tuning, left } = guitarOptions(route);
-  return `${tuning ? `&tuning=${tuning}` : ""}${left ? "&hand=left" : ""}${show}`;
+  const tuned = route.instrument === "guitar" && tuning ? `&tuning=${tuning}` : "";
+  return `${tuned}${left ? "&hand=left" : ""}${show}`;
 }
 
 /** `minor?with=7,9` style: the base chord, then the qualities. */
@@ -367,7 +374,7 @@ function parseLink(
     (TUNING_IDS as string[]).includes(tuningParam)
       ? { tuning: tuningParam as TuningId }
       : {}),
-    ...(instrument === "guitar" && query.get("hand") === "left" ? { left: true } : {}),
+    ...(instrument !== "piano" && query.get("hand") === "left" ? { left: true } : {}),
   };
   const showParam = query.get("show");
   const display: DisplayOptions = isToneDisplay(showParam) ? { show: showParam } : {};

@@ -38,9 +38,12 @@ import {
   type Tuning,
   SCALES,
   type ScaleId,
+  STRING_INSTRUMENTS,
+  STRING_INSTRUMENT_IDS,
   TUNINGS,
   TUNING_IDS,
   type TuningId,
+  tuningFor,
   chordFromSpec,
   chordHighlights,
   inversionCount,
@@ -71,7 +74,7 @@ const VIEW_OPTIONS: readonly PickerOption<View>[] = [
 
 const INSTRUMENT_OPTIONS: readonly PickerOption<Instrument>[] = [
   { value: "piano", label: "Piano" },
-  { value: "guitar", label: "Guitar" },
+  ...STRING_INSTRUMENT_IDS.map((id) => ({ value: id, label: STRING_INSTRUMENTS[id].label })),
 ];
 
 const HAND_OPTIONS: readonly PickerOption<"right" | "left">[] = [
@@ -217,15 +220,17 @@ export function Lookup({ route, onChange }: LookupProps) {
     delete rest.left;
     return { ...rest, ...options };
   };
-  const guitarPickers = instrument === "guitar" && (
+  const guitarPickers = instrument !== "piano" && (
     <>
-      <OptionPicker
-        legend="Tuning"
-        name="tuning"
-        options={TUNING_IDS.map((id) => ({ value: id, label: TUNINGS[id].label }))}
-        value={tuningId}
-        onChange={(tuning) => onChange(withGuitar({ tuning }))}
-      />
+      {instrument === "guitar" && (
+        <OptionPicker
+          legend="Tuning"
+          name="tuning"
+          options={TUNING_IDS.map((id) => ({ value: id, label: TUNINGS[id].label }))}
+          value={tuningId}
+          onChange={(tuning) => onChange(withGuitar({ tuning }))}
+        />
+      )}
       <OptionPicker
         legend="Hand"
         name="hand"
@@ -425,8 +430,11 @@ function ChordView({
   const { root, instrument } = route;
   const chord = useMemo(() => chordFromSpec(root, spec), [root, spec]);
   const tones = useMemo(() => chordHighlights(chord), [chord]);
-  const tuning = TUNINGS[route.tuning ?? "standard"];
-  const shapes = useMemo(() => chordShapes(tones, tuning.strings), [tones, tuning]);
+  const tuning = tuningFor(instrument === "piano" ? "guitar" : instrument, route.tuning);
+  const shapes = useMemo(
+    () => chordShapes(tones, tuning.strings, { rootInBass: tuning.rootInBass }),
+    [tones, tuning],
+  );
   // The inversion is clamped to what this chord has: a triad has no third inversion.
   const inversion = Math.min(route.inversion, inversionCount(chord));
   const keys = chordOnKeyboard(chord, 4, inversion);
@@ -472,7 +480,10 @@ function ScaleView({
   const scale = spellScale(route.root, route.scaleId);
   const tones = scaleHighlights(scale);
   const keys = scaleOnKeyboard(scale);
-  const tuning = TUNINGS[route.tuning ?? "standard"];
+  const tuning = tuningFor(
+    route.instrument === "piano" ? "guitar" : route.instrument,
+    route.tuning,
+  );
   return (
     <>
       <ScaleInfo scale={scale} />
