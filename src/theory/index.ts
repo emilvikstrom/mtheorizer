@@ -13,3 +13,4 @@ export * from "./progressions";
 export * from "./scales";
 export * from "./tritoneSubstitution";
 export * from "./voicing";
+export * from "./voiceLeading";
