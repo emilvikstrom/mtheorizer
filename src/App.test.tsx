@@ -491,6 +491,17 @@ describe("App", () => {
     expect(window.location.hash).toBe("#/B/diminished?on=piano");
   });
 
+  it("opens the key-signature quiz from its tab and from its link", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("tab", { name: "Key signatures" }));
+    expect(window.location.hash).toBe("#/quiz");
+    expect(screen.getByRole("heading", { level: 2, name: "Key signatures" })).toBeInTheDocument();
+    expect(screen.getByText(/^(How many|Which)/)).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Chords & scales" }));
+    expect(screen.queryByText("Nothing answered yet.")).toBeNull();
+  });
+
   it("finds a chord from pressed keys and opens it in the chord tab", async () => {
     const user = userEvent.setup();
     render(<App />);

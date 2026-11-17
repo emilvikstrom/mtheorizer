@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChordFinder } from "./components/ChordFinder";
 import { CircleOfFifthsView } from "./components/CircleOfFifthsView";
+import { KeyQuiz } from "./components/KeyQuiz";
 import { Lookup } from "./components/Lookup";
 import { ProgressionView } from "./components/ProgressionView";
 import { SavedChoices } from "./components/SavedChoices";
@@ -14,19 +15,21 @@ import {
   defaultCircleRoute,
   defaultIdentifyRoute,
   defaultProgressionRoute,
+  defaultQuizRoute,
   navigate,
   storedInstrument,
   useRoute,
 } from "./route";
 import { matchInversion, specOf } from "./theory";
 
-type Tab = "lookup" | "circle-of-fifths" | "progressions" | "identify";
+type Tab = "lookup" | "circle-of-fifths" | "progressions" | "identify" | "quiz";
 
 const TABS: readonly TabItem<Tab>[] = [
   { id: "lookup", label: "Chords & scales" },
   { id: "circle-of-fifths", label: "Circle of fifths" },
   { id: "progressions", label: "Progressions" },
   { id: "identify", label: "What chord is this?" },
+  { id: "quiz", label: "Key signatures" },
 ];
 
 export function App() {
@@ -38,7 +41,9 @@ export function App() {
         ? "progressions"
         : route.page === "identify"
           ? "identify"
-          : "lookup";
+          : route.page === "quiz"
+            ? "quiz"
+            : "lookup";
 
   // Each tab keeps its own choice while you look at the other one.
   const lastLookup = useRef<LookupRoute | undefined>(undefined);
@@ -61,7 +66,9 @@ export function App() {
           ? (lastProgression.current ?? defaultProgressionRoute())
           : next === "identify"
             ? defaultIdentifyRoute()
-            : (lastLookup.current ?? defaultChordRoute(storedInstrument())),
+            : next === "quiz"
+              ? defaultQuizRoute()
+              : (lastLookup.current ?? defaultChordRoute(storedInstrument())),
     );
 
   return (
@@ -120,6 +127,8 @@ export function App() {
               })
             }
           />
+        ) : route.page === "quiz" ? (
+          <KeyQuiz />
         ) : (
           <>
             <SavedChoices route={route} onOpen={navigate} />
