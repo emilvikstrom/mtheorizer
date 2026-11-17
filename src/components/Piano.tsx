@@ -80,11 +80,14 @@ function PianoKey({
   shape,
   tone,
   display,
+  shared,
   onToggle,
 }: {
   shape: KeyShape;
   tone: KeyboardTone | undefined;
   display: ToneDisplay;
+  /** Marks the key with a dot: a tone the compared chords have in common. */
+  shared: boolean;
   onToggle?: (midi: number) => void;
 }) {
   const width = shape.black ? BLACK_WIDTH : WHITE_WIDTH;
@@ -109,6 +112,7 @@ function PianoKey({
       data-highlighted={tone ? "true" : undefined}
       data-role={tone?.role}
       data-bass={tone?.isBass ? "true" : undefined}
+      data-shared={shared ? "true" : undefined}
       {...(onToggle
         ? {
             role: "button",
@@ -125,6 +129,7 @@ function PianoKey({
         : {})}
     >
       <rect x={shape.x} y={0} width={width} height={height} rx={shape.black ? 3 : 4} />
+      {shared && <circle className="key__shared" cx={centre} cy={shape.black ? 14 : 20} r={5} />}
       {label !== undefined ? (
         <text
           className="key__label"
@@ -145,6 +150,9 @@ function PianoKey({
   );
 }
 
+const isShared = (tone: KeyboardTone | undefined, shared: ReadonlySet<number> | undefined) =>
+  tone !== undefined && shared?.has(tone.midi % 12) === true;
+
 interface PianoProps {
   /** Keys to highlight. */
   tones: readonly KeyboardTone[];
@@ -156,10 +164,12 @@ interface PianoProps {
   onToggleKey?: (midi: number) => void;
   /** What the highlighted keys say: their names (the default), intervals, steps, or nothing. */
   display?: ToneDisplay;
+  /** Pitch classes to mark as common tones when two chords are compared. */
+  shared?: ReadonlySet<number>;
 }
 
 /** A keyboard from C4 to at least B5, wide enough for all of `tones`, with `tones` highlighted. */
-export function Piano({ tones, name, legend, onToggleKey, display = "names" }: PianoProps) {
+export function Piano({ tones, name, legend, onToggleKey, display = "names", shared }: PianoProps) {
   const narrow = useSyncExternalStore(subscribeNarrow, isNarrow, () => false);
   const midis = tones.map((tone) => tone.midi);
   const keys = keyboard(
@@ -194,6 +204,7 @@ export function Piano({ tones, name, legend, onToggleKey, display = "names" }: P
             shape={shape}
             tone={toneAt.get(shape.midi)}
             display={display}
+            shared={isShared(toneAt.get(shape.midi), shared)}
             onToggle={onToggleKey}
           />
         ))}
@@ -203,11 +214,16 @@ export function Piano({ tones, name, legend, onToggleKey, display = "names" }: P
             shape={shape}
             tone={toneAt.get(shape.midi)}
             display={display}
+            shared={isShared(toneAt.get(shape.midi), shared)}
             onToggle={onToggleKey}
           />
         ))}
       </svg>
-      <ToneLegend {...legend} bass={tones.some((tone) => tone.isBass)} />
+      <ToneLegend
+        {...legend}
+        bass={tones.some((tone) => tone.isBass)}
+        shared={tones.some((tone) => isShared(tone, shared))}
+      />
     </figure>
   );
 }

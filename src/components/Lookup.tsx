@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChordInfo } from "./ChordInfo";
 import { ChordsThatFit, ScalesThatFit } from "./ChordScaleFit";
 import { ChordBuilder } from "./ChordBuilder";
+import { ChordCompare } from "./ChordCompare";
 import { ChordSymbolField } from "./ChordSymbolField";
 import { Fretboard } from "./Fretboard";
 import { OptionPicker, type PickerOption } from "./OptionPicker";
@@ -13,6 +14,7 @@ import { ToneDisplayPicker } from "./ToneDisplayPicker";
 import { TritoneSubstitute } from "./TritoneSubstitute";
 import {
   type ChordRoute,
+  type ChordVs,
   displayOptions,
   formatRoute,
   guitarOptions,
@@ -305,6 +307,11 @@ export function Lookup({ route, onChange }: LookupProps) {
           route={route}
           spec={route.spec}
           display={shown}
+          onCompare={(vs) => {
+            const rest = { ...route };
+            delete rest.vs;
+            onChange(vs ? { ...rest, vs } : rest);
+          }}
           onOpenRoot={(newRoot) => onChange({ ...route, root: newRoot, inversion: 0 })}
           onOpenScale={(scaleId) =>
             onChange({
@@ -411,10 +418,12 @@ function ChordView({
   display,
   onOpenRoot,
   onOpenScale,
+  onCompare,
 }: {
   route: ChordRoute;
   spec: ChordSpec;
   display: ToneDisplay;
+  onCompare: (vs: ChordVs | undefined) => void;
   onOpenRoot: (root: Note) => void;
   onOpenScale: (scaleId: ScaleId) => void;
 }) {
@@ -443,6 +452,14 @@ function ChordView({
         neck={{ kind: "shape", views: shapes }}
         tuning={tuning}
         left={route.left === true}
+        display={display}
+      />
+      <ChordCompare
+        root={root}
+        spec={spec}
+        inversion={inversion}
+        vs={route.vs}
+        onChange={onCompare}
         display={display}
       />
       <TritoneSubstitute chord={chord} onOpen={onOpenRoot} />

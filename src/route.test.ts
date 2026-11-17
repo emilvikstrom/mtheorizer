@@ -175,6 +175,47 @@ describe("parseRoute", () => {
   });
 });
 
+describe("compare links", () => {
+  const minorA = { root: note("A"), spec: normalizeSpec({ base: "minor", qualities: [] }) };
+
+  it("write the second chord after the first", () => {
+    expect(formatRoute({ ...defaultChordRoute(), vs: minorA })).toBe(
+      "#/C/major?on=piano&vs=A-minor",
+    );
+    expect(
+      formatRoute({
+        ...defaultChordRoute(),
+        vs: { root: note("E", -1), spec: { base: "minor", qualities: ["7", "9"] } },
+      }),
+    ).toBe("#/C/major?on=piano&vs=Eb-minor&vsw=7,9");
+  });
+
+  it("read both chords back, for every root of the second chord", () => {
+    for (let pc = 0; pc < 12; pc++) {
+      for (const root of commonSpellings(pc)) {
+        const route: ChordRoute = {
+          ...defaultChordRoute("guitar"),
+          root: note("D", -1),
+          spec: specOf("minor7"),
+          vs: { root, spec: { base: "major", qualities: ["maj7"] } },
+        };
+        const back = parseRoute(formatRoute(route));
+        expect(back).toMatchObject({ page: "chord", spec: route.spec });
+        const vs = (back as ChordRoute).vs;
+        expect(vs && noteEquals(vs.root, root)).toBe(true);
+        expect(vs?.spec).toEqual(route.vs?.spec);
+      }
+    }
+  });
+
+  it("ignore a second chord that makes no sense", () => {
+    expect((parseRoute("#/C/major?vs=H-minor") as ChordRoute).vs).toBeUndefined();
+    expect((parseRoute("#/C/major?vs=A") as ChordRoute).vs).toBeUndefined();
+    expect((parseRoute("#/C/major?vs=A-nonsense") as ChordRoute).vs).toBeUndefined();
+    expect(parseRoute("#/C/major?vs=A-minor")).toMatchObject({ vs: minorA });
+  });
+});
+
 describe("progression links", () => {
   it("writes the key's tonic and the progression", () => {
     expect(formatRoute({ page: "progression", tonic: note("A", -1), id: "pop" })).toBe(

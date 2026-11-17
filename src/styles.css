@@ -1969,3 +1969,126 @@ body {
     padding: 0.75rem;
   }
 }
+
+/* Pivot chords: modulating to another key */
+.pivots__pick {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  margin: 0 0 8px;
+}
+
+.pivots__select {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+
+.pivots__select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.pivots__steps {
+  display: grid;
+  gap: 10px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pivots__step {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.pivots__route {
+  margin: 0 0 6px;
+}
+
+/* Comparing two chords: shared tones are marked with a dot on the keys and in the list. */
+.key__shared {
+  fill: var(--on-accent);
+  pointer-events: none;
+}
+
+.legend--shared::before {
+  background: radial-gradient(circle, var(--on-accent) 0 28%, var(--accent-tone) 32%);
+}
+
+.compare {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-radius: 8px;
+}
+
+.compare__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.compare__summary {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.compare__list,
+.compare__tones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compare__list {
+  flex-direction: column;
+}
+
+.compare__chord {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.compare__name {
+  min-width: 4rem;
+  font-weight: 700;
+}
+
+.compare__tone {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-radius: 999px;
+}
+
+.compare__tone--common {
+  border-color: var(--accent-tone);
+  background: color-mix(in srgb, var(--accent-tone) 25%, transparent);
+  font-weight: 700;
+}
+
+.compare__mark {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.compare__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.compare__actions .play__button {
+  min-height: 2.75rem;
+}

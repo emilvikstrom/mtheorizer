@@ -39,6 +39,7 @@ import { DEFAULT_TONE_DISPLAY, type ToneDisplay, isToneDisplay } from "./toneLab
  *   #/C/minor?with=7,9&on=piano    chord built from a base chord and qualities (Cm9)
  *   #/Cs/minor?with=7&on=guitar    C♯ minor seventh on the guitar
  *   #/A/scale/naturalMinor?on=piano  scale
+ *   #/C/major?on=piano&vs=A-minor  C major compared with A minor (`vs=Root-base`, qualities in `vsw`)
  *   #/C/major?on=piano&show=intervals  chord with intervals (R 3 5) on the keys; also names, steps, none
  *   #/circle/Bb/major              circle of fifths with B♭ major selected
  *   #/progression/Ab/pop           the I–V–vi–IV progression in A♭ major
@@ -72,6 +73,13 @@ export interface DisplayOptions {
   readonly show?: ToneDisplay;
 }
 
+/** The second chord of a comparison (the first is the route's own chord). */
+export interface ChordVs {
+  readonly root: Note;
+  /** Always normalized. */
+  readonly spec: ChordSpec;
+}
+
 export interface ChordRoute extends GuitarOptions, DisplayOptions {
   readonly page: "chord";
   readonly root: Note;
@@ -79,6 +87,8 @@ export interface ChordRoute extends GuitarOptions, DisplayOptions {
   readonly spec: ChordSpec;
   readonly inversion: number;
   readonly instrument: Instrument;
+  /** A second chord to compare with. Left out when nothing is compared. */
+  readonly vs?: ChordVs;
 }
 
 export interface ScaleRoute extends GuitarOptions, DisplayOptions {
@@ -216,6 +226,13 @@ function formatChordSpec(spec: ChordSpec): { path: string; params: string } {
  * The link as it was written before the chord builder, which named the whole
  * chord (`dominant7`). Only chords that have such a name can be written this way.
  */
+/** `&vs=Eb-minor&vsw=7`: the compared chord, or nothing. */
+function formatVs(vs: ChordVs | undefined): string {
+  if (!vs) return "";
+  const { base, qualities } = normalizeSpec(vs.spec);
+  return `&vs=${formatRouteNote(vs.root)}-${base}${qualities.length > 0 ? `&vsw=${qualities.join(",")}` : ""}`;
+}
+
 export function formatLegacyChordRoute(route: ChordRoute): string | undefined {
   const quality: ChordQualityId | undefined = identifyQuality(route.spec);
   if (quality === undefined) return undefined;
@@ -230,7 +247,7 @@ export function formatRoute(route: Route): string {
       const inversion =
         route.inversion > 0 && route.instrument === "piano" ? `&inv=${route.inversion}` : "";
       const { path, params } = formatChordSpec(route.spec);
-      return `#/${formatRouteNote(route.root)}/${path}?${params}on=${route.instrument}${inversion}${formatGuitarOptions(route)}`;
+      return `#/${formatRouteNote(route.root)}/${path}?${params}on=${route.instrument}${inversion}${formatVs(route.vs)}${formatGuitarOptions(route)}`;
     }
     case "scale":
       return `#/${formatRouteNote(route.root)}/scale/${route.scaleId}?on=${route.instrument}${formatGuitarOptions(route)}`;
@@ -291,6 +308,16 @@ function parseChordSpec(part: string | undefined, withParam: string | null): Cho
   else return undefined;
   const extra = (withParam ?? "").split(",").filter(isModifier);
   return normalizeSpec({ base: spec.base, qualities: [...spec.qualities, ...extra] });
+}
+
+/** The chord of `vs=Eb-minor` (and `vsw`), or undefined when the link names none. */
+function parseVs(text: string | null, withParam: string | null): ChordVs | undefined {
+  if (text === null) return undefined;
+  const at = text.indexOf("-");
+  if (at === -1) return undefined;
+  const root = parseRouteNote(text.slice(0, at));
+  const spec = parseChordSpec(text.slice(at + 1), withParam);
+  return root && spec ? { root, spec } : undefined;
 }
 
 /**
@@ -365,6 +392,7 @@ function parseLink(
   const spec = parseChordSpec(parts[1], query.get("with"));
   if (!spec) return fallback;
   const inversion = Number(query.get("inv") ?? 0);
+  const vs = parseVs(query.get("vs"), query.get("vsw"));
   return {
     page: "chord",
     root,
@@ -372,6 +400,7 @@ function parseLink(
     inversion:
       Number.isInteger(inversion) && inversion >= 0 && inversion <= MAX_INVERSION ? inversion : 0,
     instrument,
+    ...(vs ? { vs } : {}),
     ...options,
     ...display,
   };

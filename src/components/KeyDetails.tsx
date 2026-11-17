@@ -19,6 +19,7 @@ import {
   relativeKey,
   subdominantKey,
 } from "../theory";
+import { PivotChords } from "./PivotChords";
 
 const FUNCTION_LABELS: Record<HarmonicFunction, string> = {
   tonic: "Tonic",
@@ -202,6 +203,8 @@ export function KeyDetails({ value, onChange, onOpenChord }: KeyDetailsProps) {
           ))}
         </ol>
       </div>
+
+      <PivotChords value={value} onOpenChord={onOpenChord} />
 
       <div className="key-details__section">
         <h3 className="key-details__heading">Related keys</h3>
