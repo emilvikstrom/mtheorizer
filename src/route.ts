@@ -1,5 +1,6 @@
 import { useMemo, useSyncExternalStore } from "react";
 import {
+  ALL_SPELLING_GROUPS,
   CHORD_BASES,
   CHORD_MODIFIERS,
   CHORD_QUALITIES,
@@ -16,6 +17,7 @@ import {
   type ProgressionId,
   SCALES,
   type ScaleId,
+  type SpellingGroupId,
   STRING_INSTRUMENT_IDS,
   type StringInstrumentId,
   TUNING_IDS,
@@ -23,6 +25,7 @@ import {
   circlePosition,
   identifyQuality,
   isProgressionId,
+  isSpellingGroup,
   key,
   keyEquals,
   keysAt,
@@ -116,9 +119,15 @@ export interface IdentifyRoute {
   readonly page: "identify";
 }
 
-/** The key-signature quiz. */
+/**
+ * Practice: the key-signature quiz, or (`mode: "spelling"`) the spelling drill. The drill's
+ * `seed` repeats a set of questions and `groups` limits them (all of them when absent).
+ */
 export interface QuizRoute {
   readonly page: "quiz";
+  readonly mode?: "spelling";
+  readonly seed?: number;
+  readonly groups?: readonly SpellingGroupId[];
 }
 
 export type Route = LookupRoute | CircleRoute | ProgressionRoute | IdentifyRoute | QuizRoute;
@@ -265,8 +274,17 @@ export function formatRoute(route: Route): string {
     case "identify":
       return "#/identify";
     case "quiz":
-      return "#/quiz";
+      return formatQuiz(route);
   }
+}
+
+/** `#/quiz`, or `#/quiz/spelling?seed=7&groups=triads,scales`. */
+function formatQuiz(route: QuizRoute): string {
+  if (route.mode !== "spelling") return "#/quiz";
+  const params: string[] = [];
+  if (route.seed !== undefined) params.push(`seed=${route.seed}`);
+  if (route.groups) params.push(`groups=${route.groups.join(",")}`);
+  return `#/quiz/spelling${params.length > 0 ? `?${params.join("&")}` : ""}`;
 }
 
 // --- Parse ------------------------------------------------------------------
@@ -329,6 +347,28 @@ function parseVs(text: string | null, withParam: string | null): ChordVs | undef
   return root && spec ? { root, spec } : undefined;
 }
 
+const MAX_SEED = 0xffffffff;
+
+/** The drill's groups in their usual order, or undefined when the link names none, or all. */
+function parseQuizGroups(text: string | null): readonly SpellingGroupId[] | undefined {
+  const named = (text ?? "").split(",").filter(isSpellingGroup);
+  const groups = ALL_SPELLING_GROUPS.filter((id) => named.includes(id));
+  return groups.length === 0 || groups.length === ALL_SPELLING_GROUPS.length ? undefined : groups;
+}
+
+function parseQuiz(mode: string | undefined, query: URLSearchParams): QuizRoute {
+  if (mode !== "spelling") return { page: "quiz" };
+  const seedText = query.get("seed");
+  const seed = seedText !== null && /^\d+$/.test(seedText) ? Number(seedText) : undefined;
+  const groups = parseQuizGroups(query.get("groups"));
+  return {
+    page: "quiz",
+    mode: "spelling",
+    ...(seed !== undefined && seed <= MAX_SEED ? { seed } : {}),
+    ...(groups ? { groups } : {}),
+  };
+}
+
 /**
  * The view a hash stands for. A link that makes no sense falls back to C major
  * (or to C major on the circle, for a broken circle link). `fallbackInstrument`
@@ -358,7 +398,7 @@ function parseLink(
   const parts = path.split("/").filter(Boolean).map(safeDecode);
 
   if (parts[0] === "identify") return { page: "identify" };
-  if (parts[0] === "quiz") return { page: "quiz" };
+  if (parts[0] === "quiz") return parseQuiz(parts[1], query);
 
   if (parts[0] === "circle") {
     const k = parseCircleKey(parts[1], parts[2]);
@@ -434,14 +474,15 @@ function subscribe(listener: () => void) {
 const currentHash = () => window.location.hash;
 
 /** Show `route`: adds a history entry, so the back button returns to the previous view. */
-export function navigate(route: Route) {
+export function navigate(route: Route, options: { replace?: boolean } = {}) {
   const hash = formatRoute(route);
   if (route.page === "chord" || route.page === "scale") {
     rememberInstrument(route.instrument);
     if (route.show) rememberToneDisplay(route.show);
   }
   if (hash === window.location.hash) return;
-  window.history.pushState(null, "", hash);
+  if (options.replace) window.history.replaceState(null, "", hash);
+  else window.history.pushState(null, "", hash);
   for (const listener of listeners) listener();
 }
 

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { ChordFinder } from "./components/ChordFinder";
 import { CircleOfFifthsView } from "./components/CircleOfFifthsView";
-import { KeyQuiz } from "./components/KeyQuiz";
 import { Lookup } from "./components/Lookup";
 import { ProgressionView } from "./components/ProgressionView";
+import { Quiz } from "./components/Quiz";
 import { SavedChoices } from "./components/SavedChoices";
 import { type TabItem, Tabs, panelId, tabId } from "./components/Tabs";
 import { ThemeSwitch } from "./components/ThemeSwitch";
@@ -29,7 +29,7 @@ const TABS: readonly TabItem<Tab>[] = [
   { id: "circle-of-fifths", label: "Circle of fifths" },
   { id: "progressions", label: "Progressions" },
   { id: "identify", label: "What chord is this?" },
-  { id: "quiz", label: "Key signatures" },
+  { id: "quiz", label: "Practice" },
 ];
 
 export function App() {
@@ -128,7 +128,7 @@ export function App() {
             }
           />
         ) : route.page === "quiz" ? (
-          <KeyQuiz />
+          <Quiz route={route} onChange={navigate} />
         ) : (
           <>
             <SavedChoices route={route} onOpen={navigate} />

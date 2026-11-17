@@ -494,12 +494,24 @@ describe("App", () => {
   it("opens the key-signature quiz from its tab and from its link", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole("tab", { name: "Key signatures" }));
+    await user.click(screen.getByRole("tab", { name: "Practice" }));
     expect(window.location.hash).toBe("#/quiz");
     expect(screen.getByRole("heading", { level: 2, name: "Key signatures" })).toBeInTheDocument();
     expect(screen.getByText(/^(How many|Which)/)).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Chords & scales" }));
     expect(screen.queryByText("Nothing answered yet.")).toBeNull();
+  });
+
+  it("opens the spelling drill from its link and keeps the seed", async () => {
+    const user = userEvent.setup();
+    window.location.hash = "#/quiz/spelling?seed=5&groups=triads";
+    render(<App />);
+    expect(screen.getByRole("tab", { name: "Practice" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("heading", { level: 2, name: "Spelling" })).toBeInTheDocument();
+    expect(screen.getByText(/^Spell /)).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Sevenths" })).not.toBeChecked();
+    await user.click(screen.getByRole("checkbox", { name: "Sevenths" }));
+    expect(window.location.hash).toBe("#/quiz/spelling?seed=5&groups=triads,sevenths");
   });
 
   it("finds a chord from pressed keys and opens it in the chord tab", async () => {

@@ -2266,3 +2266,118 @@ body {
 .staff__note--root .staff__head {
   stroke: var(--accent-ink-root);
 }
+
+/* Practice: the choice between the quizzes, and the spelling drill. */
+.practice {
+  display: grid;
+  gap: 16px;
+}
+
+.practice__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.practice__mode {
+  min-height: 44px;
+  padding: 4px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.practice__mode[aria-pressed="true"],
+.quiz__choice[aria-pressed="true"] {
+  border: 2px solid var(--text);
+  background: var(--block);
+}
+
+.practice__mode:focus-visible,
+.spelling__link:focus-visible,
+.spelling__input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.practice__mode:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.spelling__groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.spelling__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+}
+
+.spelling__hint,
+.spelling__note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.spelling__link {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.spelling__choices {
+  display: grid;
+  gap: 8px;
+}
+
+.spelling__choice {
+  margin: 0;
+  padding: 6px 10px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.spelling__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.5rem, 1fr));
+  gap: 6px;
+}
+
+.spelling__type {
+  display: grid;
+  gap: 6px;
+}
+
+.spelling__input {
+  min-height: 44px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.quiz__next:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
