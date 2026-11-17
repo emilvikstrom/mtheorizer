@@ -1767,6 +1767,56 @@ body {
   min-height: 2.75rem;
 }
 
+/* Smooth voicing: a toggle under the progression and the movement between its chords. */
+.voicing-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 12px;
+}
+
+.voicing-toggle .play__button {
+  min-height: 2.75rem;
+}
+
+.voicing-toggle .play__button[aria-pressed="true"] {
+  border-color: var(--accent-ink-root);
+  color: var(--accent-ink-root);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--accent-ink-root) 12%, transparent);
+}
+
+.voicing-toggle__hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.voice-leading {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.voice-leading__step {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  font-size: 0.85rem;
+}
+
+.voice-leading__chords {
+  min-width: 6.5rem;
+  font-weight: 700;
+}
+
+.voice-leading__text {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
 /* "Scales that fit" under a chord and "Chords that fit" under a scale. */
 .fit {
   display: grid;
