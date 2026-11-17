@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  STRING_INSTRUMENTS,
   type HighlightTone,
   type NeckTone,
   type NeckView,
@@ -23,16 +24,15 @@ const NUT_WIDTH = 5;
 
 const NECK_START = NAME_COLUMN + OPEN_COLUMN;
 const OPEN_X = NAME_COLUMN + OPEN_COLUMN / 2;
-const STRING_COUNT = 6;
-const BOARD_HEIGHT = (STRING_COUNT - 1) * STRING_GAP + 2 * BOARD_PADDING;
-const FRET_NUMBER_Y = BOARD_HEIGHT + 18;
-const HEIGHT = FRET_NUMBER_Y + 6;
+const boardHeight = (strings: number) => (strings - 1) * STRING_GAP + 2 * BOARD_PADDING;
 
 const SINGLE_INLAYS = new Set([3, 5, 7, 9, 15]);
 const DOUBLE_INLAY = 12;
 
 const stringY = (string: number) => BOARD_PADDING + (string - 1) * STRING_GAP;
-const midY = (a: number, b: number) => (stringY(a) + stringY(b)) / 2;
+/** A height on the board as a share of the way from the first string to the last. */
+const shareY = (strings: number, share: number) =>
+  BOARD_PADDING + (strings - 1) * STRING_GAP * share;
 
 /** Where the player is on the neck: a fret, and which of the views starting there. */
 interface Wanted {
@@ -142,6 +142,10 @@ function NeckDiagram({
   const fretCentreX = (fret: number) =>
     mx(fret === 0 ? OPEN_X : NECK_START + (fret - view.firstFret + 0.5) * FRET_WIDTH);
   const muted = new Set(view.muted);
+  const strings = tuning.strings.length;
+  const BOARD_HEIGHT = boardHeight(strings);
+  const FRET_NUMBER_Y = BOARD_HEIGHT + 18;
+  const HEIGHT = FRET_NUMBER_Y + 6;
 
   return (
     <svg
@@ -166,7 +170,7 @@ function NeckDiagram({
             key={fret}
             className="fretboard__inlay"
             cx={fretCentreX(fret)}
-            cy={midY(3, 4)}
+            cy={shareY(strings, 0.5)}
             r={6}
           />
         ))}
@@ -175,13 +179,13 @@ function NeckDiagram({
           <circle
             className="fretboard__inlay"
             cx={fretCentreX(DOUBLE_INLAY)}
-            cy={midY(2, 3)}
+            cy={shareY(strings, 0.3)}
             r={6}
           />
           <circle
             className="fretboard__inlay"
             cx={fretCentreX(DOUBLE_INLAY)}
-            cy={midY(4, 5)}
+            cy={shareY(strings, 0.7)}
             r={6}
           />
         </>
@@ -350,7 +354,10 @@ export function Fretboard({
         .join(", ")}`
     : "";
   const fingers = view.fingering ? `, fingers ${formatFingering(view, tuning.strings.length)}` : "";
-  const description = `${left ? "Left-handed guitar" : "Guitar"} neck showing ${name}${tuning.id === "standard" ? "" : ` in ${tuning.label} tuning`}, ${status.toLowerCase()}, ${where.toLowerCase()}: ${detail}${fingers}${without ? `. ${without}` : ""}`;
+  const instrument = STRING_INSTRUMENTS[tuning.instrument].label;
+  const inTuning =
+    tuning.instrument === "guitar" && tuning.id !== "standard" ? ` in ${tuning.label} tuning` : "";
+  const description = `${left ? `Left-handed ${instrument.toLowerCase()}` : instrument} neck showing ${name}${inTuning}, ${status.toLowerCase()}, ${where.toLowerCase()}: ${detail}${fingers}${without ? `. ${without}` : ""}`;
   const step = (delta: number) => {
     const next = views[index + delta];
     if (next) setWanted({ fret: next.firstFret, key: viewKey(next) });

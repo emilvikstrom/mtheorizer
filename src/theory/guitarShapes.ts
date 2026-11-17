@@ -3,7 +3,13 @@
  * reads a chord diagram or a scale position.
  */
 
-import { type NeckPlace, type OpenString, STANDARD_TUNING, positionsOnNeck } from "./fretboard";
+import {
+  type NeckPlace,
+  type OpenString,
+  STANDARD_TUNING,
+  openStringMidi,
+  positionsOnNeck,
+} from "./fretboard";
 import { pitchClass } from "./notes";
 import type { HighlightTone } from "./voicing";
 
@@ -152,6 +158,7 @@ function shapesInWindow(
   onNeck: readonly NeckTone[],
   stringCount: number,
   first: number,
+  rootInBass: boolean,
 ): Omit<ChordShape, "firstFret" | "frets">[] {
   const last = first + VIEW_FRETS - 1;
   const reachable = (p: NeckTone) =>
@@ -163,11 +170,16 @@ function shapesInWindow(
 
   // Chords of two tones (power chords) are played on two or three of the lowest strings with the
   // rest muted. Any other chord plays every string from the bass up to string 1.
-  const sparse = new Set(required).size <= SPARSE_TONES;
+  // Where the root need not be lowest (ukulele, mandolin) every string is played.
+  const sparse = rootInBass && new Set(required).size <= SPARSE_TONES;
   const found: (Omit<ChordShape, "firstFret" | "frets"> & { cost: number[] })[] = [];
-  const lowestBass = sparse ? stringCount - SPARSE_BASS_STRINGS + 1 : MIN_STRINGS;
+  const lowestBass = !rootInBass
+    ? stringCount
+    : sparse
+      ? stringCount - SPARSE_BASS_STRINGS + 1
+      : Math.min(MIN_STRINGS, stringCount);
   for (let bass = stringCount; bass >= lowestBass; bass--) {
-    const bassChoices = (candidates[bass - 1] ?? []).filter((p) => p.isRoot);
+    const bassChoices = (candidates[bass - 1] ?? []).filter((p) => !rootInBass || p.isRoot);
     if (bassChoices.length === 0) continue;
     const topStrings = sparse
       ? Array.from({ length: SPARSE_MAX_STRINGS - SPARSE_MIN_STRINGS + 1 }, (_, i) => bass - 1 - i)
@@ -247,7 +259,8 @@ export function formatFingering(view: NeckView, stringCount = STANDARD_TUNING.le
  * Each four-fret stretch gets its best root-position shape, plus variants of it
  * (such as x13331 and x10331 for B♭) that play as many strings and tones and
  * need at most one more finger. The easiest comes first. The lowest string
- * played is the root, every chord tone sounds (optional tones such as the
+ * played is the root (not for the ukulele and mandolin, whose grips often start
+ * on the third or fifth), every chord tone sounds (optional tones such as the
  * fifth of a seventh chord may be left out), the strings from the bass up to
  * string 1 are all played, and at most four fingers are needed (a barre counts
  * as one). Open strings are only used in open chords, with nothing fretted
@@ -257,11 +270,12 @@ export function formatFingering(view: NeckView, stringCount = STANDARD_TUNING.le
 export function chordShapes(
   tones: readonly HighlightTone[],
   tuning: readonly OpenString[] = STANDARD_TUNING,
+  { rootInBass = true }: { rootInBass?: boolean } = {},
 ): ChordShape[] {
   const onNeck = positionsOnNeck(tones, tuning, NECK_FRETS);
   const shapes = new Map<string, ChordShape>();
   for (let first = 1; first + VIEW_FRETS - 1 <= NECK_FRETS; first++) {
-    for (const found of shapesInWindow(tones, onNeck, tuning.length, first)) {
+    for (const found of shapesInWindow(tones, onNeck, tuning.length, first, rootInBass)) {
       const fretted = found.positions.map((p) => p.fret).filter((f) => f > 0);
       const usesOpen = found.positions.some((p) => p.fret === 0);
       // Show the shape from its lowest fretted fret, the way chord diagrams do.
@@ -273,6 +287,16 @@ export function chordShapes(
   }
   // Stable sort: within a position the easiest variant comes first.
   return [...shapes.values()].sort((a, b) => a.firstFret - b.firstFret);
+}
+
+/** The number of the lowest-sounding string: the last one, except on a re-entrant ukulele. */
+export function lowestString(tuning: readonly OpenString[]): number {
+  let lowest = tuning.length;
+  tuning.forEach((open, i) => {
+    const current = tuning[lowest - 1];
+    if (current && openStringMidi(open) < openStringMidi(current)) lowest = i + 1;
+  });
+  return lowest;
 }
 
 /**
@@ -287,7 +311,7 @@ export function scalePositions(
   tuning: readonly OpenString[] = STANDARD_TUNING,
 ): NeckView[] {
   const onNeck = positionsOnNeck(tones, tuning, NECK_FRETS);
-  const lowest = tuning.length;
+  const lowest = lowestString(tuning);
   const starts = [1];
   for (let fret = 2; fret + VIEW_FRETS - 1 <= NECK_FRETS; fret++) {
     if (onNeck.some((p) => p.string === lowest && p.fret === fret)) starts.push(fret);

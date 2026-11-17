@@ -10,7 +10,7 @@ import {
   saveList,
   toggleFavorite,
 } from "../saved";
-import { SCALES, chordFromSpec, formatNote, inversionSymbol } from "../theory";
+import { SCALES, STRING_INSTRUMENTS, chordFromSpec, formatNote, inversionSymbol } from "../theory";
 
 /** Short name of a stored choice: "Cm7", "C/E", "A Natural minor". */
 function labelOf(route: LookupRoute): string {
@@ -18,7 +18,8 @@ function labelOf(route: LookupRoute): string {
   return inversionSymbol(chordFromSpec(route.root, route.spec), route.inversion);
 }
 
-const instrumentOf = (route: LookupRoute) => (route.instrument === "guitar" ? "Guitar" : "Piano");
+const instrumentOf = (route: LookupRoute) =>
+  route.instrument === "piano" ? "Piano" : STRING_INSTRUMENTS[route.instrument].label;
 
 interface Props {
   /** The choice on screen. It is added to the recent list. */
@@ -61,7 +62,9 @@ export function SavedChoices({ route, onOpen }: Props) {
           onClick={() => onOpen(saved)}
         >
           <span className="saved__label">{label}</span>
-          {saved.instrument === "guitar" ? <span className="saved__meta">Guitar</span> : null}
+          {saved.instrument !== "piano" ? (
+            <span className="saved__meta">{instrumentOf(saved)}</span>
+          ) : null}
         </button>
         <button
           type="button"
