@@ -96,8 +96,6 @@ Ljud och in/ut:
   - Acceptans: `playback.ts` planerar fortfarande med en ren och testad funktion, och klangerna väljs utan att uppspelningen ändrar sig. Inställningarna minns. Referensstämning (A4 = 440 Hz) går att ändra
 - [ ] **X-18** Web MIDI: spela på ett anslutet MIDI-keyboard och se tonerna på pianot, och (med M6-07) vilket ackord de bildar
   - Acceptans: knappen visas bara när webbläsaren har Web MIDI, åtkomst begärs först vid klick, och att koppla från mitt i en session ger ett lugnt meddelande. MIDI-in ger ingen ändring av valet förrän användaren väljer det
-- [ ] **X-19** Dela och exportera: knappar för att kopiera länken, kopiera tonerna som text ("C–E♭–G") och spara diagrammet som PNG eller SVG
-  - Acceptans: använder Web Share när det finns och kopiering annars. Exporterade bilder har tonnamn och titel och fungerar i både ljust och mörkt tema
 
 Instrument och kvalitet:
 
@@ -111,6 +109,7 @@ Instrument och kvalitet:
 
 ## Klart
 
+- [x] **X-19** Dela och exportera under ackord och skalor (`ShareExport`, hjälplogik i `src/share.ts`): "Share link" med Web Share när webbläsaren har det och "Copy link" annars, "Copy notes" ger tonerna som text ("C–E♭–G"), och "Save SVG" och "Save PNG" sparar diagrammet med titel och tonnamn. Bilden bär egna färger (bakgrund och text från aktuellt tema) och egna stilar, så den ser lika ut överallt. Bekräftelser och fel står i en `aria-live`-rad. PNG ritas via canvas utan nya beroenden _(2026-11-17)_
 - [x] **M7-07** Moduskarta under kvintcirkeln: en tabell med en rad per modus (lydisk, jonisk, mixolydisk, dorisk, eolisk, frygisk, lokrisk, ljusast först) och en kolumn per grundton. Varje cell visar durtonarten med samma toner och antal ♯ eller ♭ (C lydisk = G-dur 1♯, C mixolydisk = F-dur 1♭, C lokrisk = D♭-dur 5♭). Räknas i `modeKeySignature` i `src/theory/modes.ts`, tabelltestat för alla 12 grundtoner × 7 modus och mot kvintcirkelns positioner, med grundtonen stavad som i skalväljaren. Kolumnen för vald tonart är inramad (inte bara färg) och varje cell är en länk som öppnar skalan i skalfliken. Tabellen scrollar i sidled vid 375 px med lägesnamnen kvar _(2026-11-16)_
 - [x] **M6-06b** Sökfält för ackordsymboler ovanför byggaren (`ChordSymbolField`): man skriver en symbol (`F#m7b5/C`) och ackordet öppnas med grundton, kvaliteter och omvändning när basen är en ackordton. Felmeddelandet från `parseChordSymbol` står under fältet (`aria-live`, `aria-invalid`) och ackordet ändras först när symbolen är giltig. En bas som inte är en ackordton (C/D) förklaras och ackordet öppnas i grundläge. Fältet visar ackordets egen symbol när valet ändras på annat håll _(2026-11-16)_
 - [x] **M8-06** Kadenser i progressionsvyn: autentisk (V–I), plagal (IV–I), halv (I–V) och bedräglig (V–vi) i tonartens läge, som data i `progressions.ts` (`CADENCES`, `cadenceChords`). I moll är V dur (harmonisk moll) och den bedrägliga går till ♭VI. Varje kadens har en förklaringsrad och en egen uppspelningsknapp som använder `planProgression`. Tabelltestat för alla 15 dur- och 15 molltonarter på kvintcirkeln, rätt stavade _(2026-11-16)_

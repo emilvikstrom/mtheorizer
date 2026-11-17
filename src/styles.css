@@ -1563,3 +1563,26 @@ body {
 .symbol-field__message--error {
   color: var(--dominant);
 }
+
+/* Share and export */
+
+.share {
+  margin: 0.5rem 0 0.75rem;
+}
+
+.share__buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.share__status {
+  min-height: 1.4em;
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.share__status--error {
+  color: var(--dominant);
+}
