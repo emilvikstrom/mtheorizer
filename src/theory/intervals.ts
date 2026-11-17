@@ -37,6 +37,8 @@ export const MAJOR_SEVENTH = interval("Major seventh", "M7", 6, 11);
 export const DIMINISHED_FIFTH = interval("Diminished fifth", "d5", 4, 6);
 export const AUGMENTED_FIFTH = interval("Augmented fifth", "A5", 4, 8);
 export const DIMINISHED_SEVENTH = interval("Diminished seventh", "d7", 6, 9);
+// The altered scale has a ♭4 that is the major third, spelled on the fourth letter.
+export const DIMINISHED_FOURTH = interval("Diminished fourth", "d4", 3, 4);
 
 // Compound intervals (beyond the octave), used for chord extensions.
 export const MINOR_NINTH = interval("Minor ninth", "m9", 8, 13);

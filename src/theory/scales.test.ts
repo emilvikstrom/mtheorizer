@@ -125,6 +125,8 @@ describe("scales and modes", () => {
     lydian: [0, 2, 4, 6, 7, 9, 11],
     mixolydian: [0, 2, 4, 5, 7, 9, 10],
     locrian: [0, 1, 3, 5, 6, 8, 10],
+    lydianDominant: [0, 2, 4, 6, 7, 9, 10],
+    altered: [0, 1, 3, 4, 6, 8, 10],
     majorPentatonic: [0, 2, 4, 7, 9],
     minorPentatonic: [0, 3, 5, 7, 10],
     minorBlues: [0, 3, 5, 6, 7, 10],
@@ -170,6 +172,10 @@ describe("scales and modes", () => {
     expect(spell(4, "phrygian")).toBe("E F G A B C D");
     expect(spell(5, "lydian")).toBe("F G A B C D E");
     expect(spell(7, "mixolydian")).toBe("G A B C D E F");
+    expect(spell(0, "lydianDominant")).toBe("C D E F# G A Bb");
+    expect(spell(7, "lydianDominant")).toBe("G A B C# D E F");
+    expect(spell(0, "altered")).toBe("C Db Eb Fb Gb Ab Bb");
+    expect(spell(7, "altered")).toBe("G Ab Bb Cb Db Eb F");
     expect(spell(11, "locrian")).toBe("B C D E F G A");
     expect(spell(9, "harmonicMinor")).toBe("A B C D E F G#");
     expect(spell(9, "melodicMinor")).toBe("A B C D E F# G#");
@@ -194,6 +200,7 @@ describe("scales and modes", () => {
     expect(scaleLabel(SCALES.major)).toBe("Major (Ionian)");
     expect(scaleLabel(SCALES.naturalMinor)).toBe("Natural minor (Aeolian)");
     expect(scaleLabel(SCALES.dorian)).toBe("Dorian");
+    expect(scaleLabel(SCALES.lydianDominant)).toBe("Lydian dominant");
   });
 
   it("labels the blue note", () => {
@@ -204,6 +211,69 @@ describe("scales and modes", () => {
       "Perfect fourth",
       "Diminished fifth",
       "Perfect fifth",
+      "Minor seventh",
+    ]);
+  });
+});
+
+describe("the jazz scales", () => {
+  // Every pitch class → the scale spelled the way a musician would write it. The altered scale is
+  // melodic minor a half step up (C altered = D♭ melodic minor from C), with ♭4 for the major third.
+  const LYDIAN_DOMINANT = [
+    "C D E F# G A Bb",
+    "Db Eb F G Ab Bb Cb",
+    "D E F# G# A B C",
+    "Eb F G A Bb C Db",
+    "E F# G# A# B C# D",
+    "F G A B C D Eb",
+    "F# G# A# B# C# D# E",
+    "G A B C# D E F",
+    "Ab Bb C D Eb F Gb",
+    "A B C# D# E F# G",
+    "Bb C D E F G Ab",
+    "B C# D# E# F# G# A",
+  ];
+  const ALTERED = [
+    "C Db Eb Fb Gb Ab Bb",
+    "C# D E F G A B",
+    "D Eb F Gb Ab Bb C",
+    "D# E F# G A B C#",
+    "E F G Ab Bb C D",
+    "F Gb Ab Bbb Cb Db Eb",
+    "F# G A Bb C D E",
+    "G Ab Bb Cb Db Eb F",
+    "G# A B C D E F#",
+    "A Bb C Db Eb F G",
+    "A# B C# D E F# G#",
+    "B C D Eb F G A",
+  ];
+  const spell = (pc: number, id: ScaleId) =>
+    scaleOnPitchClass(pc, id)
+      .tones.map((t) => formatNoteAscii(t.note))
+      .join(" ");
+
+  it.each(LYDIAN_DOMINANT.map((expected, pc) => [pc, expected]))(
+    "lydian dominant on pitch class %i is %s",
+    (pc, expected) => {
+      expect(spell(pc as number, "lydianDominant")).toBe(expected);
+    },
+  );
+
+  it.each(ALTERED.map((expected, pc) => [pc, expected]))(
+    "altered on pitch class %i is %s",
+    (pc, expected) => {
+      expect(spell(pc as number, "altered")).toBe(expected);
+    },
+  );
+
+  it("names the altered notes by their interval", () => {
+    expect(scaleOnPitchClass(0, "altered").tones.map(scaleToneLabel)).toEqual([
+      "Tonic",
+      "Minor second",
+      "Minor third",
+      "Diminished fourth",
+      "Diminished fifth",
+      "Minor sixth",
       "Minor seventh",
     ]);
   });

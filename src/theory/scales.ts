@@ -1,6 +1,7 @@
 import {
   AUGMENTED_FOURTH,
   DIMINISHED_FIFTH,
+  DIMINISHED_FOURTH,
   type Interval,
   MINOR_SECOND,
   MAJOR_SECOND,
@@ -27,12 +28,14 @@ export type ScaleId =
   | "lydian"
   | "mixolydian"
   | "locrian"
+  | "lydianDominant"
+  | "altered"
   | "majorPentatonic"
   | "minorPentatonic"
   | "minorBlues"
   | "majorBlues";
 
-export type ScaleGroupId = "minor" | "modes" | "pentatonic";
+export type ScaleGroupId = "minor" | "modes" | "jazz" | "pentatonic";
 
 export interface Scale {
   readonly id: ScaleId;
@@ -139,6 +142,29 @@ const LOCRIAN_SCALE = scaleOf("locrian", "Locrian", [
   MINOR_SEVENTH,
 ]);
 
+/** The fourth mode of melodic minor: a mixolydian with a raised fourth (1 2 3 ♯4 5 6 ♭7). */
+const LYDIAN_DOMINANT_SCALE = scaleOf("lydianDominant", "Lydian dominant", [
+  MAJOR_SECOND,
+  MAJOR_THIRD,
+  AUGMENTED_FOURTH,
+  PERFECT_FIFTH,
+  MAJOR_SIXTH,
+  MINOR_SEVENTH,
+]);
+
+/**
+ * The seventh mode of melodic minor, the "super locrian" (1 ♭2 ♭3 ♭4 ♭5 ♭6 ♭7). The ♭4 is the
+ * major third and the ♭6 the sharp fifth, so every altered note of a dominant chord is in it.
+ */
+const ALTERED_SCALE = scaleOf("altered", "Altered", [
+  MINOR_SECOND,
+  MINOR_THIRD,
+  DIMINISHED_FOURTH,
+  DIMINISHED_FIFTH,
+  MINOR_SIXTH,
+  MINOR_SEVENTH,
+]);
+
 const MAJOR_PENTATONIC_SCALE = scaleOf(
   "majorPentatonic",
   "Major pentatonic",
@@ -179,6 +205,8 @@ export const SCALES: Record<ScaleId, Scale> = {
   lydian: LYDIAN_SCALE,
   mixolydian: MIXOLYDIAN_SCALE,
   locrian: LOCRIAN_SCALE,
+  lydianDominant: LYDIAN_DOMINANT_SCALE,
+  altered: ALTERED_SCALE,
   majorPentatonic: MAJOR_PENTATONIC_SCALE,
   minorPentatonic: MINOR_PENTATONIC_SCALE,
   minorBlues: MINOR_BLUES_SCALE,
@@ -202,6 +230,11 @@ export const SCALE_GROUPS: readonly ScaleGroup[] = [
     id: "modes",
     name: "Modes",
     scales: ["dorian", "phrygian", "lydian", "mixolydian", "locrian"],
+  },
+  {
+    id: "jazz",
+    name: "Jazz",
+    scales: ["lydianDominant", "altered"],
   },
   {
     id: "pentatonic",
@@ -230,11 +263,13 @@ export function keySignatureAccidentals(tonic: Note, scale: Scale): number {
 /**
  * How to spell a tonic on pitch class `pc` for `scale`.
  *
- * Rule: among the spellings with at most one accidental, use the one whose key
- * signature has the fewest accidentals. That gives D♭ major but C♯ minor,
- * A♭ major but G♯ minor, and always the natural name for white keys.
+ * Rule: a white key keeps its natural name (F altered, not E♯ altered). Among the spellings of a
+ * black key, use the one whose key signature has the fewest accidentals. That gives D♭ major but
+ * C♯ minor, and A♭ major but G♯ minor.
  */
 export function preferredTonicSpelling(pc: number, scale: Scale): Note {
+  const natural = spellingsOf(pc).find((n) => n.accidental === 0);
+  if (natural) return natural;
   const candidates = spellingsOf(pc).map((spelling) => ({
     spelling,
     cost: keySignatureAccidentals(spelling, scale),

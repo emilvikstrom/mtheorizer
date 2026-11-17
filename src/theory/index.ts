@@ -1,6 +1,7 @@
 export * from "./chordNaming";
 export * from "./chordParse";
 export * from "./chordSpec";
+export * from "./chordScales";
 export * from "./chords";
 export * from "./fretboard";
 export * from "./guitarShapes";
