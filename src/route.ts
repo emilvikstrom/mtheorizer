@@ -116,7 +116,12 @@ export interface IdentifyRoute {
   readonly page: "identify";
 }
 
-export type Route = LookupRoute | CircleRoute | ProgressionRoute | IdentifyRoute;
+/** The key-signature quiz. */
+export interface QuizRoute {
+  readonly page: "quiz";
+}
+
+export type Route = LookupRoute | CircleRoute | ProgressionRoute | IdentifyRoute | QuizRoute;
 
 const MAX_INVERSION = 3;
 const STORAGE_KEY = "mtheorizer.instrument";
@@ -190,6 +195,8 @@ export const defaultChordRoute = (instrument: Instrument = "piano"): ChordRoute 
 
 export const defaultIdentifyRoute = (): IdentifyRoute => ({ page: "identify" });
 
+export const defaultQuizRoute = (): QuizRoute => ({ page: "quiz" });
+
 export const defaultCircleRoute = (): CircleRoute => ({
   page: "circle",
   key: key(note("C"), "major"),
@@ -257,6 +264,8 @@ export function formatRoute(route: Route): string {
       return `#/progression/${formatRouteNote(route.tonic)}/${route.id}`;
     case "identify":
       return "#/identify";
+    case "quiz":
+      return "#/quiz";
   }
 }
 
@@ -349,6 +358,7 @@ function parseLink(
   const parts = path.split("/").filter(Boolean).map(safeDecode);
 
   if (parts[0] === "identify") return { page: "identify" };
+  if (parts[0] === "quiz") return { page: "quiz" };
 
   if (parts[0] === "circle") {
     const k = parseCircleKey(parts[1], parts[2]);

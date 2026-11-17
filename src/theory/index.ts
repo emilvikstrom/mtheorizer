@@ -8,6 +8,7 @@ export * from "./fretboard";
 export * from "./guitarShapes";
 export * from "./identify";
 export * from "./intervals";
+export * from "./keyQuiz";
 export * from "./keys";
 export * from "./modes";
 export * from "./notes";

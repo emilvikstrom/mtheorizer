@@ -2093,6 +2093,128 @@ body {
   min-height: 2.75rem;
 }
 
+/* Key-signature quiz: a question, the answers as buttons, then the circle of fifths as the key. */
+.quiz {
+  display: grid;
+  gap: 16px;
+  max-width: 44rem;
+}
+
+.quiz__heading {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.quiz__score {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.quiz__question {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.quiz__answers {
+  display: grid;
+  gap: 8px;
+}
+
+.quiz__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: 6px;
+}
+
+.quiz__row--tonics {
+  grid-template-columns: repeat(auto-fill, minmax(3.5rem, 1fr));
+}
+
+.quiz__choice,
+.quiz__next {
+  min-height: 44px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.quiz__choice:hover:not(:disabled),
+.quiz__next:hover {
+  border-color: var(--muted);
+}
+
+.quiz__choice:focus-visible,
+.quiz__next:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.quiz__choice:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* The right answer is outlined in green and a wrong one in red; the text says so as well. */
+.quiz__choice--right:disabled {
+  opacity: 1;
+  border: 2px solid var(--subdominant);
+}
+
+.quiz__choice--wrong:disabled {
+  opacity: 1;
+  border: 2px solid var(--dominant);
+}
+
+.quiz__feedback {
+  display: grid;
+  gap: 12px;
+}
+
+.quiz__verdict {
+  margin: 0;
+  font-weight: 600;
+}
+
+.quiz__verdict--right {
+  color: var(--subdominant);
+}
+
+.quiz__verdict--wrong {
+  color: var(--dominant);
+}
+
+.quiz__circle {
+  margin: 0;
+  max-width: 24rem;
+}
+
+.quiz__circle svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.quiz__caption {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.quiz__next {
+  justify-self: start;
+  padding-inline: 20px;
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+
 /* Notation: the chord or scale on a staff */
 
 .notation {
