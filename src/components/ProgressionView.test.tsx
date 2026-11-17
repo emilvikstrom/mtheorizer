@@ -98,7 +98,7 @@ describe("ProgressionView", () => {
     expect(opened).toHaveBeenCalledWith(note("A"), "minor");
   });
 
-  it("plays the progression through Web Audio", async () => {
+  it("plays the progression and a cadence through Web Audio", async () => {
     const started: number[] = [];
     class FakeContext {
       state = "running";
@@ -130,11 +130,51 @@ describe("ProgressionView", () => {
     // Four triads, three tones each, one block of tones per chord.
     expect(started).toHaveLength(12);
     expect(new Set(started.map((t) => +t.toFixed(3))).size).toBe(4);
+
+    // A cadence is two chords: two triads of three tones, in two blocks.
+    started.length = 0;
+    await user.click(screen.getByRole("button", { name: "Play authentic cadence in C major" }));
+    expect(started).toHaveLength(6);
+    expect(new Set(started.map((t) => +t.toFixed(3))).size).toBe(2);
   });
 
   it("hides the play button when the browser has no Web Audio", () => {
     vi.stubGlobal("AudioContext", undefined);
     render(<Harness />);
     expect(screen.queryByRole("button", { name: /^Play / })).not.toBeInTheDocument();
+  });
+
+  const cadenceList = () =>
+    within(screen.getByRole("region", { name: /^Cadences in/ })).getAllByRole("listitem");
+
+  it("shows the four cadences in the key of the progression", () => {
+    render(<Harness />);
+    expect(screen.getByRole("region", { name: "Cadences in C major" })).toBeInTheDocument();
+    expect(cadenceList().map((item) => item.textContent)).toEqual([
+      expect.stringContaining("AuthenticV–I: G → C"),
+      expect.stringContaining("PlagalIV–I: F → C"),
+      expect.stringContaining("HalfI–V: C → G"),
+      expect.stringContaining("DeceptiveV–vi: G → Am"),
+    ]);
+  });
+
+  it("spells the cadences of a minor progression with the harmonic-minor dominant", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole("radio", { name: "i–♭VI–♭III–♭VII" }));
+    expect(screen.getByRole("region", { name: "Cadences in C minor" })).toBeInTheDocument();
+    expect(cadenceList().map((item) => item.textContent)).toEqual([
+      expect.stringContaining("AuthenticV–i: G → Cm"),
+      expect.stringContaining("Plagaliv–i: Fm → Cm"),
+      expect.stringContaining("Halfi–V: Cm → G"),
+      expect.stringContaining("DeceptiveV–♭VI: G → A♭"),
+    ]);
+  });
+
+  it("follows the tonic", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole("radio", { name: "G♯/A♭" }));
+    expect(cadenceList()[0]).toHaveTextContent("AuthenticV–I: E♭ → A♭");
   });
 });
