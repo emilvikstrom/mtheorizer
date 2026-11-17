@@ -10,7 +10,8 @@ afterEach(() => {
   window.location.hash = "";
 });
 
-const table = () => screen.getByRole("table");
+// The circle view has other tables too, so look inside the mode map's own scroll region.
+const table = () => within(screen.getByRole("region", { name: /Mode map/ })).getByRole("table");
 const cell = (name: RegExp) => within(table()).getByRole("link", { name });
 
 function Harness() {
