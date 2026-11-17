@@ -3,6 +3,7 @@ import {
   type HarmonicFunction,
   type Key,
   type Note,
+  borrowedChords,
   circlePosition,
   diatonicTriads,
   dominantKey,
@@ -44,6 +45,8 @@ export function KeyDetails({ value, onChange, onOpenChord }: KeyDetailsProps) {
   const spellings = keysAt(circlePosition(value), value.mode);
   const { accidentals } = keySignature(value);
   const harmonicDominant = harmonicMinorDominant(value);
+  const borrowed = borrowedChords(value);
+  const borrowedOrigin = borrowed[0]?.origin;
   const related: [string, Key][] = [
     [value.mode === "major" ? "Relative minor" : "Relative major", relativeKey(value)],
     [value.mode === "major" ? "Parallel minor" : "Parallel major", parallelKey(value)],
@@ -133,6 +136,35 @@ export function KeyDetails({ value, onChange, onOpenChord }: KeyDetailsProps) {
           </p>
         )}
       </div>
+
+      {borrowed.length > 0 && (
+        <div className="key-details__section">
+          <h3 className="key-details__heading">Borrowed chords</h3>
+          <p className="key-details__text">
+            Chords from the parallel key{borrowedOrigin && `, ${formatKey(borrowedOrigin)}`}, that
+            colour {formatKey(value)}. Click one to open it.
+          </p>
+          <ol className="triads" aria-label="Borrowed chords">
+            {borrowed.map((chord) => (
+              <li key={chord.degree}>
+                <button
+                  type="button"
+                  className={`triad triad--borrowed triad--${chord.quality}`}
+                  aria-label={`Open ${chord.symbol} in Chords & scales, borrowed from ${formatKey(chord.origin)}`}
+                  onClick={() => {
+                    const root = chord.notes[0];
+                    if (root) onOpenChord(root, chord.quality);
+                  }}
+                >
+                  <span className="triad__roman">{chord.roman}</span>
+                  <span className="triad__symbol">{chord.symbol}</span>
+                  <span className="triad__function">{formatKey(chord.origin)}</span>
+                </button>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       <div className="key-details__section">
         <h3 className="key-details__heading">Related keys</h3>

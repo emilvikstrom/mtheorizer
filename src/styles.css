@@ -913,6 +913,15 @@ body {
   color: var(--muted);
 }
 
+/* Chords borrowed from the parallel key: dashed, so they read apart from the key's own chords. */
+.triad--borrowed {
+  border-style: dashed;
+}
+
+.triad--borrowed .triad__function {
+  text-align: center;
+}
+
 .related {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
