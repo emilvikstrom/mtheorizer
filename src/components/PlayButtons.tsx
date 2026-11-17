@@ -1,4 +1,5 @@
 import { audioSupported, planPlayback, playNotes } from "../audio/playback";
+import { SoundSettings } from "./SoundSettings";
 
 interface PlayButtonsProps {
   /** MIDI numbers of the tones to play. */
@@ -42,6 +43,7 @@ export function PlayButtons({ midis, kind, name }: PlayButtonsProps) {
           ▶ Play scale
         </button>
       )}
+      <SoundSettings />
     </div>
   );
 }
