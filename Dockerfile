@@ -15,5 +15,6 @@ RUN npm run lint && npm run format:check && npm run typecheck && npm test && npm
 
 # Stage 3: serve the static build with nginx.
 FROM nginx:1.30.6-alpine3.24 AS runtime
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80

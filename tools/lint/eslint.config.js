@@ -13,5 +13,9 @@ export default tseslint.config(
     files: ["src/**/*.{ts,tsx}", "vite.config.ts"],
     languageOptions: { globals: { ...globals.browser } },
   },
+  {
+    files: ["public/sw.js"],
+    languageOptions: { globals: { ...globals.serviceworker } },
+  },
   prettier,
 );
