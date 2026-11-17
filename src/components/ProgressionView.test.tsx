@@ -7,6 +7,35 @@ import { ProgressionView } from "./ProgressionView";
 
 const opened = vi.fn();
 
+/** Every oscillator started through the fake Web Audio below: when, and at what frequency. */
+const starts: { at: number; hz: number }[] = [];
+
+// The audio module keeps the first context it creates, so every test shares one fake class.
+class FakeContext {
+  state = "running";
+  currentTime = 0;
+  destination = {};
+  createOscillator() {
+    const osc = {
+      type: "",
+      frequency: { value: 0 },
+      connect: (n: unknown) => n,
+      start: (at: number) => starts.push({ at, hz: osc.frequency.value }),
+      stop: () => undefined,
+    };
+    return osc;
+  }
+  createGain() {
+    return {
+      gain: { setValueAtTime: () => undefined, exponentialRampToValueAtTime: () => undefined },
+      connect: (n: unknown) => n,
+    };
+  }
+  resume() {
+    return Promise.resolve();
+  }
+}
+
 function Harness({
   start = note("C"),
   startId = "pop",
@@ -99,43 +128,73 @@ describe("ProgressionView", () => {
   });
 
   it("plays the progression and a cadence through Web Audio", async () => {
-    const started: number[] = [];
-    class FakeContext {
-      state = "running";
-      currentTime = 0;
-      destination = {};
-      createOscillator() {
-        return {
-          type: "",
-          frequency: { value: 0 },
-          connect: (n: unknown) => n,
-          start: (at: number) => started.push(at),
-          stop: () => undefined,
-        };
-      }
-      createGain() {
-        return {
-          gain: { setValueAtTime: () => undefined, exponentialRampToValueAtTime: () => undefined },
-          connect: (n: unknown) => n,
-        };
-      }
-      resume() {
-        return Promise.resolve();
-      }
-    }
+    starts.length = 0;
     vi.stubGlobal("AudioContext", FakeContext);
     const user = userEvent.setup();
     render(<Harness />);
     await user.click(screen.getByRole("button", { name: "Play I–V–vi–IV in C major" }));
     // Four triads, three tones each, one block of tones per chord.
-    expect(started).toHaveLength(12);
-    expect(new Set(started.map((t) => +t.toFixed(3))).size).toBe(4);
+    expect(starts).toHaveLength(12);
+    expect(new Set(starts.map((t) => +t.at.toFixed(3))).size).toBe(4);
 
     // A cadence is two chords: two triads of three tones, in two blocks.
-    started.length = 0;
+    starts.length = 0;
     await user.click(screen.getByRole("button", { name: "Play authentic cadence in C major" }));
-    expect(started).toHaveLength(6);
-    expect(new Set(started.map((t) => +t.toFixed(3))).size).toBe(2);
+    expect(starts).toHaveLength(6);
+    expect(new Set(starts.map((t) => +t.at.toFixed(3))).size).toBe(2);
+  });
+
+  const voiceLeadingSteps = () =>
+    within(screen.getByRole("list", { name: "Voice leading between the chords" }))
+      .getAllByRole("listitem")
+      .map((item) => item.textContent);
+
+  it("shows how the chords move once smooth voicing is on", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const toggle = screen.getByRole("button", { name: "Smooth voicing" });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    expect(
+      screen.queryByRole("list", { name: "Voice leading between the chords" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    // C → G keeps G; G → Am moves every tone up a step; Am → F keeps C and A.
+    expect(voiceLeadingSteps()).toEqual([
+      "C → GG stays · C → B · E → D · 3 semitones in total",
+      "G → AmB → C · D → E · G → A · 5 semitones in total",
+      "Am → FC and A stay · E → F · 1 semitone in total",
+    ]);
+
+    await user.click(toggle);
+    expect(
+      screen.queryByRole("list", { name: "Voice leading between the chords" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("plays the progression close together when smooth voicing is on", async () => {
+    starts.length = 0;
+    vi.stubGlobal("AudioContext", FakeContext);
+    const user = userEvent.setup();
+    render(<Harness />);
+    const secondChord = () => {
+      const times = [...new Set(starts.map((s) => +s.at.toFixed(3)))].sort((a, b) => a - b);
+      return starts.filter((s) => +s.at.toFixed(3) === times[1]).map((s) => s.hz);
+    };
+
+    // In root position G major sounds from G4 (392 Hz) up to D5.
+    await user.click(screen.getByRole("button", { name: "Play I–V–vi–IV in C major" }));
+    expect(Math.max(...secondChord())).toBeGreaterThan(550);
+
+    // Smoothly voiced it sounds B3–D4–G4, just under the C major chord, so nothing goes above G4.
+    starts.length = 0;
+    await user.click(screen.getByRole("button", { name: "Smooth voicing" }));
+    await user.click(
+      screen.getByRole("button", { name: "Play I–V–vi–IV in C major with smooth voicing" }),
+    );
+    expect(starts).toHaveLength(12);
+    expect(Math.max(...secondChord())).toBeLessThan(400);
   });
 
   it("hides the play button when the browser has no Web Audio", () => {

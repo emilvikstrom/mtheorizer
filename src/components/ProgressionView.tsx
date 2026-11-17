@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { type CSSProperties, useState } from "react";
 import { audioSupported, planProgression, playNotes } from "../audio/playback";
 import {
   CADENCES,
@@ -18,12 +18,14 @@ import {
   keyScale,
   keysAt,
   cadenceChords,
+  describeVoiceLeading,
   circlePosition,
   noteEquals,
   pitchClass,
   progressionChords,
   progressionKey,
   progressionKeyOn,
+  voiceProgression,
 } from "../theory";
 import { OptionPicker } from "./OptionPicker";
 import { RootPicker } from "./RootPicker";
@@ -96,9 +98,17 @@ export function ProgressionView({ tonic, id, onChange, onOpenChord }: Progressio
   const pc = pitchClass(tonic);
   const spellings = keySpellings(pc, progression.mode);
 
+  // Smooth voicing: each chord in the inversion and octave that keeps the movement small.
+  const [smooth, setSmooth] = useState(false);
+  const voiced = smooth ? voiceProgression(chords.map(({ chord }) => chord)) : undefined;
+
   const play = () =>
     playNotes(
-      planProgression(chords.map(({ chord }) => chordOnKeyboard(chord).map((t) => t.midi))),
+      planProgression(
+        voiced
+          ? voiced.voicings.map((tones) => tones.map((t) => t.midi))
+          : chords.map(({ chord }) => chordOnKeyboard(chord).map((t) => t.midi)),
+      ),
     );
 
   return (
@@ -168,12 +178,41 @@ export function ProgressionView({ tonic, id, onChange, onOpenChord }: Progressio
           ))}
         </ol>
 
+        <div className="voicing-toggle">
+          <button
+            type="button"
+            className="play__button"
+            aria-pressed={smooth}
+            onClick={() => setSmooth((on) => !on)}
+          >
+            Smooth voicing
+          </button>
+          <span className="voicing-toggle__hint">
+            {smooth
+              ? "Each chord takes the inversion that moves the least from the one before."
+              : "Chords are played in root position."}
+          </span>
+        </div>
+
+        {voiced && (
+          <ol className="voice-leading" aria-label="Voice leading between the chords">
+            {voiced.transitions.map((transition, i) => (
+              <li key={i} className="voice-leading__step">
+                <span className="voice-leading__chords">
+                  {chords[i]?.chord.symbol} → {chords[i + 1]?.chord.symbol}
+                </span>
+                <span className="voice-leading__text">{describeVoiceLeading(transition)}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+
         {audioSupported() && (
           <div className="play" role="group" aria-label="Listen">
             <button
               type="button"
               className="play__button"
-              aria-label={`Play ${progression.name} in ${formatKey(k)}`}
+              aria-label={`Play ${progression.name} in ${formatKey(k)}${smooth ? " with smooth voicing" : ""}`}
               onClick={play}
             >
               ▶ Play progression
