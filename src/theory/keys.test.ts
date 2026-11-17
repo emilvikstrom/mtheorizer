@@ -3,6 +3,7 @@ import {
   CIRCLE_OF_FIFTHS,
   type Key,
   type KeyMode,
+  borrowedChords,
   circlePosition,
   degreeWheel,
   diatonicBlock,
@@ -212,6 +213,118 @@ describe("harmonicMinorDominant", () => {
       harmonicMinorDominant(k("G#", "minor"))?.tones.map((t) => formatNoteAscii(t.note)),
     ).toEqual(["D#", "F##", "A#"]);
     expect(harmonicMinorDominant(k("C"))).toBeUndefined();
+  });
+});
+
+describe("borrowedChords", () => {
+  const symbols = (x: Key) => borrowedChords(x).map((c) => c.symbol);
+
+  // ii°, ♭III, iv, ♭VI and ♭VII from the parallel minor, for every major key on the circle.
+  const MAJOR_TABLE: readonly (readonly [string, string])[] = [
+    ["C", "D° E♭ Fm A♭ B♭"],
+    ["G", "A° B♭ Cm E♭ F"],
+    ["D", "E° F Gm B♭ C"],
+    ["A", "B° C Dm F G"],
+    ["E", "F♯° G Am C D"],
+    ["B", "C♯° D Em G A"],
+    ["Cb", "D♭° E𝄫 F♭m A𝄫 B𝄫"],
+    ["F#", "G♯° A Bm D E"],
+    ["Gb", "A♭° B𝄫 C♭m E𝄫 F♭"],
+    ["Db", "E♭° F♭ G♭m B𝄫 C♭"],
+    ["C#", "D♯° E F♯m A B"],
+    ["Ab", "B♭° C♭ D♭m F♭ G♭"],
+    ["Eb", "F° G♭ A♭m C♭ D♭"],
+    ["Bb", "C° D♭ E♭m G♭ A♭"],
+    ["F", "G° A♭ B♭m D♭ E♭"],
+  ];
+
+  // I, ii and IV from the parallel major, for every minor key on the circle.
+  const MINOR_TABLE: readonly (readonly [string, string])[] = [
+    ["A", "A Bm D"],
+    ["E", "E F♯m A"],
+    ["B", "B C♯m E"],
+    ["F#", "F♯ G♯m B"],
+    ["C#", "C♯ D♯m F♯"],
+    ["G#", "G♯ A♯m C♯"],
+    ["Ab", "A♭ B♭m D♭"],
+    ["D#", "D♯ E♯m G♯"],
+    ["Eb", "E♭ Fm A♭"],
+    ["Bb", "B♭ Cm E♭"],
+    ["A#", "A♯ B♯m D♯"],
+    ["F", "F Gm B♭"],
+    ["C", "C Dm F"],
+    ["G", "G Am C"],
+    ["D", "D Em G"],
+  ];
+
+  it("covers every key on the circle", () => {
+    expect(MAJOR_TABLE).toHaveLength(CIRCLE_OF_FIFTHS.flat().length);
+    expect(MINOR_TABLE).toHaveLength(CIRCLE_OF_FIFTHS.flat().length);
+    const circle = CIRCLE_OF_FIFTHS.flat().map(formatNoteAscii).sort();
+    expect(MAJOR_TABLE.map(([t]) => t).sort()).toEqual(circle);
+    const minors = Array.from({ length: 12 }, (_, p) => keysAt(p, "minor"))
+      .flat()
+      .map((x) => formatNoteAscii(x.tonic))
+      .sort();
+    expect(MINOR_TABLE.map(([t]) => t).sort()).toEqual(minors);
+  });
+
+  it.each(MAJOR_TABLE)("%s major borrows %s", (tonic, expected) => {
+    expect(symbols(k(tonic)).join(" ")).toBe(expected);
+  });
+
+  it.each(MINOR_TABLE)("%s minor borrows %s", (tonic, expected) => {
+    expect(symbols(k(tonic, "minor")).join(" ")).toBe(expected);
+  });
+
+  it("gives C major the chords of C minor: Fm, A♭, B♭ and E♭, plus D°", () => {
+    const chords = borrowedChords(k("C"));
+    expect(chords.map((c) => c.roman)).toEqual(["ii°", "♭III", "iv", "♭VI", "♭VII"]);
+    expect(chords.map((c) => c.quality)).toEqual([
+      "diminished",
+      "major",
+      "minor",
+      "major",
+      "major",
+    ]);
+    expect(chords.every((c) => formatKey(c.origin) === "C minor")).toBe(true);
+    expect(chords[1]?.notes.map(formatNoteAscii)).toEqual(["Eb", "G", "Bb"]);
+  });
+
+  it("gives C minor the C major tonic, ii and IV with the origin C major", () => {
+    const chords = borrowedChords(k("C", "minor"));
+    expect(chords.map((c) => c.roman)).toEqual(["I", "ii", "IV"]);
+    expect(chords.every((c) => formatKey(c.origin) === "C major")).toBe(true);
+    expect(chords[0]?.notes.map(formatNoteAscii)).toEqual(["C", "E", "G"]);
+  });
+
+  it("spells from the key's own tonic, not from an enharmonic key", () => {
+    // D♭ major borrows from D♭ minor (with B𝄫), not from C♯ minor.
+    const chords = borrowedChords(k("Db"));
+    expect(formatKey(chords[0]?.origin ?? k("C"))).toBe("D♭ minor");
+    expect(chords[3]?.notes.map(formatNoteAscii)).toEqual(["Bbb", "Db", "Fb"]);
+  });
+
+  it("never repeats a chord the key already has", () => {
+    for (const tonic of CIRCLE_OF_FIFTHS.flat()) {
+      for (const mode of ["major", "minor"] as const) {
+        const own = new Set(diatonicTriads(key(tonic, mode)).map((t) => t.symbol));
+        for (const c of borrowedChords(key(tonic, mode))) expect(own.has(c.symbol)).toBe(false);
+      }
+    }
+  });
+
+  it("spells every chord as stacked thirds from its root", () => {
+    for (const tonic of CIRCLE_OF_FIFTHS.flat()) {
+      for (const mode of ["major", "minor"] as const) {
+        for (const c of borrowedChords(key(tonic, mode))) {
+          expect(c.notes).toHaveLength(3);
+          const letters = c.notes.map((n) => n.letter);
+          const root = "CDEFGAB".indexOf(letters[0] ?? "C");
+          expect(letters).toEqual([0, 2, 4].map((o) => "CDEFGAB"[(root + o) % 7]));
+        }
+      }
+    }
   });
 });
 
