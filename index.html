@@ -3,8 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="description" content="Look up music theory: chords on a piano keyboard." />
     <title>mtheorizer</title>
+    <!--
+      Sets the theme before the first paint, so there is no flash of the wrong one.
+      The key and the rules are the same as in src/theme.ts (a test checks that).
+    -->
+    <script>
+      (function () {
+        var choice = null;
+        try {
+          choice = localStorage.getItem("mtheorizer.theme");
+        } catch (e) {}
+        var dark =
+          choice === "dark" ||
+          (choice !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+      })();
+    </script>
+    <style>
+      html[data-theme="dark"] {
+        background: #161514;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

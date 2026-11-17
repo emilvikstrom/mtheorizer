@@ -5,6 +5,7 @@ import { Lookup } from "./components/Lookup";
 import { ProgressionView } from "./components/ProgressionView";
 import { SavedChoices } from "./components/SavedChoices";
 import { type TabItem, Tabs, panelId, tabId } from "./components/Tabs";
+import { ThemeSwitch } from "./components/ThemeSwitch";
 import {
   type CircleRoute,
   type LookupRoute,
@@ -66,8 +67,11 @@ export function App() {
   return (
     <main className="app">
       <header className="app__header">
-        <h1 className="app__title">mtheorizer</h1>
-        <p className="app__tagline">Look up chords, scales and keys.</p>
+        <div>
+          <h1 className="app__title">mtheorizer</h1>
+          <p className="app__tagline">Look up chords, scales and keys.</p>
+        </div>
+        <ThemeSwitch />
       </header>
 
       <Tabs label="Views" tabs={TABS} value={tab} onChange={showTab} />
