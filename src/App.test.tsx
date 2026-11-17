@@ -819,6 +819,126 @@ describe("App", () => {
     });
   });
 
+  describe("tone display", () => {
+    /** What the highlighted piano keys say, lowest first. */
+    const keyLabels = (container: HTMLElement) =>
+      [...container.querySelectorAll('[data-highlighted="true"]')]
+        .sort((a, b) => Number(a.getAttribute("data-midi")) - Number(b.getAttribute("data-midi")))
+        .map((key) => key.querySelector(".key__label")?.textContent ?? "");
+
+    const choose = (name: string) =>
+      userEvent.click(
+        within(screen.getByRole("group", { name: "Labels" })).getByRole("radio", { name }),
+      );
+
+    it("writes note names by default", () => {
+      const { container } = render(<App />);
+      expect(
+        within(screen.getByRole("group", { name: "Labels" })).getByRole("radio", { name: "Names" }),
+      ).toBeChecked();
+      expect(keyLabels(container)).toEqual(["C", "E", "G"]);
+    });
+
+    it("shows intervals on the keys and puts the choice in the link", async () => {
+      const { container } = render(<App />);
+      await choose("Intervals");
+      expect(keyLabels(container)).toEqual(["R", "3", "5"]);
+      expect(window.location.hash).toBe("#/C/major?on=piano&show=intervals");
+    });
+
+    it("writes a minor seventh as ♭7, never as ♯6", () => {
+      window.history.replaceState(null, "", "#/C/major?with=7&on=piano&show=intervals");
+      const { container } = render(<App />);
+      expect(keyLabels(container)).toEqual(["R", "3", "5", "♭7"]);
+    });
+
+    it("numbers the tones as steps, and the scale degrees on a scale", async () => {
+      const { container } = render(<App />);
+      await choose("Steps");
+      expect(keyLabels(container)).toEqual(["1", "2", "3"]);
+      await userEvent.click(screen.getByRole("radio", { name: "Scale" }));
+      expect(keyLabels(container).slice(0, 7)).toEqual(["1", "2", "3", "4", "5", "6", "7"]);
+      expect(window.location.hash).toContain("show=steps");
+    });
+
+    it("shows intervals on the guitar neck too", async () => {
+      window.history.replaceState(null, "", "#/C/minor?on=guitar&show=intervals");
+      const { container } = render(<App />);
+      const labels = [...container.querySelectorAll(".fret-dot__label")].map((t) => t.textContent);
+      expect(labels.length).toBeGreaterThan(0);
+      expect(new Set(labels)).toEqual(new Set(["R", "♭3", "5"]));
+    });
+
+    it("shows nothing in practice mode until the answer is asked for", async () => {
+      const { container } = render(<App />);
+      await choose("None");
+      expect(keyLabels(container)).toEqual(["", "", ""]);
+      expect(screen.getByRole("img", { name: /tone labels hidden/ })).toBeInTheDocument();
+
+      const reveal = screen.getByRole("button", { name: "Show the notes" });
+      expect(reveal).toHaveAttribute("aria-pressed", "false");
+      await userEvent.click(reveal);
+      expect(keyLabels(container)).toEqual(["C", "E", "G"]);
+      expect(screen.getByRole("button", { name: "Hide the notes" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+
+      // The answer is hidden again for the next chord.
+      await userEvent.click(screen.getByRole("radio", { name: "Minor" }));
+      expect(keyLabels(container)).toEqual(["", "", ""]);
+    });
+
+    it("hides the answer from the guitar neck's description too", async () => {
+      window.history.replaceState(null, "", "#/C/scale/major?on=guitar&show=none");
+      const { container } = render(<App />);
+      expect(container.querySelectorAll(".fret-dot__label")[0]?.textContent).toBe("");
+      expect(screen.getByRole("img", { name: /tone labels hidden/ })).toBeInTheDocument();
+    });
+
+    it("remembers the choice for links that do not name one", async () => {
+      const { unmount } = render(<App />);
+      await choose("Intervals");
+      unmount();
+
+      window.history.replaceState(null, "", "#/D/major?on=piano");
+      const { container } = render(<App />);
+      expect(screen.getByRole("radio", { name: "Intervals" })).toBeChecked();
+      expect(keyLabels(container)).toEqual(["R", "3", "5"]);
+    });
+
+    it("lets a link override the remembered choice", async () => {
+      const { unmount } = render(<App />);
+      await choose("Intervals");
+      unmount();
+
+      window.history.replaceState(null, "", "#/D/major?on=piano&show=names");
+      render(<App />);
+      expect(screen.getByRole("radio", { name: "Names" })).toBeChecked();
+    });
+
+    it("keeps the choice when switching between chord and scale and between instruments", async () => {
+      render(<App />);
+      await choose("Intervals");
+      await userEvent.click(screen.getByRole("radio", { name: "Scale" }));
+      expect(screen.getByRole("radio", { name: "Intervals" })).toBeChecked();
+      await userEvent.click(screen.getByRole("radio", { name: "Guitar" }));
+      expect(window.location.hash).toContain("show=intervals");
+      await userEvent.click(screen.getByRole("radio", { name: "Chord" }));
+      expect(screen.getByRole("radio", { name: "Intervals" })).toBeChecked();
+    });
+
+    it("still works when storage is blocked", async () => {
+      const blocked = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+        throw new Error("blocked");
+      });
+      const { container } = render(<App />);
+      await choose("Intervals");
+      expect(keyLabels(container)).toEqual(["R", "3", "5"]);
+      blocked.mockRestore();
+    });
+  });
+
   describe("enharmonic spelling", () => {
     const spelling = () => within(screen.getByRole("group", { name: "Spelling" }));
 

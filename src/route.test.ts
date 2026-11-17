@@ -234,6 +234,63 @@ describe("guitar options", () => {
   });
 });
 
+describe("tone display", () => {
+  it("writes the choice to the link, for both instruments and for scales", () => {
+    expect(formatRoute({ ...defaultChordRoute(), show: "intervals" })).toBe(
+      "#/C/major?on=piano&show=intervals",
+    );
+    expect(formatRoute({ ...defaultChordRoute("guitar"), tuning: "dropD", show: "steps" })).toBe(
+      "#/C/major?on=guitar&tuning=dropD&show=steps",
+    );
+    expect(
+      formatRoute({
+        page: "scale",
+        root: note("D"),
+        scaleId: "dorian",
+        instrument: "piano",
+        show: "none",
+      }),
+    ).toBe("#/D/scale/dorian?on=piano&show=none");
+  });
+
+  it("leaves old links as they were: no show in the link, none in the route", () => {
+    expect(formatRoute(defaultChordRoute())).toBe("#/C/major?on=piano");
+    expect(parseRoute("#/C/major?on=piano")).not.toHaveProperty("show");
+    expect(parseRoute("#/Db/minor7?on=piano&inv=1")).not.toHaveProperty("show");
+    expect(parseRoute("#/A/scale/naturalMinor?on=piano")).not.toHaveProperty("show");
+  });
+
+  it("reads every display back and ignores unknown ones", () => {
+    for (const show of ["names", "intervals", "steps", "none"] as const) {
+      expect(parseRoute(`#/C/major?on=piano&show=${show}`)).toMatchObject({ show });
+      expect(parseRoute(`#/G/scale/major?on=guitar&show=${show}`)).toMatchObject({ show });
+    }
+    expect(parseRoute("#/C/major?on=piano&show=degrees")).not.toHaveProperty("show");
+    expect(parseRoute("#/C/major?on=piano&show=")).not.toHaveProperty("show");
+  });
+
+  it("round-trips link → route → link, whatever the order of the parameters", () => {
+    for (const link of [
+      "#/C/major?on=piano&show=intervals",
+      "#/Eb/minor?with=7&on=piano&inv=1&show=steps",
+      "#/D/major?on=guitar&tuning=dropD&hand=left&show=none",
+      "#/F/scale/lydian?on=guitar&show=names",
+    ]) {
+      expect(formatRoute(parseRoute(link))).toBe(link);
+    }
+    expect(formatRoute(parseRoute("#/C/major?show=intervals&on=piano"))).toBe(
+      "#/C/major?on=piano&show=intervals",
+    );
+  });
+
+  it("keeps the display for the other instrument", () => {
+    const piano = parseRoute("#/C/major?on=piano&show=intervals") as ChordRoute;
+    expect(formatRoute({ ...piano, instrument: "guitar" })).toBe(
+      "#/C/major?on=guitar&show=intervals",
+    );
+  });
+});
+
 const chordRoute = (spec: ChordSpec, extra: Partial<ChordRoute> = {}): ChordRoute => ({
   ...defaultChordRoute(),
   spec,
