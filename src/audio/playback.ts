@@ -128,11 +128,13 @@ export function audioSupported(): boolean {
 /**
  * Plays the planned notes in the chosen sound (the stored settings unless given). The plan is the
  * same whatever the sound; tempo, tuning, volume and timbre only decide how it is played.
+ * `voices` is how many tones sound at the same time, which sets the level (all of them by default).
  * Returns the total length in seconds.
  */
 export function playNotes(
   plan: readonly ScheduledNote[],
   settings: AudioSettings = getAudioSettings(),
+  voices?: number,
 ): number {
   if (!audioSupported() || plan.length === 0) return 0;
   context ??= new AudioContext();
@@ -140,8 +142,9 @@ export function playNotes(
   if (ctx.state === "suspended") void ctx.resume();
   const notes = applyTempo(plan, settings.tempo);
   const t0 = ctx.currentTime + 0.05;
-  // Keep the combined level below clipping however many tones play.
-  const level = (0.5 / Math.max(2, notes.length)) * settings.volume;
+  // Keep the combined level below clipping however many tones play. `voices` is how many sound
+  // at once, for a long plan where only a few overlap (every tone counts when it is not given).
+  const level = (0.5 / Math.max(2, voices ?? notes.length)) * settings.volume;
   let total = 0;
   for (const { midi, start, duration } of notes) {
     const osc = ctx.createOscillator();

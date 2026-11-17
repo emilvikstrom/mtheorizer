@@ -9,6 +9,7 @@ import {
   fifthsFall,
 } from "../theory";
 import { CircleOfFifths, type ClickAction, type RingCount } from "./CircleOfFifths";
+import { FifthCircleComma } from "./FifthCircleComma";
 import { KeyDetails } from "./KeyDetails";
 import { ModeMap } from "./ModeMap";
 
@@ -176,6 +177,7 @@ export function CircleOfFifthsView({
         <KeyDetails value={selected} onChange={setSelected} onOpenChord={onOpenChord} />
       </div>
       <ModeMap selected={selected} />
+      <FifthCircleComma />
     </>
   );
 }
