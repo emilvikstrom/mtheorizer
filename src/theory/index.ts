@@ -14,3 +14,4 @@ export * from "./scales";
 export * from "./temperament";
 export * from "./tritoneSubstitution";
 export * from "./voicing";
+export * from "./voiceLeading";
