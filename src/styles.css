@@ -1620,6 +1620,19 @@ body {
   color: var(--dominant);
 }
 
+/* What the keys and frets say */
+
+.tone-display {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 16px;
+}
+
+.tone-display__reveal[aria-pressed="true"] {
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+
 /* Sound settings: a collapsed box next to the listen buttons. */
 
 .sound {

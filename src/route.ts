@@ -28,6 +28,7 @@ import {
   note,
   specOf,
 } from "./theory";
+import { DEFAULT_TONE_DISPLAY, type ToneDisplay, isToneDisplay } from "./toneLabels";
 
 /**
  * What the app shows, kept in the URL hash so a link opens the same view:
@@ -36,6 +37,7 @@ import {
  *   #/C/minor?with=7,9&on=piano    chord built from a base chord and qualities (Cm9)
  *   #/Cs/minor?with=7&on=guitar    C♯ minor seventh on the guitar
  *   #/A/scale/naturalMinor?on=piano  scale
+ *   #/C/major?on=piano&show=intervals  chord with intervals (R 3 5) on the keys; also names, steps, none
  *   #/circle/Bb/major              circle of fifths with B♭ major selected
  *   #/progression/Ab/pop           the I–V–vi–IV progression in A♭ major
  *   #/identify                     "What chord is this?" (the keys you pick are not in the link)
@@ -56,7 +58,15 @@ export interface GuitarOptions {
   readonly left?: boolean;
 }
 
-export interface ChordRoute extends GuitarOptions {
+/**
+ * What the keys and frets say. Left out of old links, which then follow the
+ * choice remembered last; a link that names it (`show=intervals`) overrides that.
+ */
+export interface DisplayOptions {
+  readonly show?: ToneDisplay;
+}
+
+export interface ChordRoute extends GuitarOptions, DisplayOptions {
   readonly page: "chord";
   readonly root: Note;
   /** Always normalized: every quality fits the base chord. */
@@ -65,7 +75,7 @@ export interface ChordRoute extends GuitarOptions {
   readonly instrument: Instrument;
 }
 
-export interface ScaleRoute extends GuitarOptions {
+export interface ScaleRoute extends GuitarOptions, DisplayOptions {
   readonly page: "scale";
   readonly root: Note;
   readonly scaleId: ScaleId;
@@ -94,6 +104,7 @@ export type Route = LookupRoute | CircleRoute | ProgressionRoute | IdentifyRoute
 
 const MAX_INVERSION = 3;
 const STORAGE_KEY = "mtheorizer.instrument";
+const SHOW_STORAGE_KEY = "mtheorizer.show";
 
 // --- Remembered instrument --------------------------------------------------
 
@@ -117,6 +128,30 @@ function rememberInstrument(instrument: Instrument) {
   } catch {
     // Not remembering is fine.
   }
+}
+
+/** The tone display used last time, for links that do not say. */
+export function storedToneDisplay(): ToneDisplay {
+  try {
+    const value = window.localStorage.getItem(SHOW_STORAGE_KEY);
+    if (isToneDisplay(value)) return value;
+  } catch {
+    // Storage can be blocked; fall through to the default.
+  }
+  return DEFAULT_TONE_DISPLAY;
+}
+
+function rememberToneDisplay(show: ToneDisplay) {
+  try {
+    window.localStorage.setItem(SHOW_STORAGE_KEY, show);
+  } catch {
+    // Not remembering is fine.
+  }
+}
+
+/** The display option of `route`, for carrying it over to another route. */
+export function displayOptions(route: LookupRoute): DisplayOptions {
+  return route.show ? { show: route.show } : {};
 }
 
 /** The guitar options of `route`, for carrying them over to another route. */
@@ -158,9 +193,10 @@ export function formatRouteNote(n: Note): string {
 }
 
 function formatGuitarOptions(route: LookupRoute): string {
-  if (route.instrument !== "guitar") return "";
+  const show = route.show ? `&show=${route.show}` : "";
+  if (route.instrument !== "guitar") return show;
   const { tuning, left } = guitarOptions(route);
-  return `${tuning ? `&tuning=${tuning}` : ""}${left ? "&hand=left" : ""}`;
+  return `${tuning ? `&tuning=${tuning}` : ""}${left ? "&hand=left" : ""}${show}`;
 }
 
 /** `minor?with=7,9` style: the base chord, then the qualities. */
@@ -306,6 +342,8 @@ function parseLink(
       : {}),
     ...(instrument === "guitar" && query.get("hand") === "left" ? { left: true } : {}),
   };
+  const showParam = query.get("show");
+  const display: DisplayOptions = isToneDisplay(showParam) ? { show: showParam } : {};
   const fallback = strict ? undefined : defaultChordRoute(instrument);
   const root = parseRouteNote(parts[0]);
   if (!root) return fallback;
@@ -313,7 +351,7 @@ function parseLink(
   if (parts[1] === "scale") {
     const scaleId = parts[2];
     return scaleId !== undefined && has(SCALES, scaleId)
-      ? { page: "scale", root, scaleId: scaleId as ScaleId, instrument, ...options }
+      ? { page: "scale", root, scaleId: scaleId as ScaleId, instrument, ...options, ...display }
       : fallback;
   }
 
@@ -328,6 +366,7 @@ function parseLink(
       Number.isInteger(inversion) && inversion >= 0 && inversion <= MAX_INVERSION ? inversion : 0,
     instrument,
     ...options,
+    ...display,
   };
 }
 
@@ -351,7 +390,10 @@ const currentHash = () => window.location.hash;
 /** Show `route`: adds a history entry, so the back button returns to the previous view. */
 export function navigate(route: Route) {
   const hash = formatRoute(route);
-  if (route.page === "chord" || route.page === "scale") rememberInstrument(route.instrument);
+  if (route.page === "chord" || route.page === "scale") {
+    rememberInstrument(route.instrument);
+    if (route.show) rememberToneDisplay(route.show);
+  }
   if (hash === window.location.hash) return;
   window.history.pushState(null, "", hash);
   for (const listener of listeners) listener();

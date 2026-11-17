@@ -10,6 +10,7 @@ import {
   lastFret,
   omittedTones,
 } from "../theory";
+import { type ToneDisplay, toneLabel } from "../toneLabels";
 import { ToneLegend } from "./ToneLegend";
 
 const NAME_COLUMN = 24; // string names
@@ -71,8 +72,19 @@ function whereOnNeck(view: NeckView): string {
     : `Frets ${view.firstFret}–${lastFret(view)}`;
 }
 
-function ToneDot({ position, x, finger }: { position: NeckTone; x: number; finger?: number }) {
+function ToneDot({
+  position,
+  x,
+  finger,
+  display,
+}: {
+  position: NeckTone;
+  x: number;
+  finger?: number;
+  display: ToneDisplay;
+}) {
   const y = stringY(position.string);
+  const label = toneLabel(display, position);
   return (
     <>
       <g
@@ -90,7 +102,7 @@ function ToneDot({ position, x, finger }: { position: NeckTone; x: number; finge
           textAnchor="middle"
           dominantBaseline="central"
         >
-          {formatNote(position.note)}
+          {label}
         </text>
       </g>
       {finger !== undefined && (
@@ -115,11 +127,13 @@ function NeckDiagram({
   description,
   tuning,
   left,
+  display,
 }: {
   view: NeckView;
   description: string;
   tuning: Tuning;
   left: boolean;
+  display: ToneDisplay;
 }) {
   const frets = Array.from({ length: view.frets }, (_, i) => view.firstFret + i);
   const neckEnd = NECK_START + view.frets * FRET_WIDTH;
@@ -266,6 +280,7 @@ function NeckDiagram({
 
       {view.positions.map((position) => (
         <ToneDot
+          display={display}
           key={`${position.string}-${position.fret}`}
           position={position}
           finger={view.fingering?.fingerOn.get(position.string)}
@@ -290,10 +305,21 @@ interface FretboardProps {
   tuning: Tuning;
   /** Mirror the neck for a left-handed player. */
   left: boolean;
+  /** What the marked positions say: names (the default), intervals, steps, or nothing. */
+  display?: ToneDisplay;
 }
 
 /** A few frets of a guitar neck at a time, with arrows to step along it. */
-export function Fretboard({ views, kind, tones, name, legend, tuning, left }: FretboardProps) {
+export function Fretboard({
+  views,
+  kind,
+  tones,
+  name,
+  legend,
+  tuning,
+  left,
+  display = "names",
+}: FretboardProps) {
   // Remember where on the neck the player is rather than an index, so changing
   // the chord keeps the hand in the same area.
   const [wanted, setWanted] = useState<Wanted>({ fret: 1, key: "" });
@@ -314,10 +340,14 @@ export function Fretboard({ views, kind, tones, name, legend, tuning, left }: Fr
   const detail =
     kind === "shape"
       ? formatShape(view, tuning.strings.length)
-      : tones.map((tone) => formatNote(tone.note)).join(", ");
+      : display === "none"
+        ? "tone labels hidden"
+        : tones.map((tone) => formatNote(tone.note)).join(", ");
   const omitted = kind === "shape" ? omittedTones(view, tones) : [];
   const without = omitted.length
-    ? `Without ${omitted.map((t) => `${t.role} (${formatNote(t.note)})`).join(", ")}`
+    ? `Without ${omitted
+        .map((t) => (display === "none" ? t.role : `${t.role} (${formatNote(t.note)})`))
+        .join(", ")}`
     : "";
   const fingers = view.fingering ? `, fingers ${formatFingering(view, tuning.strings.length)}` : "";
   const description = `${left ? "Left-handed guitar" : "Guitar"} neck showing ${name}${tuning.id === "standard" ? "" : ` in ${tuning.label} tuning`}, ${status.toLowerCase()}, ${where.toLowerCase()}: ${detail}${fingers}${without ? `. ${without}` : ""}`;
@@ -352,7 +382,13 @@ export function Fretboard({ views, kind, tones, name, legend, tuning, left }: Fr
           →
         </button>
       </div>
-      <NeckDiagram view={view} description={description} tuning={tuning} left={left} />
+      <NeckDiagram
+        view={view}
+        description={description}
+        tuning={tuning}
+        left={left}
+        display={display}
+      />
       {without && <p className="fretboard__omitted">{without}</p>}
       <ToneLegend {...legend} />
     </figure>

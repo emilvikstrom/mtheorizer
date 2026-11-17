@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChordInfo } from "./ChordInfo";
 import { ChordBuilder } from "./ChordBuilder";
 import { ChordSymbolField } from "./ChordSymbolField";
@@ -8,13 +8,18 @@ import { Piano } from "./Piano";
 import { PlayButtons } from "./PlayButtons";
 import { ShareExport } from "./ShareExport";
 import { RootPicker } from "./RootPicker";
+import { ToneDisplayPicker } from "./ToneDisplayPicker";
 import {
   type ChordRoute,
+  displayOptions,
+  formatRoute,
   guitarOptions,
   type Instrument,
   type LookupRoute,
   type ScaleRoute,
+  storedToneDisplay,
 } from "../route";
+import type { ToneDisplay } from "../toneLabels";
 import { ScaleInfo } from "./ScaleInfo";
 import { ScalePicker } from "./ScalePicker";
 import {
@@ -117,6 +122,22 @@ export function Lookup({ route, onChange }: LookupProps) {
   const { root, instrument } = route;
   const pc = pitchClass(root);
 
+  // What the keys and frets say. With the labels off, the answer is shown on request
+  // and hidden again as soon as the chord, scale or anything else changes.
+  const display: ToneDisplay = route.show ?? storedToneDisplay();
+  const linkNow = formatRoute(route);
+  const [revealedFor, setRevealedFor] = useState<string | undefined>(undefined);
+  const revealed = revealedFor === linkNow;
+  const shown: ToneDisplay = display === "none" && revealed ? "names" : display;
+  const displayPicker = (
+    <ToneDisplayPicker
+      value={display}
+      onChange={(show) => onChange({ ...route, show })}
+      revealed={revealed}
+      onToggleReveal={() => setRevealedFor(revealed ? undefined : linkNow)}
+    />
+  );
+
   const build = (spec: ChordSpec) => {
     if (route.page === "chord") onChange(follow(route, { ...route, spec }));
   };
@@ -137,6 +158,7 @@ export function Lookup({ route, onChange }: LookupProps) {
           scaleId: CHORD_QUALITIES[nearestQuality(route.spec)].keyScale.id,
           instrument,
           ...guitarOptions(route),
+          ...displayOptions(route),
         }),
       );
       return;
@@ -144,7 +166,7 @@ export function Lookup({ route, onChange }: LookupProps) {
     const before = lastChord.current;
     const chord: ChordRoute =
       before && CHORD_QUALITIES[nearestQuality(before.spec)].keyScale.id === route.scaleId
-        ? { ...before, root, instrument, ...guitarOptions(route) }
+        ? { ...before, root, instrument, ...guitarOptions(route), ...displayOptions(route) }
         : {
             page: "chord",
             root,
@@ -152,6 +174,7 @@ export function Lookup({ route, onChange }: LookupProps) {
             inversion: 0,
             instrument,
             ...guitarOptions(route),
+            ...displayOptions(route),
           };
     onChange(follow(route, chord));
   };
@@ -244,6 +267,7 @@ export function Lookup({ route, onChange }: LookupProps) {
             <ChordBuilder root={root} spec={route.spec} onChange={build} />
             {instrumentPicker}
             {guitarPickers}
+            {displayPicker}
             {instrument === "piano" && (
               <InversionPicker
                 chord={chordFromSpec(root, route.spec)}
@@ -261,15 +285,16 @@ export function Lookup({ route, onChange }: LookupProps) {
             <div className="controls__row">
               {instrumentPicker}
               {guitarPickers}
+              {displayPicker}
             </div>
           </>
         )}
       </section>
 
       {route.page === "chord" ? (
-        <ChordView route={route} spec={route.spec} />
+        <ChordView route={route} spec={route.spec} display={shown} />
       ) : (
-        <ScaleView route={route} />
+        <ScaleView route={route} display={shown} />
       )}
     </>
   );
@@ -287,6 +312,7 @@ interface InstrumentViewProps {
   neck: { kind: "shape" | "position"; views: readonly NeckView[] };
   tuning: Tuning;
   left: boolean;
+  display: ToneDisplay;
 }
 
 function InstrumentView({
@@ -298,9 +324,10 @@ function InstrumentView({
   neck,
   tuning,
   left,
+  display,
 }: InstrumentViewProps) {
   return instrument === "piano" ? (
-    <Piano tones={keys} name={name} legend={legend} />
+    <Piano tones={keys} name={name} legend={legend} display={display} />
   ) : (
     <Fretboard
       views={neck.views}
@@ -310,6 +337,7 @@ function InstrumentView({
       legend={legend}
       tuning={tuning}
       left={left}
+      display={display}
     />
   );
 }
@@ -339,7 +367,15 @@ function InversionPicker({
   );
 }
 
-function ChordView({ route, spec }: { route: ChordRoute; spec: ChordSpec }) {
+function ChordView({
+  route,
+  spec,
+  display,
+}: {
+  route: ChordRoute;
+  spec: ChordSpec;
+  display: ToneDisplay;
+}) {
   const { root, instrument } = route;
   const chord = useMemo(() => chordFromSpec(root, spec), [root, spec]);
   const tones = useMemo(() => chordHighlights(chord), [chord]);
@@ -362,12 +398,13 @@ function ChordView({ route, spec }: { route: ChordRoute; spec: ChordSpec }) {
         neck={{ kind: "shape", views: shapes }}
         tuning={tuning}
         left={route.left === true}
+        display={display}
       />
     </>
   );
 }
 
-function ScaleView({ route }: { route: ScaleRoute }) {
+function ScaleView({ route, display }: { route: ScaleRoute; display: ToneDisplay }) {
   const scale = spellScale(route.root, route.scaleId);
   const tones = scaleHighlights(scale);
   const keys = scaleOnKeyboard(scale);
@@ -386,6 +423,7 @@ function ScaleView({ route }: { route: ScaleRoute }) {
         neck={{ kind: "position", views: scalePositions(tones, tuning.strings) }}
         tuning={tuning}
         left={route.left === true}
+        display={display}
       />
     </>
   );

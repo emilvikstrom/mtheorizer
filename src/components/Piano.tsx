@@ -1,5 +1,6 @@
 import { type KeyboardEvent, useSyncExternalStore } from "react";
 import { type KeyboardTone, formatNote, midiOf } from "../theory";
+import { type ToneDisplay, toneLabel } from "../toneLabels";
 import { ToneLegend } from "./ToneLegend";
 
 /** The keyboard always shows at least C4–B5; it grows by whole octaves for wider chords. */
@@ -78,16 +79,19 @@ const NOTE_NAMES = ["C", "C♯/D♭", "D", "D♯/E♭", "E", "F", "F♯/G♭", "
 function PianoKey({
   shape,
   tone,
+  display,
   onToggle,
 }: {
   shape: KeyShape;
   tone: KeyboardTone | undefined;
+  display: ToneDisplay;
   onToggle?: (midi: number) => void;
 }) {
   const width = shape.black ? BLACK_WIDTH : WHITE_WIDTH;
   const height = shape.black ? BLACK_HEIGHT : WHITE_HEIGHT;
   const centre = shape.x + width / 2;
   const isC = shape.midi % 12 === 0;
+  const label = tone ? toneLabel(display, tone) : undefined;
   const classes = [
     "key",
     shape.black ? "key--black" : "key--white",
@@ -121,14 +125,14 @@ function PianoKey({
         : {})}
     >
       <rect x={shape.x} y={0} width={width} height={height} rx={shape.black ? 3 : 4} />
-      {tone ? (
+      {label !== undefined ? (
         <text
           className="key__label"
           x={centre}
           y={height - (shape.black ? 12 : 16)}
           textAnchor="middle"
         >
-          {formatNote(tone.note)}
+          {label}
         </text>
       ) : (
         isC && (
@@ -150,10 +154,12 @@ interface PianoProps {
   legend: { root: string; tone: string };
   /** Makes the keys buttons that call this with the key's MIDI number. The keyboard is then always shown in full. */
   onToggleKey?: (midi: number) => void;
+  /** What the highlighted keys say: their names (the default), intervals, steps, or nothing. */
+  display?: ToneDisplay;
 }
 
 /** A keyboard from C4 to at least B5, wide enough for all of `tones`, with `tones` highlighted. */
-export function Piano({ tones, name, legend, onToggleKey }: PianoProps) {
+export function Piano({ tones, name, legend, onToggleKey, display = "names" }: PianoProps) {
   const narrow = useSyncExternalStore(subscribeNarrow, isNarrow, () => false);
   const midis = tones.map((tone) => tone.midi);
   const keys = keyboard(
@@ -167,7 +173,11 @@ export function Piano({ tones, name, legend, onToggleKey }: PianoProps) {
       ? visibleSpan(keys, tones)
       : { x: 0, width: whiteKeys.length * WHITE_WIDTH };
   const toneAt = new Map(tones.map((tone) => [tone.midi, tone]));
-  const description = `Piano keyboard showing ${name}: ${tones.map((tone) => formatNote(tone.note)).join(", ")}`;
+  // With the names hidden, the description does not give them away either.
+  const description =
+    display === "none"
+      ? `Piano keyboard showing ${name}, tone labels hidden`
+      : `Piano keyboard showing ${name}: ${tones.map((tone) => formatNote(tone.note)).join(", ")}`;
 
   return (
     <figure className="piano">
@@ -183,6 +193,7 @@ export function Piano({ tones, name, legend, onToggleKey }: PianoProps) {
             key={shape.midi}
             shape={shape}
             tone={toneAt.get(shape.midi)}
+            display={display}
             onToggle={onToggleKey}
           />
         ))}
@@ -191,6 +202,7 @@ export function Piano({ tones, name, legend, onToggleKey }: PianoProps) {
             key={shape.midi}
             shape={shape}
             tone={toneAt.get(shape.midi)}
+            display={display}
             onToggle={onToggleKey}
           />
         ))}

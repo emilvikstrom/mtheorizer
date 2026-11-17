@@ -1,4 +1,5 @@
 import type { Chord, ChordTone } from "./chords";
+import type { Interval } from "./intervals";
 import { type Note, formatNote, pitchClass } from "./notes";
 import type { SpelledScale } from "./scales";
 
@@ -32,6 +33,10 @@ export interface HighlightTone {
   readonly role: string;
   /** A chord tone that may be left out when the chord is played (often the fifth). */
   readonly optional?: boolean;
+  /** The interval above the root or tonic, which names the tone as R, ♭3, 5, ♭7 … */
+  readonly interval?: Interval;
+  /** The tone's number in the chord (1 = root, then upwards) or its scale degree. */
+  readonly step?: number;
 }
 
 /** A key to highlight on the keyboard. */
@@ -41,20 +46,31 @@ export interface KeyboardTone extends HighlightTone {
   readonly isBass?: boolean;
 }
 
+/** The number of each tone of `chord` counted from the root upwards: 1, 2, 3 … */
+function chordSteps(chord: Chord): (tone: ChordTone) => number {
+  const order = chord.tones.map((tone) => tone.interval.semitones).sort((a, b) => a - b);
+  return (tone) => order.indexOf(tone.interval.semitones) + 1;
+}
+
 export function chordHighlights(chord: Chord): HighlightTone[] {
-  return chord.tones.map(({ note, role, optional }) => ({
-    note,
-    isRoot: role === "root",
-    role,
-    optional,
+  const stepOf = chordSteps(chord);
+  return chord.tones.map((tone) => ({
+    note: tone.note,
+    isRoot: tone.role === "root",
+    role: tone.role,
+    optional: tone.optional,
+    interval: tone.interval,
+    step: stepOf(tone),
   }));
 }
 
 export function scaleHighlights(scale: SpelledScale): HighlightTone[] {
-  return scale.tones.map(({ note, degree }) => ({
+  return scale.tones.map(({ note, degree, interval }) => ({
     note,
     isRoot: degree === 1,
     role: `degree-${degree}`,
+    interval,
+    step: degree,
   }));
 }
 
@@ -104,13 +120,16 @@ export function chordOnKeyboard(chord: Chord, octave = 4, inversion = 0): Keyboa
     lowest.has(tone) ? { ...tone, midi: tone.midi + 12 } : tone,
   );
   const bass = Math.min(...voiced.map((tone) => tone.midi));
-  return voiced.map(({ note, midi, role, optional }) => ({
-    note,
-    midi,
-    isRoot: role === "root",
-    isBass: midi === bass,
-    role,
-    optional,
+  const stepOf = chordSteps(chord);
+  return voiced.map((tone) => ({
+    note: tone.note,
+    midi: tone.midi,
+    isRoot: tone.role === "root",
+    isBass: tone.midi === bass,
+    role: tone.role,
+    optional: tone.optional,
+    interval: tone.interval,
+    step: stepOf(tone),
   }));
 }
 
@@ -125,7 +144,15 @@ export function scaleOnKeyboard(scale: SpelledScale, octave = 4): KeyboardTone[]
     midi: tonicMidi + interval.semitones,
     isRoot: degree === 1,
     role: `degree-${degree}`,
+    interval,
+    step: degree,
   }));
-  tones.push({ note: scale.tonic, midi: tonicMidi + 12, isRoot: true, role: "degree-8" });
+  tones.push({
+    note: scale.tonic,
+    midi: tonicMidi + 12,
+    isRoot: true,
+    role: "degree-8",
+    step: 1,
+  });
   return tones;
 }
