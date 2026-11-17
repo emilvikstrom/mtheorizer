@@ -31,7 +31,15 @@ export function choiceOf(hash: string): string | undefined {
   return current === hash || legacy === hash ? current : undefined;
 }
 
-export const hashOf = (route: LookupRoute): string => formatRoute(route);
+/** The link of a saved or recent choice. What a chord is compared with is not part of the choice. */
+export function hashOf(route: LookupRoute): string {
+  if (route.page === "chord" && route.vs) {
+    const rest = { ...route };
+    delete rest.vs;
+    return formatRoute(rest);
+  }
+  return formatRoute(route);
+}
 
 /** The route a stored link stands for. Only call with values from `choiceOf`. */
 export const routeOf = (hash: string): LookupRoute => parseRoute(hash) as LookupRoute;

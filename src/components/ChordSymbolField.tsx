@@ -17,6 +17,8 @@ interface ChordSymbolFieldProps {
   inversion: number;
   /** Called with the chord a valid symbol names. Nothing is called while the symbol is not valid. */
   onJump: (root: Note, spec: ChordSpec, inversion: number) => void;
+  /** The visible label. */
+  label?: string;
 }
 
 /** What the user typed, and the chord that was open when (or because) they typed it. */
@@ -36,7 +38,13 @@ const keyOf = (root: Note, spec: ChordSpec, inversion: number) =>
  * message under the field says what is wrong. When the chord is changed some
  * other way (the builder, a link), the field shows that chord's own symbol.
  */
-export function ChordSymbolField({ root, spec, inversion, onJump }: ChordSymbolFieldProps) {
+export function ChordSymbolField({
+  root,
+  spec,
+  inversion,
+  onJump,
+  label = "Chord symbol",
+}: ChordSymbolFieldProps) {
   const id = useId();
   const messageId = `${id}-message`;
   const [draft, setDraft] = useState<Draft | undefined>(undefined);
@@ -75,7 +83,7 @@ export function ChordSymbolField({ root, spec, inversion, onJump }: ChordSymbolF
   return (
     <form className="symbol-field" onSubmit={(event) => event.preventDefault()}>
       <label className="picker__legend" htmlFor={`${id}-input`}>
-        Chord symbol
+        {label}
       </label>
       <input
         id={`${id}-input`}
