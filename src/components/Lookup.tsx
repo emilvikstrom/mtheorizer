@@ -12,6 +12,7 @@ import { PlayButtons } from "./PlayButtons";
 import { ShareExport } from "./ShareExport";
 import { RootPicker } from "./RootPicker";
 import { ToneDisplayPicker } from "./ToneDisplayPicker";
+import { SameNotesAsChord, SameNotesAsScale } from "./SameNotes";
 import { TritoneSubstitute } from "./TritoneSubstitute";
 import {
   type ChordRoute,
@@ -97,6 +98,9 @@ const TRIAD_FOR_SCALE: Record<ScaleId, ChordQualityId> = {
   locrian: "diminished",
   lydianDominant: "major",
   altered: "diminished",
+  wholeTone: "augmented",
+  diminishedWholeHalf: "diminished",
+  diminishedHalfWhole: "major",
   majorPentatonic: "major",
   minorPentatonic: "minor",
   minorBlues: "minor",
@@ -330,6 +334,7 @@ export function Lookup({ route, onChange }: LookupProps) {
         <ScaleView
           route={route}
           display={shown}
+          onOpenRoot={(newRoot) => onChange({ ...route, root: newRoot })}
           onOpenChord={(chordRoot, quality) =>
             onChange({
               page: "chord",
@@ -466,6 +471,7 @@ function ChordView({
         display={display}
       />
       <TritoneSubstitute chord={chord} onOpen={onOpenRoot} />
+      <SameNotesAsChord chord={chord} onOpen={onOpenRoot} />
       <ScalesThatFit chord={chord} onOpen={onOpenScale} />
     </>
   );
@@ -474,10 +480,12 @@ function ChordView({
 function ScaleView({
   route,
   display,
+  onOpenRoot,
   onOpenChord,
 }: {
   route: ScaleRoute;
   display: ToneDisplay;
+  onOpenRoot: (root: Note) => void;
   onOpenChord: (root: Note, quality: ChordQualityId) => void;
 }) {
   const scale = spellScale(route.root, route.scaleId);
@@ -510,6 +518,7 @@ function ScaleView({
         name={scale.name}
         hidden={display === "none"}
       />
+      <SameNotesAsScale tonic={scale.tonic} scaleId={route.scaleId} onOpen={onOpenRoot} />
       <ChordsThatFit scale={scale} onOpen={onOpenChord} />
     </>
   );

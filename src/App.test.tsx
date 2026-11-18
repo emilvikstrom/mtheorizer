@@ -624,7 +624,7 @@ describe("App", () => {
       expect(screen.queryByRole("group", { name: "Qualities" })).not.toBeInTheDocument();
       expect(
         within(screen.getByRole("group", { name: "Scale" })).getAllByRole("radio"),
-      ).toHaveLength(15);
+      ).toHaveLength(18);
       expect(
         within(screen.getByRole("group", { name: "Tonic" })).getAllByRole("radio"),
       ).toHaveLength(12);
