@@ -140,6 +140,48 @@ describe("parseRoute", () => {
     expect(parseRouteStrict("#/quiz")).toEqual({ page: "quiz" });
   });
 
+  it("links to the spelling drill with its seed and groups", () => {
+    expect(formatRoute({ page: "quiz", mode: "spelling" })).toBe("#/quiz/spelling");
+    expect(formatRoute({ page: "quiz", mode: "spelling", seed: 42 })).toBe(
+      "#/quiz/spelling?seed=42",
+    );
+    const route = {
+      page: "quiz",
+      mode: "spelling",
+      seed: 42,
+      groups: ["triads", "scales"],
+    } as const;
+    expect(formatRoute(route)).toBe("#/quiz/spelling?seed=42&groups=triads,scales");
+    expect(parseRoute(formatRoute(route))).toEqual(route);
+    expect(parseRouteStrict("#/quiz/spelling")).toEqual({ page: "quiz", mode: "spelling" });
+  });
+
+  it("ignores a bad seed and unknown or complete groups in a drill link", () => {
+    expect(parseRoute("#/quiz/spelling?seed=abc")).toEqual({ page: "quiz", mode: "spelling" });
+    expect(parseRoute("#/quiz/spelling?seed=-1")).toEqual({ page: "quiz", mode: "spelling" });
+    expect(parseRoute("#/quiz/spelling?seed=99999999999")).toEqual({
+      page: "quiz",
+      mode: "spelling",
+    });
+    expect(parseRoute("#/quiz/spelling?groups=nonsense")).toEqual({
+      page: "quiz",
+      mode: "spelling",
+    });
+    // Groups come back in their usual order.
+    expect(parseRoute("#/quiz/spelling?groups=scales,sevenths,nonsense")).toEqual({
+      page: "quiz",
+      mode: "spelling",
+      groups: ["sevenths", "scales"],
+    });
+    // Naming every group is the same as naming none.
+    expect(
+      parseRoute(
+        "#/quiz/spelling?groups=triads,sixths,sevenths,ninths,elevenths,thirteenths,added,scales",
+      ),
+    ).toEqual({ page: "quiz", mode: "spelling" });
+    expect(parseRoute("#/quiz/other")).toEqual({ page: "quiz" });
+  });
+
   it("falls back to C major on the circle for a bad circle link", () => {
     for (const hash of ["#/circle", "#/circle/Cs/foo", "#/circle/Ds/major", "#/circle/H/minor"]) {
       expectSame(parseRoute(hash), defaultCircleRoute());
