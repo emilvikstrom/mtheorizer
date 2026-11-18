@@ -5,8 +5,11 @@ import {
   type ChordSize,
   type Key,
   type Note,
+  camelotCode,
   chordOnKeyboard,
+  compatibleKeys,
   fifthsFall,
+  formatKey,
 } from "../theory";
 import { CircleOfFifths, type ClickAction, type RingCount } from "./CircleOfFifths";
 import { FifthCircleComma } from "./FifthCircleComma";
@@ -44,6 +47,7 @@ export function CircleOfFifthsView({
   const [chordSize, setChordSize] = useState<ChordSize>("triads");
   const [clickAction, setClickAction] = useState<ClickAction>("key");
   const [fall, setFall] = useState(false);
+  const [camelot, setCamelot] = useState(false);
   const minor = selected.mode === "minor";
   const chain = fifthsFall(selected);
 
@@ -124,6 +128,16 @@ export function CircleOfFifthsView({
               </button>
             )}
           </div>
+          <div className="circle-view__rings" role="group" aria-label="Camelot wheel">
+            <button
+              type="button"
+              className="toggle"
+              aria-pressed={camelot}
+              onClick={() => setCamelot(!camelot)}
+            >
+              Camelot wheel
+            </button>
+          </div>
           <CircleOfFifths
             value={selected}
             onChange={setSelected}
@@ -132,9 +146,22 @@ export function CircleOfFifthsView({
             chordSize={chordSize}
             clickAction={clickAction}
             fifthsFall={fall}
+            camelot={camelot}
             onOpenChord={onOpenChord}
           />
           <figcaption className="circle-view__legend">
+            {camelot && (
+              <span className="legend legend--camelot">
+                Camelot wheel: {formatKey(selected)} is {camelotCode(selected).label}. It mixes well
+                with{" "}
+                {compatibleKeys(selected)
+                  .filter(({ relation }) => relation !== "same")
+                  .map(({ code, keys }) => `${code.label} (${keys.map(formatKey).join(" or ")})`)
+                  .join(", ")}
+                : the relative key, and a fifth up and down. Numbers go clockwise, A is minor and B
+                is major. The outlined sectors are those keys
+              </span>
+            )}
             {fall && (
               <span className="legend legend--fall">
                 Falling fifths, numbered in the order they are played:{" "}

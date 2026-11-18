@@ -182,6 +182,31 @@ describe("parseRoute", () => {
     expect(parseRoute("#/quiz/other")).toEqual({ page: "quiz" });
   });
 
+  it("links to the listening drill with its seed, level and inversions", () => {
+    expect(formatRoute({ page: "quiz", mode: "listening" })).toBe("#/quiz/listening");
+    const route = {
+      page: "quiz",
+      mode: "listening",
+      seed: 7,
+      level: "sevenths",
+      inversions: true,
+    } as const;
+    expect(formatRoute(route)).toBe("#/quiz/listening?seed=7&level=sevenths&inversions=1");
+    expect(parseRoute(formatRoute(route))).toEqual(route);
+    // The default level is left out of the link and out of what is read back.
+    expect(formatRoute({ page: "quiz", mode: "listening", level: "triads" })).toBe(
+      "#/quiz/listening",
+    );
+    expect(parseRoute("#/quiz/listening?level=triads")).toEqual({
+      page: "quiz",
+      mode: "listening",
+    });
+    expect(parseRoute("#/quiz/listening?seed=abc&level=nonsense&inversions=2")).toEqual({
+      page: "quiz",
+      mode: "listening",
+    });
+  });
+
   it("falls back to C major on the circle for a bad circle link", () => {
     for (const hash of ["#/circle", "#/circle/Cs/foo", "#/circle/Ds/major", "#/circle/H/minor"]) {
       expectSame(parseRoute(hash), defaultCircleRoute());
