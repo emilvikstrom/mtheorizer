@@ -20,6 +20,7 @@ make down    # stoppar den
 ```bash
 docker compose --profile dev up dev     # Vite med hot reload på http://localhost:5173
 docker compose run --rm dev npm test    # kör testerna
+make e2e                                # Playwright-rök- och skärmbildstester mot den byggda appen
 ```
 
 `docker compose build` kör typkontroll och alla tester innan produktionsbygget görs.

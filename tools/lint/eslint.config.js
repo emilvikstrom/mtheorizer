@@ -5,7 +5,7 @@ import prettier from "eslint-config-prettier";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", "tools"] },
+  { ignores: ["dist", "node_modules", "tools", "e2e"] },
   js.configs.recommended,
   tseslint.configs.recommended,
   reactHooks.configs.flat.recommended,

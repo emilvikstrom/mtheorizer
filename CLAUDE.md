@@ -12,6 +12,7 @@ Node finns inte på värddatorn, så allt körs i Docker. Om `docker` inte hitta
 | Stoppa | `make down` (kör `docker compose down`) |
 | Dev-server med hot reload (http://localhost:5173) | `docker compose --profile dev up dev` |
 | Kör testerna | `docker compose run --rm dev npm test` |
+| Rök- och skärmbildstester (Playwright, `e2e/`) | `make e2e`; skriv om baselines med `make e2e-update` |
 | Typkontroll | `docker compose run --rm dev npm run typecheck` |
 | Lint / formattering | `docker compose run --rm dev npm run lint`, `npm run format` (skriver om) och `npm run format:check` |
 | Lägga till ett paket | `docker compose run --rm dev npm install <paket>` och sedan `docker compose build dev` |

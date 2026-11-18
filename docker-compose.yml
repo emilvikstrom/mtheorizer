@@ -25,3 +25,20 @@ services:
       # Keep the container's node_modules instead of the (absent) host one.
       - /app/node_modules
       - /app/tools/lint/node_modules
+
+  # Playwright smoke and screenshot tests against the "app" service (see e2e/).
+  # Run with: make e2e   (or: docker compose --profile e2e run --rm e2e)
+  # Update the screenshot baselines with: make e2e-update
+  e2e:
+    profiles: ["e2e"]
+    build:
+      context: .
+      dockerfile: Dockerfile.e2e
+    depends_on:
+      - app
+    environment:
+      BASE_URL: http://app
+    volumes:
+      # Tests, baselines and reports live on the host; node_modules stays in the container.
+      - ./e2e:/e2e
+      - /e2e/node_modules
