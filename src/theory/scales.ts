@@ -1,4 +1,5 @@
 import {
+  AUGMENTED_FIFTH,
   AUGMENTED_FOURTH,
   DIMINISHED_FIFTH,
   DIMINISHED_FOURTH,
@@ -30,12 +31,15 @@ export type ScaleId =
   | "locrian"
   | "lydianDominant"
   | "altered"
+  | "wholeTone"
+  | "diminishedWholeHalf"
+  | "diminishedHalfWhole"
   | "majorPentatonic"
   | "minorPentatonic"
   | "minorBlues"
   | "majorBlues";
 
-export type ScaleGroupId = "minor" | "modes" | "jazz" | "pentatonic";
+export type ScaleGroupId = "minor" | "modes" | "jazz" | "symmetric" | "pentatonic";
 
 export interface Scale {
   readonly id: ScaleId;
@@ -165,6 +169,44 @@ const ALTERED_SCALE = scaleOf("altered", "Altered", [
   MINOR_SEVENTH,
 ]);
 
+/** Six notes a whole step apart (1 2 3 ♯4 ♯5 ♭7). It repeats after two transpositions. */
+const WHOLE_TONE_SCALE = scaleOf(
+  "wholeTone",
+  "Whole tone",
+  [MAJOR_SECOND, MAJOR_THIRD, AUGMENTED_FOURTH, AUGMENTED_FIFTH, MINOR_SEVENTH],
+  { 1: flat("D"), 3: flat("E"), 8: flat("A"), 10: flat("B") },
+);
+
+/**
+ * The octatonic scale that starts with a whole step: whole, half, whole, half … (1 2 ♭3 4 ♭5 ♭6
+ * 6 7). It uses seven letters, one of them twice (the ♭6 and the 6). Repeats after three
+ * transpositions.
+ */
+const DIMINISHED_WHOLE_HALF_SCALE = scaleOf("diminishedWholeHalf", "Diminished (whole–half)", [
+  MAJOR_SECOND,
+  MINOR_THIRD,
+  PERFECT_FOURTH,
+  DIMINISHED_FIFTH,
+  MINOR_SIXTH,
+  MAJOR_SIXTH,
+  MAJOR_SEVENTH,
+]);
+
+/**
+ * The octatonic scale that starts with a half step: half, whole, half, whole … (1 ♭2 ♭3 3 ♯4 5 6
+ * ♭7), the "dominant diminished" scale. The ♭3 and the 3 share a letter. Repeats after three
+ * transpositions.
+ */
+const DIMINISHED_HALF_WHOLE_SCALE = scaleOf("diminishedHalfWhole", "Diminished (half–whole)", [
+  MINOR_SECOND,
+  MINOR_THIRD,
+  MAJOR_THIRD,
+  AUGMENTED_FOURTH,
+  PERFECT_FIFTH,
+  MAJOR_SIXTH,
+  MINOR_SEVENTH,
+]);
+
 const MAJOR_PENTATONIC_SCALE = scaleOf(
   "majorPentatonic",
   "Major pentatonic",
@@ -207,6 +249,9 @@ export const SCALES: Record<ScaleId, Scale> = {
   locrian: LOCRIAN_SCALE,
   lydianDominant: LYDIAN_DOMINANT_SCALE,
   altered: ALTERED_SCALE,
+  wholeTone: WHOLE_TONE_SCALE,
+  diminishedWholeHalf: DIMINISHED_WHOLE_HALF_SCALE,
+  diminishedHalfWhole: DIMINISHED_HALF_WHOLE_SCALE,
   majorPentatonic: MAJOR_PENTATONIC_SCALE,
   minorPentatonic: MINOR_PENTATONIC_SCALE,
   minorBlues: MINOR_BLUES_SCALE,
@@ -235,6 +280,11 @@ export const SCALE_GROUPS: readonly ScaleGroup[] = [
     id: "jazz",
     name: "Jazz",
     scales: ["lydianDominant", "altered"],
+  },
+  {
+    id: "symmetric",
+    name: "Symmetric",
+    scales: ["wholeTone", "diminishedWholeHalf", "diminishedHalfWhole"],
   },
   {
     id: "pentatonic",

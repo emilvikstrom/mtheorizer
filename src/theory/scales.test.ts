@@ -127,6 +127,9 @@ describe("scales and modes", () => {
     locrian: [0, 1, 3, 5, 6, 8, 10],
     lydianDominant: [0, 2, 4, 6, 7, 9, 10],
     altered: [0, 1, 3, 4, 6, 8, 10],
+    wholeTone: [0, 2, 4, 6, 8, 10],
+    diminishedWholeHalf: [0, 2, 3, 5, 6, 8, 9, 11],
+    diminishedHalfWhole: [0, 1, 3, 4, 6, 7, 9, 10],
     majorPentatonic: [0, 2, 4, 7, 9],
     minorPentatonic: [0, 3, 5, 7, 10],
     minorBlues: [0, 3, 5, 6, 7, 10],
@@ -150,8 +153,9 @@ describe("scales and modes", () => {
     it.each(pitchClasses)("on pitch class %i uses each letter at most once", (pc) => {
       const scale = scaleOnPitchClass(pc, id);
       const letters = scale.tones.map((t) => t.note.letter);
-      // The blues scales have both ♭3 and 3, or ♭5 and 5, on one letter.
-      const distinct = id.endsWith("Blues") ? 5 : letters.length;
+      // The blues scales have both ♭3 and 3, or ♭5 and 5, on one letter. The eight-note diminished
+      // scales cannot have a letter each: they use all seven and one of them twice.
+      const distinct = id.endsWith("Blues") ? 5 : Math.min(letters.length, 7);
       expect(new Set(letters).size).toBe(distinct);
     });
 
