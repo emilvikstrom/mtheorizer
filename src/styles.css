@@ -2267,6 +2267,62 @@ body {
   stroke: var(--accent-ink-root);
 }
 
+.midi {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.midi__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.midi__note,
+.midi__chords {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.midi__chords {
+  color: inherit;
+}
+
+.midi__result {
+  display: grid;
+  gap: 8px;
+}
+
+.midi__button {
+  justify-self: start;
+  min-height: 44px;
+  padding: 4px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.midi__button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.midi__button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
 /* Chromatic chords (Neapolitan and augmented sixths) in the key panel. */
 .chromatic__list {
   display: grid;
