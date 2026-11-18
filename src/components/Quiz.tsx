@@ -1,5 +1,6 @@
 import { type QuizRoute } from "../route";
 import { KeyQuiz } from "./KeyQuiz";
+import { ListeningQuiz } from "./ListeningQuiz";
 import { SpellingQuiz } from "./SpellingQuiz";
 
 interface QuizProps {
@@ -10,11 +11,12 @@ interface QuizProps {
 const MODES = [
   { id: "signatures", label: "Key signatures" },
   { id: "spelling", label: "Spelling" },
+  { id: "listening", label: "Listening" },
 ] as const;
 
-/** Practice: a choice between the key-signature quiz and the spelling drill. */
+/** Practice: a choice between the key-signature quiz, the spelling drill and the listening drill. */
 export function Quiz({ route, onChange }: QuizProps) {
-  const mode = route.mode === "spelling" ? "spelling" : "signatures";
+  const mode = route.mode ?? "signatures";
   return (
     <div className="practice">
       <div className="practice__modes" role="group" aria-label="Practice">
@@ -26,14 +28,20 @@ export function Quiz({ route, onChange }: QuizProps) {
             aria-pressed={mode === id}
             onClick={() =>
               mode !== id &&
-              onChange(id === "spelling" ? { page: "quiz", mode: "spelling" } : { page: "quiz" })
+              onChange(id === "signatures" ? { page: "quiz" } : { page: "quiz", mode: id })
             }
           >
             {label}
           </button>
         ))}
       </div>
-      {mode === "spelling" ? <SpellingQuiz route={route} onChange={onChange} /> : <KeyQuiz />}
+      {mode === "spelling" ? (
+        <SpellingQuiz route={route} onChange={onChange} />
+      ) : mode === "listening" ? (
+        <ListeningQuiz route={route} onChange={onChange} />
+      ) : (
+        <KeyQuiz />
+      )}
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { useMemo, useSyncExternalStore } from "react";
 import {
   ALL_SPELLING_GROUPS,
+  DEFAULT_LISTENING_LEVEL,
+  type ListeningLevelId,
   CHORD_BASES,
   CHORD_MODIFIERS,
   CHORD_QUALITIES,
@@ -24,6 +26,7 @@ import {
   type TuningId,
   circlePosition,
   identifyQuality,
+  isListeningLevel,
   isProgressionId,
   isSpellingGroup,
   key,
@@ -120,14 +123,18 @@ export interface IdentifyRoute {
 }
 
 /**
- * Practice: the key-signature quiz, or (`mode: "spelling"`) the spelling drill. The drill's
- * `seed` repeats a set of questions and `groups` limits them (all of them when absent).
+ * Practice: the key-signature quiz, the spelling drill (`mode: "spelling"`) or the listening
+ * drill (`mode: "listening"`). A drill's `seed` repeats a set of questions. The spelling drill's
+ * `groups` limit them (all of them when absent); the listening drill has a `level` (triads when
+ * absent) and can turn chords over (`inversions`).
  */
 export interface QuizRoute {
   readonly page: "quiz";
-  readonly mode?: "spelling";
+  readonly mode?: "spelling" | "listening";
   readonly seed?: number;
   readonly groups?: readonly SpellingGroupId[];
+  readonly level?: ListeningLevelId;
+  readonly inversions?: true;
 }
 
 export type Route = LookupRoute | CircleRoute | ProgressionRoute | IdentifyRoute | QuizRoute;
@@ -278,8 +285,20 @@ export function formatRoute(route: Route): string {
   }
 }
 
-/** `#/quiz`, or `#/quiz/spelling?seed=7&groups=triads,scales`. */
+/**
+ * `#/quiz`, `#/quiz/spelling?seed=7&groups=triads,scales` or
+ * `#/quiz/listening?seed=7&level=sevenths&inversions=1`.
+ */
 function formatQuiz(route: QuizRoute): string {
+  if (route.mode === "listening") {
+    const listening: string[] = [];
+    if (route.seed !== undefined) listening.push(`seed=${route.seed}`);
+    if (route.level && route.level !== DEFAULT_LISTENING_LEVEL) {
+      listening.push(`level=${route.level}`);
+    }
+    if (route.inversions) listening.push("inversions=1");
+    return `#/quiz/listening${listening.length > 0 ? `?${listening.join("&")}` : ""}`;
+  }
   if (route.mode !== "spelling") return "#/quiz";
   const params: string[] = [];
   if (route.seed !== undefined) params.push(`seed=${route.seed}`);
@@ -357,9 +376,21 @@ function parseQuizGroups(text: string | null): readonly SpellingGroupId[] | unde
 }
 
 function parseQuiz(mode: string | undefined, query: URLSearchParams): QuizRoute {
-  if (mode !== "spelling") return { page: "quiz" };
+  if (mode !== "spelling" && mode !== "listening") return { page: "quiz" };
   const seedText = query.get("seed");
   const seed = seedText !== null && /^\d+$/.test(seedText) ? Number(seedText) : undefined;
+  if (mode === "listening") {
+    const levelText = query.get("level") ?? "";
+    const level =
+      isListeningLevel(levelText) && levelText !== DEFAULT_LISTENING_LEVEL ? levelText : undefined;
+    return {
+      page: "quiz",
+      mode: "listening",
+      ...(seed !== undefined && seed <= MAX_SEED ? { seed } : {}),
+      ...(level ? { level } : {}),
+      ...(query.get("inversions") === "1" ? { inversions: true as const } : {}),
+    };
+  }
   const groups = parseQuizGroups(query.get("groups"));
   return {
     page: "quiz",
