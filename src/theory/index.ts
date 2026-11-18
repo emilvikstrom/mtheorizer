@@ -1,4 +1,5 @@
 export * from "./chordNaming";
+export * from "./chromaticChords";
 export * from "./chordParse";
 export * from "./chordSpec";
 export * from "./chordScales";

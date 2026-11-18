@@ -5,6 +5,7 @@ import {
   formatNote,
   identifyChords,
 } from "../theory";
+import { MidiInput } from "./MidiInput";
 import { Piano } from "./Piano";
 
 /** Show the best matches only; a cluster of notes can fit dozens of odd chords. */
@@ -61,6 +62,8 @@ export function ChordFinder({ selected, onChange, onOpen }: ChordFinderProps) {
       <p className="finder__hint">
         Press the keys of the notes you hear or play. The lowest key is taken as the bass.
       </p>
+
+      <MidiInput onUse={onChange} />
 
       <Piano
         tones={tones}
