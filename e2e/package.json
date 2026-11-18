@@ -1,0 +1,14 @@
+{
+  "name": "mtheorizer-e2e",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Playwright smoke and screenshot tests against the built app. Runs in Docker only, see docker-compose.yml.",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:update": "playwright test --update-snapshots"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.49.1"
+  }
+}

@@ -1,0 +1,9 @@
+# Playwright tests against the built app (see e2e/). The base image ships Node, the browsers and their system
+# libraries, so screenshots are rendered the same way on every machine and in CI. Keep the image tag and the
+# @playwright/test version in e2e/package.json identical.
+FROM mcr.microsoft.com/playwright:v1.49.1-noble
+WORKDIR /e2e
+COPY e2e/package.json e2e/package-lock.json ./
+RUN npm ci
+COPY e2e/ ./
+CMD ["npx", "playwright", "test"]
