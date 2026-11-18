@@ -814,6 +814,34 @@ body {
   box-sizing: border-box;
 }
 
+/* Camelot wheel: codes outside the circle and outlines on the keys that mix well. */
+.circle__signature--camelot {
+  font-size: 11px;
+}
+
+.circle__signature.is-compatible {
+  fill: var(--text);
+  font-weight: 700;
+}
+
+.circle__compatible {
+  fill: none;
+  stroke: var(--accent-tone);
+  stroke-width: 3;
+  stroke-dasharray: 6 4;
+  pointer-events: none;
+}
+
+.legend--camelot {
+  flex-basis: 100%;
+}
+
+.legend--camelot::before {
+  background: transparent;
+  border: 2px dashed var(--accent-tone);
+  box-sizing: border-box;
+}
+
 /* Key details */
 
 .key-details {

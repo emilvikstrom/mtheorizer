@@ -8,7 +8,9 @@ import {
   type KeySignature,
   type Note,
   type RingChord,
+  camelotAt,
   circlePosition,
+  compatibleKeys,
   degreeWheel,
   diatonicBlock,
   fifthsFall,
@@ -422,6 +424,8 @@ interface CircleOfFifthsProps {
   clickAction?: ClickAction;
   /** Mark the chain of falling fifths (vi ii V I) with numbered badges and arrows. Default: off. */
   fifthsFall?: boolean;
+  /** Number the keys 1A–12B (Camelot) and outline the keys that mix well with the selected one. Default: off. */
+  camelot?: boolean;
   onOpenChord?: (root: Note, quality: ChordQualityId) => void;
 }
 
@@ -442,6 +446,7 @@ export function CircleOfFifths({
   chordSize = "triads",
   clickAction = "key",
   fifthsFall: showFall = false,
+  camelot = false,
   onOpenChord,
 }: CircleOfFifthsProps) {
   const segments = useRef(new Map<string, SVGGElement>());
@@ -452,6 +457,8 @@ export function CircleOfFifths({
   const shownMode: KeyMode = radii.minor ? value.mode : "major";
   const hubRadius = Math.min(...Object.values(radii).map(([inner]) => inner));
   const block = blockInfo(value, chordSize);
+  const compatible = camelot ? compatibleKeys(value) : [];
+  const compatiblePositions = new Set(compatible.map(({ position }) => position));
 
   /** Open the key's chord on this ring and position, if it has one. */
   function openChord(ring: Ring, position: number) {
@@ -538,21 +545,46 @@ export function CircleOfFifths({
           />
         ))}
 
+      {camelot && (
+        <g aria-hidden="true">
+          {compatible.map(({ position, mode, relation }) => {
+            const ringRadii = radii[mode];
+            if (!ringRadii || relation === "same") return null;
+            const angle = angleOf(position);
+            return (
+              <path
+                key={`${mode}-${position}`}
+                className="circle__compatible"
+                d={sectorPath(ringRadii[0], ringRadii[1], angle - 15, angle + 15)}
+              />
+            );
+          })}
+        </g>
+      )}
+
       <g aria-hidden="true">
         {POSITIONS.map((position) => {
           const [x, y] = polar(R_SIGNATURE, angleOf(position));
+          const classes = [
+            "circle__signature",
+            ...(camelot ? ["circle__signature--camelot"] : []),
+            ...(position === selectedPosition ? ["is-selected"] : []),
+            ...(camelot && compatiblePositions.has(position) ? ["is-compatible"] : []),
+          ];
           return (
             <text
               key={position}
-              className={`circle__signature${position === selectedPosition ? " is-selected" : ""}`}
+              className={classes.join(" ")}
               x={x}
               y={y}
               textAnchor="middle"
               dominantBaseline="central"
             >
-              {keysAt(position, "major")
-                .map((k) => signatureLabel(keySignature(k)))
-                .join(" / ")}
+              {camelot
+                ? `${camelotAt(position, "minor").label} ${camelotAt(position, "major").label}`
+                : keysAt(position, "major")
+                    .map((k) => signatureLabel(keySignature(k)))
+                    .join(" / ")}
             </text>
           );
         })}
