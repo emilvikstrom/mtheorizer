@@ -25,8 +25,8 @@ Idéer i ungefärlig prioritetsordning inom varje grupp. Bryt ner och flytta upp
 
 ### M6 – Ackordbyggare, fortsättning
 
-- [ ] **M6-08b** Gitarren i "What chord is this?": klicka på bandpositioner (sträng + band) på halsen och se samma förslag som på pianot
-  - Acceptans: bygger på M6-08. Tonhöjderna räknas ur stämningen (`TUNINGS`), den lägsta klingande tonen skickas som `bass` till `identifyChords`, och förslag öppnas i ackordfliken som från pianot. En sträng kan bara ha en tryckt position, och tangenterna och positionerna kan stängas av igen
+- [ ] **M6-08c** Gitarrens frets i "What chord is this?" sparas i länken (`#/identify?...`) och när man byter flik, som pianots tangenter, och halsen kan visa mer än de tolv första banden (bläddra eller välj bandområde)
+  - Acceptans: de tryckta positionerna (sträng och band) och valt instrument ligger i rutten och överlever en omladdning; ett test går tur och retur för alla instrument
 
 ### M7 – Utbyggd kvintcirkel, fortsättning
 
@@ -102,6 +102,8 @@ Instrument och kvalitet:
   - Acceptans: `Staff` återanvänds. Förtecknen följer tonartens förtecken i hela följden, och en ton som går emot dem får ett eget
 
 ## Klart
+
+- [x] **M6-08b** Gitarren i "What chord is this?" _(2026-11-18)_: en väljare "Play it on" (Piano och alla strängintrument) i `ChordFinder`. På ett strängintrument visas en hals av knappar (`FretPicker`, öppen sträng och band 1–12, `aria-pressed`, minst 44 px) där man trycker ett band per sträng; ett nytt tryck på samma plats släpper den. Teorin är `togglePick` och `pickedMidi(picks, tuning)` i `fretboard.ts`: tonhöjderna räknas ur stämningen, den lägsta klingande tonen skickas som `bass` till `identifyChords`, och förslagen öppnas i ackordfliken som från pianot. "Notes: E–B–G" visar vilka toner som klingar, "Clear frets" rensar, och pianots tangenter ligger kvar när man byter tillbaka. Tabelltester över alla stämningar och alla grepp som `chordShapes` hittar för durackord i alla 12 grundtoner ger durackordet som förslag. Frets sparas inte i länken: utbrutet som M6-08c
 
 - [x] **X-21** Rök- och skärmbildstester med Playwright (2026-11-18): `e2e/` (eget `package.json`, `@playwright/test` 1.49.1 pinnad) körs i Playwrights officiella Docker-image (`Dockerfile.e2e`, samma tag) mot nginx-imagen, med `make e2e` eller `docker compose --profile e2e run --rm e2e`. Rökproven öppnar varje flik utan konsolfel, öppnar vyn en länk pekar på, väljer ett ackord (C → G) och kontrollerar att sidan inte är bredare än skärmen vid 375 px. Skärmbilderna `lookup-c-major` och `circle-of-fifths` jämförs mot baselines i `e2e/tests/*-snapshots`, och `make e2e-update` skriver om dem. CI-jobbet `e2e` körs efter Docker-bygget och laddar upp förväntad, faktisk och diff-bild som artefakt vid avvikelse. Filerna heter `*.e2e.ts` så att Vitest inte plockar upp dem
 - [x] **M7-09** Camelot-hjulet (2026-11-18): en växel "Camelot wheel" på kvintcirkeln numrerar de tolv positionerna 1A–12B (8B = C-dur, 8A = A-moll, `src/theory/camelot.ts`: `camelotCode`, `keysForCamelot`, `compatibleKeys`). De tre grannpositionerna (±1 och den relativa) markeras med streckade konturer och förklaras i teckenförklaringen med båda stavningarna, till exempel 2B (F♯-dur eller G♭-dur). Tabelltestad mot standardtabellen och för alla 24 tonarter i alla stavningar

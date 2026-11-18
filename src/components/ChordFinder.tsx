@@ -1,12 +1,29 @@
+import { useState } from "react";
 import {
   type ChordMatch,
+  type FretPick,
   type KeyboardTone,
+  STRING_INSTRUMENTS,
+  STRING_INSTRUMENT_IDS,
+  type StringInstrumentId,
   commonSpellings,
   formatNote,
   identifyChords,
+  pickedMidi,
+  togglePick,
+  tuningFor,
 } from "../theory";
+import { FretPicker } from "./FretPicker";
 import { MidiInput } from "./MidiInput";
+import { OptionPicker, type PickerOption } from "./OptionPicker";
 import { Piano } from "./Piano";
+
+type Source = "piano" | StringInstrumentId;
+
+const SOURCE_OPTIONS: readonly PickerOption<Source>[] = [
+  { value: "piano", label: "Piano" },
+  ...STRING_INSTRUMENT_IDS.map((id) => ({ value: id, label: STRING_INSTRUMENTS[id].label })),
+];
 
 /** Show the best matches only; a cluster of notes can fit dozens of odd chords. */
 const MAX_SUGGESTIONS = 12;
@@ -28,11 +45,18 @@ const omittedText = (match: ChordMatch) =>
     : `Without ${match.omitted.map((t) => `${t.role} (${formatNote(t.note)})`).join(", ")}`;
 
 /**
- * "What chord is this?": press keys on the piano and see which chords the notes
- * form. The lowest key is the bass, so C, E, G and A with C lowest gives Am7/C.
+ * "What chord is this?": press keys on the piano, or frets on a string instrument,
+ * and see which chords the notes form. The lowest note is the bass, so C, E, G and
+ * A with C lowest gives Am7/C.
  */
 export function ChordFinder({ selected, onChange, onOpen }: ChordFinderProps) {
-  const sorted = [...selected].sort((a, b) => a - b);
+  const [source, setSource] = useState<Source>("piano");
+  const [picks, setPicks] = useState<readonly FretPick[]>([]);
+  const strings = source === "piano" ? undefined : tuningFor(source);
+  const noun = strings ? "frets" : "keys";
+
+  // The pressed keys, or the notes the pressed frets sound in the instrument's tuning.
+  const sorted = strings ? pickedMidi(picks, strings.strings) : [...selected].sort((a, b) => a - b);
   const bass = sorted[0];
   const matches = identifyChords(
     sorted.map((midi) => midi % 12),
@@ -53,33 +77,63 @@ export function ChordFinder({ selected, onChange, onOpen }: ChordFinderProps) {
   const pitchClasses = new Set(sorted.map((midi) => midi % 12));
   const count = pitchClasses.size;
   const first = tones[0] ? formatNote(tones[0].note) : undefined;
+  // Two strings can sound the same note, so list each note once.
+  const noteNames = [...new Set(tones.map((t) => formatNote(t.note)))];
 
   return (
     <section className="finder" aria-labelledby="finder-heading">
       <h2 id="finder-heading" className="finder__heading">
         What chord is this?
       </h2>
+      <OptionPicker
+        legend="Play it on"
+        name="finder-instrument"
+        options={SOURCE_OPTIONS}
+        value={source}
+        onChange={(value) => {
+          setSource(value);
+          // Another instrument has other strings, so the pressed frets don't carry over.
+          setPicks([]);
+        }}
+      />
       <p className="finder__hint">
-        Press the keys of the notes you hear or play. The lowest key is taken as the bass.
+        {strings
+          ? "Press the frets of the notes you play, one per string. Press again to let go. The lowest string you press is taken as the bass."
+          : "Press the keys of the notes you hear or play. The lowest key is taken as the bass."}
       </p>
 
-      <MidiInput onUse={onChange} />
-
-      <Piano
-        tones={tones}
-        name={sorted.length === 0 ? "no keys pressed" : "the pressed keys"}
-        legend={{ root: "", tone: "Pressed key" }}
-        onToggleKey={toggle}
-      />
+      {strings ? (
+        <>
+          <FretPicker
+            tuning={strings}
+            picks={picks}
+            onToggle={(pick) => setPicks(togglePick(picks, pick))}
+            name={STRING_INSTRUMENTS[strings.instrument].label.toLowerCase()}
+          />
+          <p className="finder__notes" aria-live="polite">
+            {noteNames.length === 0 ? "No frets pressed" : `Notes: ${noteNames.join("–")}`}
+          </p>
+        </>
+      ) : (
+        <>
+          <MidiInput onUse={onChange} />
+          <Piano
+            tones={tones}
+            name={sorted.length === 0 ? "no keys pressed" : "the pressed keys"}
+            legend={{ root: "", tone: "Pressed key" }}
+            onToggleKey={toggle}
+          />
+        </>
+      )}
 
       <div className="finder__actions">
         <button
           type="button"
           className="finder__clear"
-          onClick={() => onChange([])}
-          disabled={selected.length === 0}
+          onClick={() => (strings ? setPicks([]) : onChange([]))}
+          disabled={(strings ? picks.length : selected.length) === 0}
         >
-          Clear keys
+          Clear {noun}
         </button>
       </div>
 
@@ -88,12 +142,12 @@ export function ChordFinder({ selected, onChange, onOpen }: ChordFinderProps) {
           <p className="finder__empty">Press at least two different notes to find a chord.</p>
         ) : count === 1 ? (
           <p className="finder__empty">
-            One note is not a chord yet. Press at least one more key (you pressed {first}).
+            One note is not a chord yet. Press at least one more {strings ? "fret" : "key"} (you
+            pressed {first}).
           </p>
         ) : matches.length === 0 ? (
           <p className="finder__empty">
-            No chord in the list has exactly these notes:{" "}
-            {tones.map((t) => formatNote(t.note)).join(", ")}. Try removing one.
+            No chord in the list has exactly these notes: {noteNames.join(", ")}. Try removing one.
           </p>
         ) : (
           <>
