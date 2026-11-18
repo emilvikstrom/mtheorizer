@@ -20,6 +20,7 @@ export * from "./scales";
 export * from "./spellingQuiz";
 export * from "./listeningQuiz";
 export * from "./staff";
+export * from "./symmetry";
 export * from "./temperament";
 export * from "./tonnetz";
 export * from "./tritoneSubstitution";

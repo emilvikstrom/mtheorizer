@@ -167,3 +167,36 @@ export function fretboardPositions(
 ): FretPosition[] {
   return positionsOnNeck(chord.tones, tuning, frets);
 }
+
+/** A pressed place on the neck: one string at one fret (0 = the open string). */
+export interface FretPick {
+  /** 1 = the highest-sounding string, as in `NeckPlace`. */
+  readonly string: number;
+  readonly fret: number;
+}
+
+/**
+ * Press `fret` on `string`. A string sounds one note at a time, so this replaces
+ * whatever was pressed on that string; pressing the same place again lets go.
+ */
+export function togglePick(picks: readonly FretPick[], pick: FretPick): FretPick[] {
+  const same = picks.some((p) => p.string === pick.string && p.fret === pick.fret);
+  const others = picks.filter((p) => p.string !== pick.string);
+  return same ? others : [...others, pick].sort((a, b) => a.string - b.string);
+}
+
+/**
+ * MIDI numbers of the notes the pressed places sound in `tuning`, lowest first.
+ * Places on strings the tuning doesn't have are ignored.
+ */
+export function pickedMidi(
+  picks: readonly FretPick[],
+  tuning: readonly OpenString[] = STANDARD_TUNING,
+): number[] {
+  return picks
+    .flatMap((pick) => {
+      const open = tuning[pick.string - 1];
+      return open ? [openStringMidi(open) + pick.fret] : [];
+    })
+    .sort((a, b) => a - b);
+}
