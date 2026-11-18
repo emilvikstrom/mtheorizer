@@ -2532,3 +2532,130 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
   gap: 6px;
 }
+
+/* Tonnetz: the lattice of notes with triads as triangles. */
+.tonnetz {
+  display: grid;
+  gap: 12px;
+}
+
+.tonnetz__heading {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.tonnetz__text {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.tonnetz__grid {
+  width: 100%;
+  max-width: 440px;
+  height: auto;
+  justify-self: center;
+}
+
+.tonnetz__triangle polygon {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.tonnetz__triangle--minor polygon {
+  fill: color-mix(in srgb, var(--accent-ink-tone) 8%, var(--surface));
+}
+
+.tonnetz__triangle--selected polygon {
+  fill: color-mix(in srgb, var(--accent-ink-root) 30%, var(--surface));
+  stroke: var(--accent-ink-root);
+  stroke-width: 2;
+}
+
+.tonnetz__triangle--neighbor {
+  cursor: pointer;
+}
+
+.tonnetz__triangle--neighbor polygon {
+  fill: color-mix(in srgb, var(--accent-ink-tone) 22%, var(--surface));
+  stroke: var(--accent-ink-tone);
+  stroke-width: 1.5;
+}
+
+.tonnetz__triangle--neighbor:hover polygon {
+  fill: color-mix(in srgb, var(--accent-ink-tone) 38%, var(--surface));
+}
+
+.tonnetz__triangle--neighbor:focus-visible {
+  outline: none;
+}
+
+.tonnetz__triangle--neighbor:focus-visible polygon {
+  stroke: var(--focus);
+  stroke-width: 3;
+}
+
+.tonnetz__chord {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.tonnetz__move {
+  fill: var(--accent-ink-tone);
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.tonnetz__note circle {
+  fill: var(--muted);
+}
+
+.tonnetz__note--in circle {
+  fill: var(--accent-ink-root);
+}
+
+.tonnetz__note text {
+  fill: var(--muted);
+  font-size: 10px;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  pointer-events: none;
+}
+
+.tonnetz__note--in text {
+  fill: var(--text);
+  font-weight: 700;
+}
+
+.tonnetz__now {
+  margin: 0;
+}
+
+.tonnetz__moves {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.tonnetz__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.tonnetz__open {
+  min-height: 44px;
+}
+
+.tonnetz__toggle {
+  font-size: 0.9rem;
+}

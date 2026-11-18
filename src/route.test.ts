@@ -134,6 +134,26 @@ describe("parseRoute", () => {
     expect(parseRouteStrict("#/identify")).toEqual({ page: "identify" });
   });
 
+  it("links to the Tonnetz with a triad selected", () => {
+    const route = { page: "tonnetz", root: note("E", -1), mode: "minor" } as const;
+    expect(formatRoute(route)).toBe("#/tonnetz/Eb/minor");
+    expect(parseRoute("#/tonnetz/Eb/minor")).toEqual(route);
+    expect(parseRouteStrict("#/tonnetz/Eb/minor")).toEqual(route);
+    expect(parseRoute("#/tonnetz/Cs/major")).toEqual({
+      page: "tonnetz",
+      root: note("C", 1),
+      mode: "major",
+    });
+  });
+
+  it("falls back to C major on the Tonnetz for a broken link", () => {
+    const fallback = { page: "tonnetz", root: note("C"), mode: "major" };
+    expect(parseRoute("#/tonnetz")).toEqual(fallback);
+    expect(parseRoute("#/tonnetz/H/major")).toEqual(fallback);
+    expect(parseRoute("#/tonnetz/C/dorian")).toEqual(fallback);
+    expect(parseRouteStrict("#/tonnetz/C")).toBeUndefined();
+  });
+
   it("links to the key-signature quiz", () => {
     expect(formatRoute({ page: "quiz" })).toBe("#/quiz");
     expect(parseRoute("#/quiz")).toEqual({ page: "quiz" });

@@ -20,6 +20,7 @@ import {
   SCALES,
   type ScaleId,
   type SpellingGroupId,
+  type TriadMode,
   STRING_INSTRUMENT_IDS,
   type StringInstrumentId,
   TUNING_IDS,
@@ -50,6 +51,7 @@ import { DEFAULT_TONE_DISPLAY, type ToneDisplay, isToneDisplay } from "./toneLab
  *   #/circle/Bb/major              circle of fifths with B♭ major selected
  *   #/progression/Ab/pop           the I–V–vi–IV progression in A♭ major
  *   #/identify                     "What chord is this?" (the keys you pick are not in the link)
+ *   #/tonnetz/C/major              the Tonnetz with the C major triad selected
  *
  * The chord is a base chord (`major`, `minor`, `diminished`, `augmented`, `sus2`,
  * `sus4` or `power`) and the qualities in `with`. Qualities that do not fit the
@@ -137,7 +139,15 @@ export interface QuizRoute {
   readonly inversions?: true;
 }
 
-export type Route = LookupRoute | CircleRoute | ProgressionRoute | IdentifyRoute | QuizRoute;
+/** The Tonnetz with one triad selected. */
+export interface TonnetzRoute {
+  readonly page: "tonnetz";
+  readonly root: Note;
+  readonly mode: TriadMode;
+}
+
+export type Route =
+  LookupRoute | CircleRoute | ProgressionRoute | IdentifyRoute | QuizRoute | TonnetzRoute;
 
 const MAX_INVERSION = 3;
 const STORAGE_KEY = "mtheorizer.instrument";
@@ -213,6 +223,12 @@ export const defaultIdentifyRoute = (): IdentifyRoute => ({ page: "identify" });
 
 export const defaultQuizRoute = (): QuizRoute => ({ page: "quiz" });
 
+export const defaultTonnetzRoute = (): TonnetzRoute => ({
+  page: "tonnetz",
+  root: note("C"),
+  mode: "major",
+});
+
 export const defaultCircleRoute = (): CircleRoute => ({
   page: "circle",
   key: key(note("C"), "major"),
@@ -282,6 +298,8 @@ export function formatRoute(route: Route): string {
       return "#/identify";
     case "quiz":
       return formatQuiz(route);
+    case "tonnetz":
+      return `#/tonnetz/${formatRouteNote(route.root)}/${route.mode}`;
   }
 }
 
@@ -430,6 +448,15 @@ function parseLink(
 
   if (parts[0] === "identify") return { page: "identify" };
   if (parts[0] === "quiz") return parseQuiz(parts[1], query);
+
+  if (parts[0] === "tonnetz") {
+    const tonic = parseRouteNote(parts[1]);
+    const mode = parts[2];
+    if (tonic && (mode === "major" || mode === "minor")) {
+      return { page: "tonnetz", root: tonic, mode };
+    }
+    return strict ? undefined : defaultTonnetzRoute();
+  }
 
   if (parts[0] === "circle") {
     const k = parseCircleKey(parts[1], parts[2]);

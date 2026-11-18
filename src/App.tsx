@@ -7,28 +7,32 @@ import { Quiz } from "./components/Quiz";
 import { SavedChoices } from "./components/SavedChoices";
 import { type TabItem, Tabs, panelId, tabId } from "./components/Tabs";
 import { ThemeSwitch } from "./components/ThemeSwitch";
+import { Tonnetz } from "./components/Tonnetz";
 import {
   type CircleRoute,
   type LookupRoute,
   type ProgressionRoute,
+  type TonnetzRoute,
   defaultChordRoute,
   defaultCircleRoute,
   defaultIdentifyRoute,
   defaultProgressionRoute,
   defaultQuizRoute,
+  defaultTonnetzRoute,
   navigate,
   storedInstrument,
   useRoute,
 } from "./route";
 import { matchInversion, specOf } from "./theory";
 
-type Tab = "lookup" | "circle-of-fifths" | "progressions" | "identify" | "quiz";
+type Tab = "lookup" | "circle-of-fifths" | "progressions" | "identify" | "quiz" | "tonnetz";
 
 const TABS: readonly TabItem<Tab>[] = [
   { id: "lookup", label: "Chords & scales" },
   { id: "circle-of-fifths", label: "Circle of fifths" },
   { id: "progressions", label: "Progressions" },
   { id: "identify", label: "What chord is this?" },
+  { id: "tonnetz", label: "Tonnetz" },
   { id: "quiz", label: "Practice" },
 ];
 
@@ -43,15 +47,19 @@ export function App() {
           ? "identify"
           : route.page === "quiz"
             ? "quiz"
-            : "lookup";
+            : route.page === "tonnetz"
+              ? "tonnetz"
+              : "lookup";
 
   // Each tab keeps its own choice while you look at the other one.
   const lastLookup = useRef<LookupRoute | undefined>(undefined);
   const lastCircle = useRef<CircleRoute | undefined>(undefined);
   const lastProgression = useRef<ProgressionRoute | undefined>(undefined);
+  const lastTonnetz = useRef<TonnetzRoute | undefined>(undefined);
   useEffect(() => {
     if (route.page === "circle") lastCircle.current = route;
     else if (route.page === "progression") lastProgression.current = route;
+    else if (route.page === "tonnetz") lastTonnetz.current = route;
     else if (route.page === "chord" || route.page === "scale") lastLookup.current = route;
   }, [route]);
 
@@ -68,7 +76,9 @@ export function App() {
             ? defaultIdentifyRoute()
             : next === "quiz"
               ? defaultQuizRoute()
-              : (lastLookup.current ?? defaultChordRoute(storedInstrument())),
+              : next === "tonnetz"
+                ? (lastTonnetz.current ?? defaultTonnetzRoute())
+                : (lastLookup.current ?? defaultChordRoute(storedInstrument())),
     );
 
   return (
@@ -129,6 +139,20 @@ export function App() {
           />
         ) : route.page === "quiz" ? (
           <Quiz route={route} onChange={navigate} />
+        ) : route.page === "tonnetz" ? (
+          <Tonnetz
+            triad={{ root: route.root, mode: route.mode }}
+            onChange={(triad) => navigate({ page: "tonnetz", root: triad.root, mode: triad.mode })}
+            onOpenChord={(root, quality) =>
+              navigate({
+                page: "chord",
+                root,
+                spec: specOf(quality),
+                inversion: 0,
+                instrument: storedInstrument(),
+              })
+            }
+          />
         ) : (
           <>
             <SavedChoices route={route} onOpen={navigate} />
