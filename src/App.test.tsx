@@ -502,6 +502,28 @@ describe("App", () => {
     expect(screen.queryByText("Nothing answered yet.")).toBeNull();
   });
 
+  it("opens the Tonnetz from its tab, moves with L and keeps the triad across tabs", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("tab", { name: "Tonnetz" }));
+    expect(window.location.hash).toBe("#/tonnetz/C/major");
+    expect(screen.getByRole("heading", { level: 2, name: "Tonnetz" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^L, leading tone: E minor/ }));
+    expect(window.location.hash).toBe("#/tonnetz/E/minor");
+    await user.click(screen.getByRole("tab", { name: "Chords & scales" }));
+    await user.click(screen.getByRole("tab", { name: "Tonnetz" }));
+    expect(window.location.hash).toBe("#/tonnetz/E/minor");
+  });
+
+  it("opens a Tonnetz triad as a chord", async () => {
+    const user = userEvent.setup();
+    window.location.hash = "#/tonnetz/A/minor";
+    render(<App />);
+    expect(screen.getByRole("tab", { name: "Tonnetz" })).toHaveAttribute("aria-selected", "true");
+    await user.click(screen.getByRole("button", { name: "Open Am as a chord" }));
+    expect(window.location.hash).toBe("#/A/minor?on=piano");
+  });
+
   it("opens the spelling drill from its link and keeps the seed", async () => {
     const user = userEvent.setup();
     window.location.hash = "#/quiz/spelling?seed=5&groups=triads";

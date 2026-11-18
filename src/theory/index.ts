@@ -22,6 +22,7 @@ export * from "./listeningQuiz";
 export * from "./staff";
 export * from "./symmetry";
 export * from "./temperament";
+export * from "./tonnetz";
 export * from "./tritoneSubstitution";
 export * from "./voicing";
 export * from "./voiceLeading";
