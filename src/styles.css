@@ -2322,3 +2322,58 @@ body {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
+
+/* Chromatic chords (Neapolitan and augmented sixths) in the key panel. */
+.chromatic__list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chromatic__item {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.chromatic__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.chromatic__roman {
+  font-family: Georgia, "Times New Roman", serif;
+  color: var(--muted);
+}
+
+.chromatic__name {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.chromatic__symbol {
+  font-weight: 700;
+}
+
+.chromatic__notes {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.chromatic__text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.chromatic__item .play__button {
+  justify-self: start;
+}

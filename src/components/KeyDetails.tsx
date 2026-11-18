@@ -19,6 +19,7 @@ import {
   relativeKey,
   subdominantKey,
 } from "../theory";
+import { ChromaticChords } from "./ChromaticChords";
 import { PivotChords } from "./PivotChords";
 
 const FUNCTION_LABELS: Record<HarmonicFunction, string> = {
@@ -203,6 +204,8 @@ export function KeyDetails({ value, onChange, onOpenChord }: KeyDetailsProps) {
           ))}
         </ol>
       </div>
+
+      <ChromaticChords value={value} onOpenChord={onOpenChord} />
 
       <PivotChords value={value} onOpenChord={onOpenChord} />
 
