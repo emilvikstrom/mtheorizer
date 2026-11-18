@@ -5,6 +5,7 @@ export * from "./chordSpec";
 export * from "./chordScales";
 export * from "./chords";
 export * from "./compare";
+export * from "./camelot";
 export * from "./fretboard";
 export * from "./guitarShapes";
 export * from "./identify";

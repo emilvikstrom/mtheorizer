@@ -30,8 +30,8 @@ Idéer i ungefärlig prioritetsordning inom varje grupp. Bryt ner och flytta upp
 
 ### M7 – Utbyggd kvintcirkel, fortsättning
 
-- [ ] **M7-09** Camelot-hjulet (DJ-vy): samma ringar med tonarterna numrerade 1A–12B, för harmonisk mixning
-  - Acceptans: numreringen följer standarden (8B = C-dur, 8A = A-moll), och grannpositionerna (±1 och den relativa) markeras som kompatibla tonarter
+- [ ] **M7-09b** Camelot för ackord och mixning: skriv in en Camelot-kod ("8B") och hoppa till tonarten, och visa koden i tonartspanelen
+  - Acceptans: `keysForCamelot` används för inmatningen, koden visas bredvid tonartens namn och ingår i delningslänken om det behövs
 
 ### M8 – Harmoni och progressioner (fördjupande teori)
 
@@ -103,6 +103,7 @@ Instrument och kvalitet:
 
 ## Klart
 
+- [x] **M7-09** Camelot-hjulet (2026-11-18): en växel "Camelot wheel" på kvintcirkeln numrerar de tolv positionerna 1A–12B (8B = C-dur, 8A = A-moll, `src/theory/camelot.ts`: `camelotCode`, `keysForCamelot`, `compatibleKeys`). De tre grannpositionerna (±1 och den relativa) markeras med streckade konturer och förklaras i teckenförklaringen med båda stavningarna, till exempel 2B (F♯-dur eller G♭-dur). Tabelltestad mot standardtabellen och för alla 24 tonarter i alla stavningar
 - [x] **M8-11** Klassiska kromatiska ackord (2026-11-17): `chromaticChords(key)` i `src/theory/chromaticChords.ts` ger det neapolitanska sextackordet (♭II i första omvändning, D♭/F i C) och det italienska, franska och tyska sextackordet, byggda ur grundtonen med intervall så att stavningen blir rätt i alla tonarter (F♯ och inte G♭). Det tyska och det franska visas bredvid dominantackordet de låter som (A♭7, D7♭5) med förklaring av omstavningen. Sektionen "Chromatic chords" i tonartspanelen (`ChromaticChords.tsx`) öppnar triaden eller septimackordet i ackordvyn. Tabelltester över alla stavningar av alla tonarter, dur och moll
 - [x] **X-18** Web MIDI (2026-11-17): knappen "Connect a MIDI keyboard" i "What chord is this?" visas bara när webbläsaren har `requestMIDIAccess`, och åtkomst begärs först vid klick. Tolkningen är ren logik i `src/midi.ts` (`parseMidiMessage`, `applyNote`: note on med hastighet 0 är note off, och ackordet kvarstår på skärmen efter att tangenterna släppts), webbläsarlagret i `src/midiAccess.ts` och vyn i `src/components/MidiInput.tsx` (ett piano med de spelade tonerna och "Sounds like …" via `identifyChords` med lägsta tonen som bas). Nekad åtkomst och urkopplat keyboard ger lugna meddelanden. Valet i sökaren ändras först med "Use these keys".
 - [x] **X-13** Notskrift (2026-11-17): ackord och skalor visas på ett notsystem i en sektion "Notation" under pianot (`src/components/Staff.tsx`). Placeringen är ren teori i `src/theory/staff.ts`: `placeOnStaff` ger varje stavad ton oktav, linje eller mellanrum och klav (mellersta C och uppåt i diskant, annars bas), så D♯ och E♭ hamnar på olika steg. Tonartens förtecken skrivs för dur, naturlig moll och modi (`scaleSignature`) och täcker då tonerna; andra skalor skriver förtecknen vid noterna, med hel- och dubbelförtecken (♮ ♭ 𝄫 ♯ 𝄪) och återställningstecken mot förtecknet. Hjälplinjer, förtecken i kolumner och sekundskift för täta ackord. Bara klaverna som har en ton ritas. Staffen döljs när tonvisningen är avstängd (annars avslöjar den svaret). Tabelltester för alla 12 grundtoner och alla ackordkvaliteter och skalor; SVG utan externa beroenden, teckensnittet för klaver och förtecken är systemets
