@@ -11,6 +11,7 @@ import { ThemeSwitch } from "./components/ThemeSwitch";
 import { Tonnetz } from "./components/Tonnetz";
 import {
   type CircleRoute,
+  type IdentifyRoute,
   type LookupRoute,
   type ProgressionRoute,
   type TonnetzRoute,
@@ -57,10 +58,12 @@ export function App() {
   const lastCircle = useRef<CircleRoute | undefined>(undefined);
   const lastProgression = useRef<ProgressionRoute | undefined>(undefined);
   const lastTonnetz = useRef<TonnetzRoute | undefined>(undefined);
+  const lastIdentify = useRef<IdentifyRoute | undefined>(undefined);
   useEffect(() => {
     if (route.page === "circle") lastCircle.current = route;
     else if (route.page === "progression") lastProgression.current = route;
     else if (route.page === "tonnetz") lastTonnetz.current = route;
+    else if (route.page === "identify") lastIdentify.current = route;
     else if (route.page === "chord" || route.page === "scale") lastLookup.current = route;
   }, [route]);
 
@@ -74,7 +77,7 @@ export function App() {
         : next === "progressions"
           ? (lastProgression.current ?? defaultProgressionRoute())
           : next === "identify"
-            ? defaultIdentifyRoute()
+            ? (lastIdentify.current ?? defaultIdentifyRoute())
             : next === "quiz"
               ? defaultQuizRoute()
               : next === "tonnetz"
@@ -149,6 +152,8 @@ export function App() {
           />
         ) : route.page === "identify" ? (
           <ChordFinder
+            route={route}
+            onRoute={navigate}
             selected={pressed}
             onChange={setPressed}
             onOpen={(match) =>

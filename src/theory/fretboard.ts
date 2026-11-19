@@ -200,3 +200,37 @@ export function pickedMidi(
     })
     .sort((a, b) => a - b);
 }
+
+/** How many frets the picker shows at a time (the open string is always shown too). */
+export const FRET_WINDOW = 12;
+
+/** The highest fret that can be pressed: two octaves up the neck. */
+export const MAX_PICK_FRET = 24;
+
+/** The first fret of each window the picker can show: frets 1–12 and frets 13–24. */
+export const FRET_WINDOW_STARTS: readonly number[] = [1, 1 + FRET_WINDOW];
+
+/** Pressed places as link text, "6.0,5.2,4.2": string, a dot and the fret, lowest string number first. */
+export function formatPicks(picks: readonly FretPick[]): string {
+  return picks.map((p) => `${p.string}.${p.fret}`).join(",");
+}
+
+/**
+ * Pressed places from link text. A place that is not `string.fret`, is on a string the
+ * instrument lacks or above `MAX_PICK_FRET` is dropped, and a string keeps its first
+ * place, so any text gives a valid set, sorted by string.
+ */
+export function parsePicks(text: string | null, stringCount: number): FretPick[] {
+  if (!text) return [];
+  const picks: FretPick[] = [];
+  for (const part of text.split(",")) {
+    const match = /^(\d{1,2})\.(\d{1,2})$/.exec(part);
+    if (!match) continue;
+    const string = Number(match[1]);
+    const fret = Number(match[2]);
+    if (string < 1 || string > stringCount || fret > MAX_PICK_FRET) continue;
+    if (picks.some((p) => p.string === string)) continue;
+    picks.push({ string, fret });
+  }
+  return picks.sort((a, b) => a.string - b.string);
+}

@@ -1,13 +1,19 @@
-import { type FretPick, type Tuning, commonSpellings, formatNote, openStringMidi } from "../theory";
-
-/** Open string and frets 1–12: an octave of the neck. */
-const FRETS = Array.from({ length: 13 }, (_, fret) => fret);
+import {
+  FRET_WINDOW,
+  type FretPick,
+  type Tuning,
+  commonSpellings,
+  formatNote,
+  openStringMidi,
+} from "../theory";
 
 interface FretPickerProps {
   tuning: Tuning;
   picks: readonly FretPick[];
   /** Press the place, or let go of it when it is already pressed. */
   onToggle: (pick: FretPick) => void;
+  /** The first fret shown after the open string (1 shows frets 1–12, 13 shows 13–24). */
+  from?: number;
   /** What the neck is, for its accessible name: "guitar". */
   name: string;
 }
@@ -22,10 +28,12 @@ function soundingName(tuning: Tuning, string: number, fret: number): string {
 
 /**
  * A neck to press on: one button for every string and fret from the open string to
- * the twelfth fret. String 1 is on top, as in tablature. Each string takes one
+ * the twelfth fret (or the window `from` picks). String 1 is on top, as in tablature. Each string takes one
  * pressed place, and pressing it again lets go.
  */
-export function FretPicker({ tuning, picks, onToggle, name }: FretPickerProps) {
+export function FretPicker({ tuning, picks, onToggle, from = 1, name }: FretPickerProps) {
+  // The open string, then a window of frets.
+  const FRETS = [0, ...Array.from({ length: FRET_WINDOW }, (_, i) => from + i)];
   const fretOn = new Map(picks.map((p) => [p.string, p.fret]));
   return (
     <div className="fret-picker" role="group" aria-label={`Frets of the ${name}`}>

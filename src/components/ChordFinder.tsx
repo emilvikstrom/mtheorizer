@@ -1,6 +1,7 @@
-import { useState } from "react";
 import {
   type ChordMatch,
+  FRET_WINDOW,
+  FRET_WINDOW_STARTS,
   type FretPick,
   type KeyboardTone,
   STRING_INSTRUMENTS,
@@ -13,12 +14,18 @@ import {
   togglePick,
   tuningFor,
 } from "../theory";
+import type { IdentifyRoute } from "../route";
 import { FretPicker } from "./FretPicker";
 import { MidiInput } from "./MidiInput";
 import { OptionPicker, type PickerOption } from "./OptionPicker";
 import { Piano } from "./Piano";
 
 type Source = "piano" | StringInstrumentId;
+
+const WINDOW_OPTIONS: readonly PickerOption<string>[] = FRET_WINDOW_STARTS.map((start) => ({
+  value: String(start),
+  label: `${start}–${start + FRET_WINDOW - 1}`,
+}));
 
 const SOURCE_OPTIONS: readonly PickerOption<Source>[] = [
   { value: "piano", label: "Piano" },
@@ -29,6 +36,9 @@ const SOURCE_OPTIONS: readonly PickerOption<Source>[] = [
 const MAX_SUGGESTIONS = 12;
 
 interface ChordFinderProps {
+  /** The instrument, pressed frets and fret window, which live in the link. */
+  route: IdentifyRoute;
+  onRoute: (route: IdentifyRoute) => void;
   /** MIDI numbers of the pressed keys. */
   selected: readonly number[];
   onChange: (selected: readonly number[]) => void;
@@ -49,9 +59,12 @@ const omittedText = (match: ChordMatch) =>
  * and see which chords the notes form. The lowest note is the bass, so C, E, G and
  * A with C lowest gives Am7/C.
  */
-export function ChordFinder({ selected, onChange, onOpen }: ChordFinderProps) {
-  const [source, setSource] = useState<Source>("piano");
-  const [picks, setPicks] = useState<readonly FretPick[]>([]);
+export function ChordFinder({ route, onRoute, selected, onChange, onOpen }: ChordFinderProps) {
+  const source: Source = route.instrument ?? "piano";
+  const picks: readonly FretPick[] = route.frets ?? [];
+  const from = route.from ?? 1;
+  const setPicks = (frets: readonly FretPick[]) =>
+    onRoute({ ...route, frets: frets.length > 0 ? frets : undefined });
   const strings = source === "piano" ? undefined : tuningFor(source);
   const noun = strings ? "frets" : "keys";
 
@@ -90,11 +103,12 @@ export function ChordFinder({ selected, onChange, onOpen }: ChordFinderProps) {
         name="finder-instrument"
         options={SOURCE_OPTIONS}
         value={source}
-        onChange={(value) => {
-          setSource(value);
+        onChange={(value) =>
           // Another instrument has other strings, so the pressed frets don't carry over.
-          setPicks([]);
-        }}
+          onRoute(
+            value === "piano" ? { page: "identify" } : { page: "identify", instrument: value },
+          )
+        }
       />
       <p className="finder__hint">
         {strings
@@ -104,9 +118,19 @@ export function ChordFinder({ selected, onChange, onOpen }: ChordFinderProps) {
 
       {strings ? (
         <>
+          <OptionPicker
+            legend="Frets shown"
+            name="finder-frets"
+            options={WINDOW_OPTIONS}
+            value={String(from)}
+            onChange={(start) =>
+              onRoute({ ...route, from: Number(start) === 1 ? undefined : Number(start) })
+            }
+          />
           <FretPicker
             tuning={strings}
             picks={picks}
+            from={from}
             onToggle={(pick) => setPicks(togglePick(picks, pick))}
             name={STRING_INSTRUMENTS[strings.instrument].label.toLowerCase()}
           />

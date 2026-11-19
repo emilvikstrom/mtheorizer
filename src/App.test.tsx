@@ -550,6 +550,28 @@ describe("App", () => {
     expect(window.location.hash).toBe("#/quiz/spelling?seed=5&groups=triads,sevenths");
   });
 
+  it("keeps the guitar and its pressed frets in the chord finder link and across tabs", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("tab", { name: "What chord is this?" }));
+    await user.click(screen.getByRole("radio", { name: "Guitar" }));
+    const fret = (string: number, n: number) =>
+      document.querySelector<HTMLButtonElement>(
+        `.fret-picker__cell[data-string="${string}"][data-fret="${n}"]`,
+      )!;
+    await user.click(fret(5, 3));
+    await user.click(fret(4, 2));
+    expect(window.location.hash).toBe("#/identify?on=guitar&frets=4.2,5.3");
+    await user.click(screen.getByRole("radio", { name: "13–24" }));
+    expect(window.location.hash).toBe("#/identify?on=guitar&frets=4.2,5.3&from=13");
+
+    await user.click(screen.getByRole("tab", { name: "Circle of fifths" }));
+    await user.click(screen.getByRole("tab", { name: "What chord is this?" }));
+    expect(window.location.hash).toBe("#/identify?on=guitar&frets=4.2,5.3&from=13");
+    await user.click(screen.getByRole("radio", { name: "1–12" }));
+    expect(fret(5, 3)).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("finds a chord from pressed keys and opens it in the chord tab", async () => {
     const user = userEvent.setup();
     render(<App />);
