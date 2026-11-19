@@ -40,7 +40,7 @@ export function Quiz({ route, onChange }: QuizProps) {
       ) : mode === "listening" ? (
         <ListeningQuiz route={route} onChange={onChange} />
       ) : (
-        <KeyQuiz />
+        <KeyQuiz route={route} onChange={onChange} />
       )}
     </div>
   );

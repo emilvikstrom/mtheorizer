@@ -58,7 +58,8 @@ describe("Quiz: the listening drill", () => {
     render(<Harness start={{ page: "quiz" }} log={log} />);
     await user.click(screen.getByRole("button", { name: "Listening" }));
     expect(screen.getByRole("heading", { level: 2, name: "Listening" })).toBeInTheDocument();
-    expect(log[0]).toEqual({ page: "quiz", mode: "listening" });
+    // The key-signature quiz put its seed in the link first; then came the click.
+    expect(log[1]).toEqual({ page: "quiz", mode: "listening" });
     await user.click(screen.getByRole("button", { name: "Spelling" }));
     expect(screen.getByRole("heading", { level: 2, name: "Spelling" })).toBeInTheDocument();
   });

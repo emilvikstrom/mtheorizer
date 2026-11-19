@@ -495,11 +495,25 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("tab", { name: "Practice" }));
-    expect(window.location.hash).toBe("#/quiz");
+    // The quiz puts the seed of its set in the link.
+    expect(window.location.hash).toMatch(/^#\/quiz\?seed=\d+$/);
     expect(screen.getByRole("heading", { level: 2, name: "Key signatures" })).toBeInTheDocument();
     expect(screen.getByText(/^(How many|Which)/)).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Chords & scales" }));
     expect(screen.queryByText("Nothing answered yet.")).toBeNull();
+  });
+
+  it("opens the key-signature quiz from a link with a seed and options, and keeps them", async () => {
+    const user = userEvent.setup();
+    window.location.hash = "#/quiz?seed=5&keys=minor&upto=2";
+    render(<App />);
+    expect(screen.getByRole("tab", { name: "Practice" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("radio", { name: "Minor" })).toBeChecked();
+    expect(screen.getByText(/^Set 5, 10 questions\./)).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "Major" }));
+    expect(window.location.hash).toBe("#/quiz?seed=5&keys=major&upto=2");
+    await user.selectOptions(screen.getByRole("combobox", { name: /Signatures/ }), "7");
+    expect(window.location.hash).toBe("#/quiz?seed=5&keys=major");
   });
 
   it("opens the Tonnetz from its tab, moves with L and keeps the triad across tabs", async () => {

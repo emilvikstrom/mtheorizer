@@ -2965,3 +2965,20 @@ body {
   gap: 8px;
   margin-top: 16px;
 }
+
+/* Key-signature quiz: the choice of signatures to practise. */
+.quiz__limit {
+  min-height: 44px;
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.quiz__limit:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
