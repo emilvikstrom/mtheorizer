@@ -20,6 +20,7 @@ import {
   ringChords,
   relativeKey,
   secondaryDominants,
+  secondaryLeadingToneChords,
   subdominantKey,
 } from "./keys";
 import {
@@ -335,6 +336,105 @@ describe("secondaryDominants", () => {
     for (const [, x] of KEYS) {
       const plain = secondaryDominants(x).filter((d) => d.foreign.length === 0);
       expect(plain.map((d) => d.roman)).toEqual(x.mode === "minor" ? ["V7/III"] : []);
+    }
+  });
+});
+
+describe("secondaryLeadingToneChords", () => {
+  const show = (x: Key) =>
+    secondaryLeadingToneChords(x).map(
+      (d) =>
+        `${d.roman} ${d.symbol}→${d.targetSymbol} [${d.foreign.map((n) => formatNote(n)).join(" ")}]`,
+    );
+
+  // Written out by hand for a plain key, a flat-heavy key and a minor key.
+  const TABLE: readonly (readonly [string, KeyMode, readonly string[]])[] = [
+    [
+      "C",
+      "major",
+      [
+        "vii°7/ii C♯°7→Dm [C♯ B♭]",
+        "vii°7/iii D♯°7→Em [D♯ F♯]",
+        "vii°7/IV E°7→F [B♭ D♭]",
+        "vii°7/V F♯°7→G [F♯ E♭]",
+        "vii°7/vi G♯°7→Am [G♯]",
+      ],
+    ],
+    [
+      "Db",
+      "major",
+      [
+        "vii°7/ii D°7→E♭m [D C♭]",
+        "vii°7/iii E°7→Fm [E G]",
+        "vii°7/IV F°7→G♭ [C♭ E𝄫]",
+        "vii°7/V G°7→A♭ [G F♭]",
+        "vii°7/vi A°7→B♭m [A]",
+      ],
+    ],
+    [
+      "A",
+      "minor",
+      [
+        "vii°7/III B°7→C [A♭]",
+        "vii°7/iv C♯°7→Dm [C♯ B♭]",
+        "vii°7/v D♯°7→Em [D♯ F♯]",
+        "vii°7/VI E°7→F [B♭ D♭]",
+        "vii°7/VII F♯°7→G [F♯ E♭]",
+      ],
+    ],
+  ];
+
+  it.each(TABLE)("%s %s", (tonic, mode, expected) => {
+    expect(show(k(tonic, mode))).toEqual(expected);
+  });
+
+  it("gives the diminished seventh in the spelling of its notes", () => {
+    const d = secondaryLeadingToneChords(k("C"))[3];
+    expect(d?.notes.map((n) => formatNote(n))).toEqual(["F♯", "A", "C", "E♭"]);
+    expect(d?.target).toBe(5);
+  });
+
+  const KEYS = Array.from({ length: 12 }, (_, position) => position).flatMap((position) =>
+    (["major", "minor"] as const).flatMap((mode) =>
+      keysAt(position, mode).map((x) => [formatKey(x), x] as const),
+    ),
+  );
+
+  // For every key on the circle: the chords are aimed at the same five degrees as the
+  // secondary dominants, and each root is the leading tone of its target, spelled one
+  // letter below the target's root (F♯ for G, never G♭).
+  it.each(KEYS)("every secondary leading-tone chord of %s sits under its target", (_name, x) => {
+    const result = secondaryLeadingToneChords(x);
+    expect(result.map((d) => d.target)).toEqual(secondaryDominants(x).map((d) => d.target));
+    expect(result).toHaveLength(5);
+    const triads = diatonicTriads(x);
+    for (const d of result) {
+      const targetRoot = triads[d.target - 1]?.notes[0] as Note;
+      expect(triads[d.target - 1]?.symbol).toBe(d.targetSymbol);
+      const [root, third, fifth, seventh] = d.notes as [Note, Note, Note, Note];
+      expect(d.notes).toHaveLength(4);
+      expect(pitchClass(root)).toBe(mod12(pitchClass(targetRoot) - 1));
+      expect("CDEFGAB".indexOf(formatNote(root).charAt(0))).toBe(
+        ("CDEFGAB".indexOf(formatNote(targetRoot).charAt(0)) + 6) % 7,
+      );
+      // Stacked minor thirds: a fully diminished seventh.
+      expect([third, fifth, seventh].map((n) => mod12(pitchClass(n) - pitchClass(root)))).toEqual([
+        3, 6, 9,
+      ]);
+      expect(d.symbol).toBe(`${formatNote(root)}°7`);
+    }
+  });
+
+  it("marks exactly the notes outside the scale", () => {
+    for (const [, x] of KEYS) {
+      const scale = new Set(keyScale(x).map((n) => formatNote(n)));
+      for (const d of secondaryLeadingToneChords(x)) {
+        expect(d.foreign.map((n) => formatNote(n))).toEqual(
+          d.notes.map((n) => formatNote(n)).filter((n) => !scale.has(n)),
+        );
+        // The chord stacks four minor thirds, which no seven-note scale holds whole.
+        expect(d.foreign.length).toBeGreaterThan(0);
+      }
     }
   });
 });

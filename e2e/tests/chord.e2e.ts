@@ -33,5 +33,8 @@ test("circle of fifths screenshot", async ({ page }) => {
     "aria-selected",
     "true",
   );
-  await expect(page).toHaveScreenshot("circle-of-fifths.png", { fullPage: true });
+  // Only the circle itself: the key panel below it grows whenever a section is added.
+  const circle = page.getByRole("radiogroup", { name: /^Circle of fifths/ });
+  await expect(circle).toBeVisible();
+  await expect(circle).toHaveScreenshot("circle-of-fifths.png");
 });

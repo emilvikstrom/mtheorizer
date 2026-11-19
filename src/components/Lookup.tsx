@@ -4,7 +4,7 @@ import { useSounding } from "../audio/sounding";
 import { ChordInfo } from "./ChordInfo";
 import { ChordsThatFit, ScalesThatFit } from "./ChordScaleFit";
 import { ChordBuilder } from "./ChordBuilder";
-import { ChordCompare } from "./ChordCompare";
+import { ChordCompare, ChordScaleCompare } from "./ChordCompare";
 import { ChordSymbolField } from "./ChordSymbolField";
 import { Fretboard } from "./Fretboard";
 import { OptionPicker, type PickerOption } from "./OptionPicker";
@@ -475,7 +475,9 @@ function ChordView({
         vs={route.vs}
         onChange={onCompare}
         display={display}
+        neck={instrument === "piano" ? undefined : { tuning, left: route.left === true }}
       />
+      <ChordScaleCompare key={`scale-${chord.name}`} chord={chord} />
       <TritoneSubstitute chord={chord} onOpen={onOpenRoot} />
       <SameNotesAsChord chord={chord} onOpen={onOpenRoot} />
       <ScalesThatFit chord={chord} onOpen={onOpenScale} />

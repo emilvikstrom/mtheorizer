@@ -5,6 +5,7 @@ import {
   type Note,
   borrowedChords,
   secondaryDominants,
+  secondaryLeadingToneChords,
   circlePosition,
   diatonicTriads,
   dominantKey,
@@ -199,6 +200,37 @@ export function KeyDetails({ value, onChange, onOpenChord }: KeyDetailsProps) {
                   {dominant.foreign.length > 0
                     ? `● ${dominant.foreign.map((n) => formatNote(n)).join(" ")}`
                     : "in key"}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div className="key-details__section">
+        <h3 className="key-details__heading">Secondary leading-tone chords</h3>
+        <p className="key-details__text">
+          A diminished seventh built on the note a half step below another chord of the key, as F♯°7
+          leads to G in C major. The notes outside {formatKey(value)} are marked with a dot. Click
+          one to open it.
+        </p>
+        <ol className="triads" aria-label="Secondary leading-tone chords">
+          {secondaryLeadingToneChords(value).map((chord) => (
+            <li key={chord.target}>
+              <button
+                type="button"
+                className="triad triad--leading"
+                aria-label={`Open ${chord.symbol} in Chords & scales, ${chord.roman}, resolves to ${chord.targetSymbol}, with ${chord.foreign.map((n) => formatNote(n)).join(" and ")} from outside the key`}
+                onClick={() => {
+                  const root = chord.notes[0];
+                  if (root) onOpenChord(root, "diminished7");
+                }}
+              >
+                <span className="triad__roman">{chord.roman}</span>
+                <span className="triad__symbol">{chord.symbol}</span>
+                <span className="triad__function">→ {chord.targetSymbol}</span>
+                <span className="triad__foreign" aria-hidden="true">
+                  ● {chord.foreign.map((n) => formatNote(n)).join(" ")}
                 </span>
               </button>
             </li>
