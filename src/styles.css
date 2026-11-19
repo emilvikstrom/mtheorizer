@@ -2884,3 +2884,84 @@ body {
     opacity: 0.55;
   }
 }
+
+/* Progression builder: pick the key's chords, then move or remove them. */
+.builder__palette {
+  margin: 12px 0;
+  padding: 0;
+  border: 0;
+}
+
+.builder__choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.builder__choices .triad:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.builder__hint {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.builder__list {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.builder__item {
+  display: grid;
+  grid-template-columns: 1.5rem 88px 1fr;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.builder__number {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.builder__tones {
+  overflow-wrap: anywhere;
+}
+
+.builder__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  grid-column: 1 / -1;
+}
+
+.builder__actions .play__button,
+.builder__footer .play__button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.builder__actions .play__button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.builder__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}

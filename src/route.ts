@@ -1,6 +1,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import {
   ALL_SPELLING_GROUPS,
+  type BuilderChord,
   DEFAULT_LISTENING_LEVEL,
   type ListeningLevelId,
   CHORD_BASES,
@@ -26,6 +27,7 @@ import {
   TUNING_IDS,
   type TuningId,
   circlePosition,
+  formatBuilderChords,
   identifyQuality,
   isListeningLevel,
   isProgressionId,
@@ -35,6 +37,7 @@ import {
   keysAt,
   normalizeSpec,
   note,
+  parseBuilderChords,
   specOf,
 } from "./theory";
 import { DEFAULT_TONE_DISPLAY, type ToneDisplay, isToneDisplay } from "./toneLabels";
@@ -50,6 +53,7 @@ import { DEFAULT_TONE_DISPLAY, type ToneDisplay, isToneDisplay } from "./toneLab
  *   #/C/major?on=piano&show=intervals  chord with intervals (R 3 5) on the keys; also names, steps, none
  *   #/circle/Bb/major              circle of fifths with B♭ major selected
  *   #/progression/Ab/pop           the I–V–vi–IV progression in A♭ major
+ *   #/build/C/major?c=1,5,6s,4     a progression built from the key's chords (`s` = seventh chord)
  *   #/identify                     "What chord is this?" (the keys you pick are not in the link)
  *   #/tonnetz/C/major              the Tonnetz with the C major triad selected
  *
@@ -120,6 +124,16 @@ export interface ProgressionRoute {
   readonly id: ProgressionId;
 }
 
+/**
+ * A progression built chord by chord from a key's own chords. `steps` is empty for a new one (and
+ * for a link whose chords make no sense).
+ */
+export interface BuildRoute {
+  readonly page: "build";
+  readonly key: Key;
+  readonly steps: readonly BuilderChord[];
+}
+
 export interface IdentifyRoute {
   readonly page: "identify";
 }
@@ -147,7 +161,13 @@ export interface TonnetzRoute {
 }
 
 export type Route =
-  LookupRoute | CircleRoute | ProgressionRoute | IdentifyRoute | QuizRoute | TonnetzRoute;
+  | LookupRoute
+  | CircleRoute
+  | ProgressionRoute
+  | BuildRoute
+  | IdentifyRoute
+  | QuizRoute
+  | TonnetzRoute;
 
 const MAX_INVERSION = 3;
 const STORAGE_KEY = "mtheorizer.instrument";
@@ -240,6 +260,12 @@ export const defaultProgressionRoute = (): ProgressionRoute => ({
   id: "pop",
 });
 
+export const defaultBuildRoute = (): BuildRoute => ({
+  page: "build",
+  key: key(note("C"), "major"),
+  steps: [],
+});
+
 // --- Format -----------------------------------------------------------------
 
 export function formatRouteNote(n: Note): string {
@@ -294,6 +320,10 @@ export function formatRoute(route: Route): string {
       return `#/circle/${formatRouteNote(route.key.tonic)}/${route.key.mode}`;
     case "progression":
       return `#/progression/${formatRouteNote(route.tonic)}/${route.id}`;
+    case "build": {
+      const chords = formatBuilderChords(route.steps);
+      return `#/build/${formatRouteNote(route.key.tonic)}/${route.key.mode}${chords ? `?c=${chords}` : ""}`;
+    }
     case "identify":
       return "#/identify";
     case "quiz":
@@ -470,6 +500,15 @@ function parseLink(
       if (k) return { page: "progression", tonic: k.tonic, id };
     }
     return strict ? undefined : defaultProgressionRoute();
+  }
+
+  if (parts[0] === "build") {
+    const k = parseCircleKey(parts[1], parts[2]);
+    if (!k) return strict ? undefined : defaultBuildRoute();
+    // A list that makes no sense gives an empty progression, not a different key.
+    const steps = parseBuilderChords(query.get("c") ?? "");
+    if (!steps && strict) return undefined;
+    return { page: "build", key: k, steps: steps ?? [] };
   }
 
   const onParam = query.get("on");

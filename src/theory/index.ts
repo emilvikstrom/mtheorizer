@@ -17,6 +17,7 @@ export * from "./negativeHarmony";
 export * from "./notes";
 export * from "./pivotChords";
 export * from "./progressions";
+export * from "./progressionBuilder";
 export * from "./scales";
 export * from "./spellingQuiz";
 export * from "./listeningQuiz";

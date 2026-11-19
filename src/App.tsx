@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChordFinder } from "./components/ChordFinder";
 import { CircleOfFifthsView } from "./components/CircleOfFifthsView";
 import { Lookup } from "./components/Lookup";
+import { ProgressionBuilder } from "./components/ProgressionBuilder";
 import { ProgressionView } from "./components/ProgressionView";
 import { Quiz } from "./components/Quiz";
 import { SavedChoices } from "./components/SavedChoices";
@@ -23,7 +24,7 @@ import {
   storedInstrument,
   useRoute,
 } from "./route";
-import { matchInversion, specOf } from "./theory";
+import { PROGRESSIONS, key, matchInversion, specOf } from "./theory";
 
 type Tab = "lookup" | "circle-of-fifths" | "progressions" | "identify" | "quiz" | "tonnetz";
 
@@ -41,7 +42,7 @@ export function App() {
   const tab: Tab =
     route.page === "circle"
       ? "circle-of-fifths"
-      : route.page === "progression"
+      : route.page === "progression" || route.page === "build"
         ? "progressions"
         : route.page === "identify"
           ? "identify"
@@ -108,11 +109,34 @@ export function App() {
               })
             }
           />
+        ) : route.page === "build" ? (
+          <ProgressionBuilder
+            keyValue={route.key}
+            steps={route.steps}
+            onChange={(key, steps) => navigate({ page: "build", key, steps })}
+            onBack={() => navigate(lastProgression.current ?? defaultProgressionRoute())}
+            onOpenChord={(root, quality) =>
+              navigate({
+                page: "chord",
+                root,
+                spec: specOf(quality),
+                inversion: 0,
+                instrument: storedInstrument(),
+              })
+            }
+          />
         ) : route.page === "progression" ? (
           <ProgressionView
             tonic={route.tonic}
             id={route.id}
             onChange={(tonic, id) => navigate({ page: "progression", tonic, id })}
+            onBuild={() =>
+              navigate({
+                page: "build",
+                key: key(route.tonic, PROGRESSIONS[route.id].mode),
+                steps: [],
+              })
+            }
             onOpenChord={(root, quality) =>
               navigate({
                 page: "chord",

@@ -35,6 +35,8 @@ interface ProgressionViewProps {
   tonic: Note;
   id: ProgressionId;
   onChange: (tonic: Note, id: ProgressionId) => void;
+  /** Start building a progression of one's own in this key. */
+  onBuild?: () => void;
   /** Open a chord of the progression in the chord view. */
   onOpenChord: (root: Note, quality: ChordQualityId) => void;
 }
@@ -91,7 +93,13 @@ function Cadences({ k }: { k: Key }) {
 }
 
 /** Common chord progressions put in a key, with step numbers; each chord opens in the chord view. */
-export function ProgressionView({ tonic, id, onChange, onOpenChord }: ProgressionViewProps) {
+export function ProgressionView({
+  tonic,
+  id,
+  onChange,
+  onBuild,
+  onOpenChord,
+}: ProgressionViewProps) {
   const progression = PROGRESSIONS[id];
   const k = progressionKeyOn(progression, tonic);
   const chords = progressionChords(progression, k);
@@ -223,6 +231,14 @@ export function ProgressionView({ tonic, id, onChange, onOpenChord }: Progressio
       </section>
 
       <Cadences k={k} />
+
+      {onBuild && (
+        <div className="builder__footer">
+          <button type="button" className="play__button" onClick={onBuild}>
+            Build your own progression in {formatKey(k)}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
