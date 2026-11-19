@@ -1,5 +1,7 @@
+import { useState } from "react";
 import {
   type ChordQualityId,
+  type LeadingToneVariant,
   type HarmonicFunction,
   type Key,
   type Note,
@@ -47,6 +49,7 @@ interface KeyDetailsProps {
 
 /** Signature, scale, diatonic triads and related keys for the selected key. */
 export function KeyDetails({ value, onChange, onOpenChord }: KeyDetailsProps) {
+  const [leadingVariant, setLeadingVariant] = useState<LeadingToneVariant>("diminished");
   const spellings = keysAt(circlePosition(value), value.mode);
   const { accidentals } = keySignature(value);
   const harmonicDominant = harmonicMinorDominant(value);
@@ -212,10 +215,24 @@ export function KeyDetails({ value, onChange, onOpenChord }: KeyDetailsProps) {
         <p className="key-details__text">
           A diminished seventh built on the note a half step below another chord of the key, as F♯°7
           leads to G in C major. The notes outside {formatKey(value)} are marked with a dot. Click
-          one to open it.
+          one to open it. Before a major chord the half-diminished seventh (the key's own viiø7) is
+          an alternative; before a minor chord the diminished seventh stays.
         </p>
+        <div className="negative__size" role="group" aria-label="Leading-tone chord type">
+          {(["diminished", "halfDiminished"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              className="toggle"
+              aria-pressed={leadingVariant === option}
+              onClick={() => setLeadingVariant(option)}
+            >
+              {option === "diminished" ? "Diminished °7" : "Half-diminished ø7"}
+            </button>
+          ))}
+        </div>
         <ol className="triads" aria-label="Secondary leading-tone chords">
-          {secondaryLeadingToneChords(value).map((chord) => (
+          {secondaryLeadingToneChords(value, leadingVariant).map((chord) => (
             <li key={chord.target}>
               <button
                 type="button"
@@ -223,7 +240,7 @@ export function KeyDetails({ value, onChange, onOpenChord }: KeyDetailsProps) {
                 aria-label={`Open ${chord.symbol} in Chords & scales, ${chord.roman}, resolves to ${chord.targetSymbol}, with ${chord.foreign.map((n) => formatNote(n)).join(" and ")} from outside the key`}
                 onClick={() => {
                   const root = chord.notes[0];
-                  if (root) onOpenChord(root, "diminished7");
+                  if (root) onOpenChord(root, chord.quality);
                 }}
               >
                 <span className="triad__roman">{chord.roman}</span>
