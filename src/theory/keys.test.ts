@@ -3,6 +3,7 @@ import {
   CIRCLE_OF_FIFTHS,
   type Key,
   type KeyMode,
+  type SecondaryLeadingToneChord,
   borrowedChords,
   circlePosition,
   degreeWheel,
@@ -423,6 +424,77 @@ describe("secondaryLeadingToneChords", () => {
       ]);
       expect(d.symbol).toBe(`${formatNote(root)}°7`);
     }
+  });
+
+  describe("half-diminished variant", () => {
+    const showHalf = (x: Key) =>
+      secondaryLeadingToneChords(x, "halfDiminished").map(
+        (d) =>
+          `${d.roman} ${d.symbol}→${d.targetSymbol} [${d.foreign.map((n) => formatNote(n)).join(" ")}]`,
+      );
+
+    it("gives ø7 before major chords and keeps °7 before minor ones (C major)", () => {
+      expect(showHalf(k("C"))).toEqual([
+        "vii°7/ii C♯°7→Dm [C♯ B♭]",
+        "vii°7/iii D♯°7→Em [D♯ F♯]",
+        "viiø7/IV Em7♭5→F [B♭]",
+        "viiø7/V F♯m7♭5→G [F♯]",
+        "vii°7/vi G♯°7→Am [G♯]",
+      ]);
+    });
+
+    it("is spelled after the target in a flat key (D♭ major)", () => {
+      expect(showHalf(k("Db"))).toEqual([
+        "vii°7/ii D°7→E♭m [D C♭]",
+        "vii°7/iii E°7→Fm [E G]",
+        "viiø7/IV Fm7♭5→G♭ [C♭]",
+        "viiø7/V Gm7♭5→A♭ [G]",
+        "vii°7/vi A°7→B♭m [A]",
+      ]);
+    });
+
+    it("keeps °7 before the minor chords of a minor key (A minor)", () => {
+      expect(showHalf(k("A", "minor"))).toEqual([
+        "viiø7/III Bm7♭5→C []",
+        "vii°7/iv C♯°7→Dm [C♯ B♭]",
+        "vii°7/v D♯°7→Em [D♯ F♯]",
+        "viiø7/VI Em7♭5→F [B♭]",
+        "viiø7/VII F♯m7♭5→G [F♯]",
+      ]);
+    });
+
+    it("is the default variant when none is given", () => {
+      expect(secondaryLeadingToneChords(k("C"))).toEqual(
+        secondaryLeadingToneChords(k("C"), "diminished"),
+      );
+    });
+
+    // For every key: the same five roots as the °7 variant, a half-diminished chord
+    // (minor third, diminished fifth, minor seventh) exactly where the target is major.
+    it.each(KEYS)("builds ø7 only above major targets in %s", (_name, x) => {
+      const full = secondaryLeadingToneChords(x);
+      const half = secondaryLeadingToneChords(x, "halfDiminished");
+      const triads = diatonicTriads(x);
+      expect(half.map((d) => d.target)).toEqual(full.map((d) => d.target));
+      half.forEach((d, i) => {
+        const f = full[i] as SecondaryLeadingToneChord;
+        const isMajor = triads[d.target - 1]?.quality === "major";
+        const [root, third, fifth, seventh] = d.notes as [Note, Note, Note, Note];
+        expect(formatNote(root)).toBe(formatNote(f.notes[0] as Note));
+        expect(d.quality).toBe(isMajor ? "halfDiminished7" : "diminished7");
+        if (isMajor) {
+          expect(d.roman.startsWith("viiø7/")).toBe(true);
+          expect(d.symbol).toBe(`${formatNote(root)}m7♭5`);
+          expect(
+            [third, fifth, seventh].map((n) => mod12(pitchClass(n) - pitchClass(root))),
+          ).toEqual([3, 6, 10]);
+          // The seventh falls to the target's third: it is the key's own viiø7 over that chord.
+          expect(pitchClass(seventh)).toBe(mod12(pitchClass(root) + 10));
+        } else {
+          expect(d).toEqual(f);
+        }
+      });
+    });
   });
 
   it("marks exactly the notes outside the scale", () => {
