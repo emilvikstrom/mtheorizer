@@ -78,6 +78,7 @@ function ToneDot({
   finger,
   display,
   sounding,
+  shared,
 }: {
   position: NeckTone;
   x: number;
@@ -85,6 +86,8 @@ function ToneDot({
   display: ToneDisplay;
   /** The tone sounds now: a dashed ring around the dot, besides the colour. */
   sounding: boolean;
+  /** A common tone of two compared chords: a small mark on the dot, besides the colour. */
+  shared: boolean;
 }) {
   const y = stringY(position.string);
   const label = toneLabel(display, position);
@@ -97,6 +100,7 @@ function ToneDot({
         data-fret={position.fret}
         data-role={position.role}
         data-sounding={sounding ? "true" : undefined}
+        data-shared={shared ? "true" : undefined}
       >
         {sounding && <circle className="fret-dot__sounding" cx={x} cy={y} r={DOT_RADIUS + 5} />}
         <circle cx={x} cy={y} r={DOT_RADIUS} />
@@ -109,6 +113,14 @@ function ToneDot({
         >
           {label}
         </text>
+        {shared && (
+          <circle
+            className="fret-dot__shared"
+            cx={x + DOT_RADIUS - 2}
+            cy={y - DOT_RADIUS + 2}
+            r={4}
+          />
+        )}
       </g>
       {finger !== undefined && (
         <g className="fret-dot__finger" aria-hidden="true" data-finger={finger}>
@@ -134,6 +146,7 @@ function NeckDiagram({
   left,
   display,
   sounding,
+  shared,
 }: {
   view: NeckView;
   description: string;
@@ -141,6 +154,7 @@ function NeckDiagram({
   left: boolean;
   display: ToneDisplay;
   sounding?: ReadonlySet<number>;
+  shared?: ReadonlySet<number>;
 }) {
   // The notes sounding come from the keyboard's voicing, so they match a dot by its pitch class.
   const soundingClasses = new Set([...(sounding ?? [])].map((midi) => midi % 12));
@@ -295,6 +309,7 @@ function NeckDiagram({
         <ToneDot
           display={display}
           sounding={soundingClasses.has(position.midi % 12)}
+          shared={shared?.has(position.midi % 12) === true}
           key={`${position.string}-${position.fret}`}
           position={position}
           finger={view.fingering?.fingerOn.get(position.string)}
@@ -323,6 +338,8 @@ interface FretboardProps {
   display?: ToneDisplay;
   /** MIDI numbers that sound right now (see `useSounding`): the marked positions with these pitch classes are ringed. */
   sounding?: ReadonlySet<number>;
+  /** Pitch classes (0–11) shared with another chord: the positions with these get a mark. */
+  shared?: ReadonlySet<number>;
 }
 
 /** A few frets of a guitar neck at a time, with arrows to step along it. */
@@ -336,6 +353,7 @@ export function Fretboard({
   left,
   display = "names",
   sounding,
+  shared,
 }: FretboardProps) {
   // Remember where on the neck the player is rather than an index, so changing
   // the chord keeps the hand in the same area.
@@ -409,9 +427,10 @@ export function Fretboard({
         left={left}
         display={display}
         sounding={sounding}
+        shared={shared}
       />
       {without && <p className="fretboard__omitted">{without}</p>}
-      <ToneLegend {...legend} />
+      <ToneLegend {...legend} shared={shared !== undefined && shared.size > 0} />
     </figure>
   );
 }
