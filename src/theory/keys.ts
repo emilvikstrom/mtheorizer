@@ -325,6 +325,48 @@ export function secondaryDominants(k: Key): SecondaryDominant[] {
     });
 }
 
+export interface SecondaryLeadingToneChord {
+  /** Scale degree of the chord it resolves to, 2–7 (never the tonic: vii°7/I is just vii°7). */
+  readonly target: number;
+  /** Roman numeral with the target: vii°7/V, vii°7/ii. */
+  readonly roman: string;
+  /** The chord it resolves to, e.g. "G" or "Am". */
+  readonly targetSymbol: string;
+  readonly notes: readonly Note[];
+  /** Chord symbol of the diminished seventh, e.g. "F♯°7". */
+  readonly symbol: string;
+  /** Notes that are not in the key's scale: F♯ and A♭ in F♯°7 (C major). */
+  readonly foreign: readonly Note[];
+}
+
+/**
+ * The secondary leading-tone chords of a key: a fully diminished seventh chord
+ * built on the leading tone of each diatonic major or minor chord except the
+ * tonic. In C major that is C♯°7 (vii°7/ii), D♯°7 (vii°7/iii), E°7 (vii°7/IV),
+ * F♯°7 (vii°7/V) and G♯°7 (vii°7/vi). The diminished chord on the seventh
+ * degree is not tonicised, so it has none.
+ *
+ * Roots are spelled a major seventh above the target (F♯ for G, never G♭), so
+ * the leading tone sits a letter and a half step below the target's root.
+ */
+export function secondaryLeadingToneChords(k: Key): SecondaryLeadingToneChord[] {
+  const scale = new Set(keyScale(k).map((n) => formatNote(n)));
+  return diatonicTriads(k)
+    .filter((t) => t.degree !== 1 && (t.quality === "major" || t.quality === "minor"))
+    .map((t) => {
+      const root = transpose(t.notes[0] ?? k.tonic, MAJOR_SEVENTH);
+      const notes = buildChord(root, "diminished7").tones.map((tone) => tone.note);
+      return {
+        target: t.degree,
+        roman: `vii°7/${t.roman}`,
+        targetSymbol: t.symbol,
+        notes,
+        symbol: chordSymbol(root, "diminished7"),
+        foreign: notes.filter((n) => !scale.has(formatNote(n))),
+      };
+    });
+}
+
 export interface DiatonicSeventh {
   /** Scale degree, 1–7. */
   readonly degree: number;

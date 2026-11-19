@@ -993,6 +993,16 @@ body {
   text-align: center;
 }
 
+/* Secondary leading-tone chords: double border, so they read apart from the dotted dominants. */
+.triad--leading {
+  border-style: double;
+  border-width: 4px;
+}
+
+.triad--leading .triad__function {
+  text-align: center;
+}
+
 .triad__foreign {
   font-size: 0.7rem;
   color: var(--muted);
