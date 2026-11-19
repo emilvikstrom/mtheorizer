@@ -2774,6 +2774,117 @@ body {
   font-size: 0.9rem;
 }
 
+/* Negative harmony (experimental) in the key panel. */
+.negative__badge {
+  margin-left: 6px;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.negative__size {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.negative__list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.negative__item {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.negative__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.negative__roman {
+  font-family: Georgia, "Times New Roman", serif;
+  color: var(--muted);
+}
+
+.negative__notes {
+  margin: 0;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.negative__text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.negative__item .play__button {
+  justify-self: start;
+}
+
+/*
+ * Tones that sound right now. The keys get a dashed outline and a bar under them and the neck dots
+ * a dashed ring, so the mark does not rest on colour alone. The pulse stops under reduced motion.
+ */
+:root {
+  --sounding: #b45309;
+}
+
+:root[data-theme="dark"] {
+  --sounding: #ffd43b;
+}
+
+.key[data-sounding="true"] rect:first-of-type {
+  stroke: var(--sounding);
+  stroke-width: 3px;
+  stroke-dasharray: 6 3;
+}
+
+.key__sounding {
+  fill: var(--sounding);
+  stroke: var(--text);
+  stroke-width: 1px;
+  pointer-events: none;
+}
+
+.fret-dot circle.fret-dot__sounding {
+  fill: none;
+  stroke: var(--sounding);
+  stroke-width: 3px;
+  stroke-dasharray: 5 3;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .key__sounding,
+  .fret-dot circle.fret-dot__sounding {
+    animation: sounding-pulse 0.7s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes sounding-pulse {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.55;
+  }
+}
+
 /* Progression builder: pick the key's chords, then move or remove them. */
 .builder__palette {
   margin: 12px 0;

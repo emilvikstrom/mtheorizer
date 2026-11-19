@@ -20,6 +20,7 @@ import {
   subdominantKey,
 } from "../theory";
 import { ChromaticChords } from "./ChromaticChords";
+import { NegativeHarmony } from "./NegativeHarmony";
 import { PivotChords } from "./PivotChords";
 
 const FUNCTION_LABELS: Record<HarmonicFunction, string> = {
@@ -208,6 +209,8 @@ export function KeyDetails({ value, onChange, onOpenChord }: KeyDetailsProps) {
       <ChromaticChords value={value} onOpenChord={onOpenChord} />
 
       <PivotChords value={value} onOpenChord={onOpenChord} />
+
+      <NegativeHarmony value={value} onOpenChord={onOpenChord} />
 
       <div className="key-details__section">
         <h3 className="key-details__heading">Related keys</h3>

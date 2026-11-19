@@ -77,11 +77,14 @@ function ToneDot({
   x,
   finger,
   display,
+  sounding,
 }: {
   position: NeckTone;
   x: number;
   finger?: number;
   display: ToneDisplay;
+  /** The tone sounds now: a dashed ring around the dot, besides the colour. */
+  sounding: boolean;
 }) {
   const y = stringY(position.string);
   const label = toneLabel(display, position);
@@ -93,7 +96,9 @@ function ToneDot({
         data-string={position.string}
         data-fret={position.fret}
         data-role={position.role}
+        data-sounding={sounding ? "true" : undefined}
       >
+        {sounding && <circle className="fret-dot__sounding" cx={x} cy={y} r={DOT_RADIUS + 5} />}
         <circle cx={x} cy={y} r={DOT_RADIUS} />
         <text
           className="fret-dot__label"
@@ -128,13 +133,17 @@ function NeckDiagram({
   tuning,
   left,
   display,
+  sounding,
 }: {
   view: NeckView;
   description: string;
   tuning: Tuning;
   left: boolean;
   display: ToneDisplay;
+  sounding?: ReadonlySet<number>;
 }) {
+  // The notes sounding come from the keyboard's voicing, so they match a dot by its pitch class.
+  const soundingClasses = new Set([...(sounding ?? [])].map((midi) => midi % 12));
   const frets = Array.from({ length: view.frets }, (_, i) => view.firstFret + i);
   const neckEnd = NECK_START + view.frets * FRET_WIDTH;
   // A left-handed neck is the mirror image: the nut on the right, frets counting leftwards.
@@ -285,6 +294,7 @@ function NeckDiagram({
       {view.positions.map((position) => (
         <ToneDot
           display={display}
+          sounding={soundingClasses.has(position.midi % 12)}
           key={`${position.string}-${position.fret}`}
           position={position}
           finger={view.fingering?.fingerOn.get(position.string)}
@@ -311,6 +321,8 @@ interface FretboardProps {
   left: boolean;
   /** What the marked positions say: names (the default), intervals, steps, or nothing. */
   display?: ToneDisplay;
+  /** MIDI numbers that sound right now (see `useSounding`): the marked positions with these pitch classes are ringed. */
+  sounding?: ReadonlySet<number>;
 }
 
 /** A few frets of a guitar neck at a time, with arrows to step along it. */
@@ -323,6 +335,7 @@ export function Fretboard({
   tuning,
   left,
   display = "names",
+  sounding,
 }: FretboardProps) {
   // Remember where on the neck the player is rather than an index, so changing
   // the chord keeps the hand in the same area.
@@ -395,6 +408,7 @@ export function Fretboard({
         tuning={tuning}
         left={left}
         display={display}
+        sounding={sounding}
       />
       {without && <p className="fretboard__omitted">{without}</p>}
       <ToneLegend {...legend} />
