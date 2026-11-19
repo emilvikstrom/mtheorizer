@@ -1,5 +1,12 @@
 import { audioSupported, planProgression, playNotes } from "../audio/playback";
-import { type Chord, type Note, chordOnKeyboard, formatNote, tritoneSubstitute } from "../theory";
+import {
+  type Chord,
+  type Note,
+  chordOnKeyboard,
+  formatNote,
+  isDominantSeventh,
+  tritoneSubstitute,
+} from "../theory";
 
 interface TritoneSubstituteProps {
   chord: Chord;
@@ -7,12 +14,12 @@ interface TritoneSubstituteProps {
   onOpen: (root: Note) => void;
 }
 
-const pair = (notes: readonly [Note, Note]) => `${formatNote(notes[0])}–${formatNote(notes[1])}`;
+const keys = (notes: readonly Note[]) => notes.map(formatNote).join("–");
 
 /**
- * For a dominant seventh: the dominant seventh a tritone away that can replace it, why (they share
- * the same two keys, the third and the seventh, which swap roles), and a way to hear both.
- * Renders nothing for any other chord.
+ * For a dominant chord (7, 9, 13, 7♭9, 7♯9, 7sus4): the dominant chord a tritone away that can
+ * replace it, why (they share keys, for a plain seventh the third and the seventh, which swap
+ * roles), and a way to hear both. Renders nothing for any other chord.
  */
 export function TritoneSubstitute({ chord, onOpen }: TritoneSubstituteProps) {
   const result = tritoneSubstitute(chord);
@@ -25,12 +32,24 @@ export function TritoneSubstitute({ chord, onOpen }: TritoneSubstituteProps) {
         Tritone substitute
       </h3>
       <p className="tritone__text">
-        <strong>{substitute.symbol}</strong> can stand in for {original.symbol}. Both chords contain
-        the same tritone: the third and seventh of {original.symbol} are{" "}
-        <span className="tritone__notes">{pair(shared.original)}</span>, and the third and seventh
-        of {substitute.symbol} are <span className="tritone__notes">{pair(shared.substitute)}</span>{" "}
-        (the same two keys, with their roles swapped). {substitute.symbol} then resolves down a half
-        step instead of down a fifth.
+        <strong>{substitute.symbol}</strong> can stand in for {original.symbol}.{" "}
+        {shared.original.length === 0 ? (
+          <>
+            The two suspended chords have no key in common, but both keep the suspension, and{" "}
+            {substitute.symbol} resolves down a half step instead of down a fifth.
+          </>
+        ) : (
+          <>
+            Both chords contain the same keys: in {original.symbol} they are{" "}
+            <span className="tritone__notes">{keys(shared.original)}</span>, and in{" "}
+            {substitute.symbol} they are{" "}
+            <span className="tritone__notes">{keys(shared.substitute)}</span>
+            {isDominantSeventh(original)
+              ? " (the third and seventh, with their roles swapped)"
+              : " (spelled from the other root)"}
+            . {substitute.symbol} then resolves down a half step instead of down a fifth.
+          </>
+        )}
       </p>
       <div className="tritone__actions">
         <button type="button" className="play__button" onClick={() => onOpen(substitute.root)}>

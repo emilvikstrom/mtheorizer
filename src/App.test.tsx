@@ -626,12 +626,12 @@ describe("App", () => {
       expect(screen.getByRole("button", { name: "Open C7" })).toBeInTheDocument();
     });
 
-    it("disappears once the chord is more than a plain dominant seventh", async () => {
+    it("disappears once the chord is not a dominant seventh variant any more", async () => {
       const user = userEvent.setup();
       render(<App />);
       await user.click(screen.getByRole("button", { name: "7" }));
       expect(screen.getByRole("heading", { name: "Tritone substitute" })).toBeInTheDocument();
-      await user.click(screen.getByRole("button", { name: "♯9" }));
+      await user.click(screen.getByRole("button", { name: "♭5" }));
       expect(screen.queryByRole("heading", { name: "Tritone substitute" })).not.toBeInTheDocument();
     });
   });

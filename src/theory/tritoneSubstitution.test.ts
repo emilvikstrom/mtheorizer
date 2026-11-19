@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CHORD_QUALITY_IDS, buildChord, chordOnPitchClass } from "./chords";
 import { type Note, formatNote, note, pitchClass } from "./notes";
-import { isDominantSeventh, tritoneSubstitute } from "./tritoneSubstitution";
+import { hasTritoneSubstitute, isDominantSeventh, tritoneSubstitute } from "./tritoneSubstitution";
 
 const names = (notes: readonly Note[]) => notes.map(formatNote).join("–");
 
@@ -51,6 +51,8 @@ describe("tritoneSubstitute", () => {
       if (!result) throw new Error("expected a substitute");
       const [third, seventh] = result.shared.original;
       const [subThird, subSeventh] = result.shared.substitute;
+      if (!third || !seventh || !subThird || !subSeventh)
+        throw new Error("expected two shared keys");
       expect(pitchClass(third)).toBe(pitchClass(subSeventh));
       expect(pitchClass(seventh)).toBe(pitchClass(subThird));
       // The roots are a tritone apart, and the substitute of the substitute is the original.
@@ -68,11 +70,143 @@ describe("tritoneSubstitute", () => {
     expect(tritoneSubstitute(buildChord(note("D", -1), "dominant7"))?.substitute.symbol).toBe("G7");
   });
 
-  it("has no substitute for anything but a plain dominant seventh", () => {
+  it("has no substitute for anything but a dominant seventh and its variants", () => {
     for (const id of CHORD_QUALITY_IDS) {
       const chord = buildChord(note("C"), id);
       expect(isDominantSeventh(chord)).toBe(id === "dominant7");
-      expect(tritoneSubstitute(chord) !== undefined).toBe(id === "dominant7");
+      expect(hasTritoneSubstitute(chord)).toBe(id in VARIANTS);
+      expect(tritoneSubstitute(chord) !== undefined).toBe(id in VARIANTS);
+    }
+  });
+});
+
+// The dominant variants and the quality of their substitute.
+const VARIANTS: Record<string, string> = {
+  dominant7: "dominant7",
+  dominant9: "dominant9",
+  dominant13: "dominant7Sharp11",
+  dominant7Flat9: "dominant7Flat9",
+  dominant7Sharp9: "dominant7Sharp9",
+  dominant7Sus4: "dominant7Sus4",
+};
+
+// Original and substitute symbols for each variant, from every root (pitch class 0–11).
+const VARIANT_TABLE: Record<string, ReadonlyArray<readonly [string, string]>> = {
+  dominant9: [
+    ["C9", "F♯9"],
+    ["D♭9", "G9"],
+    ["D9", "A♭9"],
+    ["E♭9", "A9"],
+    ["E9", "B♭9"],
+    ["F9", "B9"],
+    ["F♯9", "C9"],
+    ["G9", "D♭9"],
+    ["A♭9", "D9"],
+    ["A9", "E♭9"],
+    ["B♭9", "E9"],
+    ["B9", "F9"],
+  ],
+  dominant13: [
+    ["C13", "F♯7♯11"],
+    ["D♭13", "G7♯11"],
+    ["D13", "A♭7♯11"],
+    ["E♭13", "A7♯11"],
+    ["E13", "B♭7♯11"],
+    ["F13", "B7♯11"],
+    ["F♯13", "C7♯11"],
+    ["G13", "D♭7♯11"],
+    ["A♭13", "D7♯11"],
+    ["A13", "E♭7♯11"],
+    ["B♭13", "E7♯11"],
+    ["B13", "F7♯11"],
+  ],
+  dominant7Flat9: [
+    ["C7♭9", "F♯7♭9"],
+    ["C♯7♭9", "G7♭9"],
+    ["D7♭9", "G♯7♭9"],
+    ["E♭7♭9", "A7♭9"],
+    ["E7♭9", "B♭7♭9"],
+    ["F7♭9", "B7♭9"],
+    ["F♯7♭9", "C7♭9"],
+    ["G7♭9", "C♯7♭9"],
+    ["G♯7♭9", "D7♭9"],
+    ["A7♭9", "E♭7♭9"],
+    ["B♭7♭9", "E7♭9"],
+    ["B7♭9", "F7♭9"],
+  ],
+  dominant7Sharp9: [
+    ["C7♯9", "G♭7♯9"],
+    ["D♭7♯9", "G7♯9"],
+    ["D7♯9", "A♭7♯9"],
+    ["E♭7♯9", "A7♯9"],
+    ["E7♯9", "B♭7♯9"],
+    ["F7♯9", "B7♯9"],
+    ["G♭7♯9", "C7♯9"],
+    ["G7♯9", "D♭7♯9"],
+    ["A♭7♯9", "D7♯9"],
+    ["A7♯9", "E♭7♯9"],
+    ["B♭7♯9", "E7♯9"],
+    ["B7♯9", "F7♯9"],
+  ],
+  dominant7Sus4: [
+    ["C7sus4", "F♯7sus4"],
+    ["C♯7sus4", "G7sus4"],
+    ["D7sus4", "A♭7sus4"],
+    ["E♭7sus4", "A7sus4"],
+    ["E7sus4", "B♭7sus4"],
+    ["F7sus4", "B7sus4"],
+    ["F♯7sus4", "C7sus4"],
+    ["G7sus4", "C♯7sus4"],
+    ["A♭7sus4", "D7sus4"],
+    ["A7sus4", "E♭7sus4"],
+    ["B♭7sus4", "E7sus4"],
+    ["B7sus4", "F7sus4"],
+  ],
+};
+
+describe("tritoneSubstitute for the dominant variants", () => {
+  for (const [id, rows] of Object.entries(VARIANT_TABLE)) {
+    it.each(rows.map((row, pc) => [pc, ...row] as const))(
+      `${id}, pitch class %i: %s → %s`,
+      (pc, original, substitute) => {
+        const result = tritoneSubstitute(chordOnPitchClass(pc, id as never));
+        expect(result?.original.symbol).toBe(original);
+        expect(result?.substitute.symbol).toBe(substitute);
+      },
+    );
+  }
+
+  it("keeps the colour: the substitute quality, a tritone up, from every root", () => {
+    for (const [id, subId] of Object.entries(VARIANTS)) {
+      for (let pc = 0; pc < 12; pc++) {
+        const result = tritoneSubstitute(chordOnPitchClass(pc, id as never));
+        expect(result?.substitute.quality?.id).toBe(subId);
+        expect(((result ? pitchClass(result.substitute.root) : 0) - pc + 12) % 12).toBe(6);
+      }
+    }
+  });
+
+  it("lists the keys the chords share, each as its own chord spells them", () => {
+    const names9 = (id: Parameters<typeof buildChord>[1]) => {
+      const r = tritoneSubstitute(buildChord(note("G"), id));
+      return [names(r?.shared.original ?? []), names(r?.shared.substitute ?? [])];
+    };
+    expect(names9("dominant9")).toEqual(["B–F", "F–C♭"]);
+    expect(names9("dominant13")).toEqual(["G–B–F", "F–C♭–G"]);
+    // G7♭9 and C♯7♭9 (D♭7♭9) are nearly the same chord: B, D, F and A♭ are all common.
+    expect(names9("dominant7Flat9")).toEqual(["B–D–F–A♭", "E♯–G♯–B–D"]);
+    expect(names9("dominant7Sus4")).toEqual(["", ""]);
+  });
+
+  it("shares exactly the tones of the same pitch class, in both directions", () => {
+    for (const id of Object.keys(VARIANTS)) {
+      for (let pc = 0; pc < 12; pc++) {
+        const r = tritoneSubstitute(chordOnPitchClass(pc, id as never));
+        if (!r) throw new Error("expected a substitute");
+        const a = r.shared.original.map(pitchClass).sort((x, y) => x - y);
+        const b = r.shared.substitute.map(pitchClass).sort((x, y) => x - y);
+        expect(a).toEqual(b);
+      }
     }
   });
 });

@@ -38,12 +38,36 @@ describe("TritoneSubstitute", () => {
     expect(screen.queryByRole("button", { name: /^Play/ })).not.toBeInTheDocument();
   });
 
-  it("shows nothing for chords that are not a plain dominant seventh", () => {
+  it("shows nothing for chords that are not a dominant seventh or one of its variants", () => {
     const { container, rerender } = render(
       <TritoneSubstitute chord={buildChord(note("C"), "major7")} onOpen={() => {}} />,
     );
     expect(container).toBeEmptyDOMElement();
-    rerender(<TritoneSubstitute chord={buildChord(note("C"), "dominant9")} onOpen={() => {}} />);
+    rerender(<TritoneSubstitute chord={buildChord(note("C"), "major9")} onOpen={() => {}} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it("explains G13 → D♭7♯11 with the keys the two chords share", () => {
+    render(<TritoneSubstitute chord={buildChord(note("G"), "dominant13")} onOpen={() => {}} />);
+    const text = screen.getByText(/can stand in for G13/);
+    expect(text).toHaveTextContent("D♭7♯11");
+    expect(text).toHaveTextContent("G–B–F");
+    expect(text).toHaveTextContent("F–C♭–G");
+  });
+
+  it("opens the substitute of a ninth and plays both chords", async () => {
+    vi.stubGlobal("AudioContext", class {});
+    const onOpen = vi.fn();
+    render(<TritoneSubstitute chord={buildChord(note("G"), "dominant9")} onOpen={onOpen} />);
+    expect(screen.getByRole("button", { name: "Play G9 then D♭9" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Open D♭9" }));
+    expect(formatNote(onOpen.mock.calls[0]?.[0])).toBe("D♭");
+  });
+
+  it("says so when the suspended chords have no key in common", () => {
+    render(<TritoneSubstitute chord={buildChord(note("G"), "dominant7Sus4")} onOpen={() => {}} />);
+    const text = screen.getByText(/can stand in for G7sus4/);
+    expect(text).toHaveTextContent("C♯7sus4");
+    expect(text).toHaveTextContent("no key in common");
   });
 });
