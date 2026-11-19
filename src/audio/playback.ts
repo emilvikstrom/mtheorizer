@@ -1,4 +1,5 @@
 import { type AudioSettings, type Timbre, getAudioSettings } from "./settings";
+import { clearSounding, trackSounding } from "./sounding";
 
 /** How a set of tones is played: all at once, or one after another from the lowest. */
 export type PlayMode = "together" | "broken";
@@ -106,6 +107,7 @@ const active = new Set<{ osc: OscillatorNode; gain: GainNode }>();
 
 /** Cuts off everything that is playing or about to play. Does nothing when nothing is. */
 export function stopPlayback(): void {
+  clearSounding();
   if (!context) return;
   const now = context.currentTime;
   for (const { osc, gain } of active) {
@@ -146,6 +148,7 @@ export function playNotes(
   // at once, for a long plan where only a few overlap (every tone counts when it is not given).
   const level = (0.5 / Math.max(2, voices ?? notes.length)) * settings.volume;
   let total = 0;
+  trackSounding(notes, 0.05);
   for (const { midi, start, duration } of notes) {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();

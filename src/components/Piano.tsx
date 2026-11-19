@@ -81,6 +81,7 @@ function PianoKey({
   tone,
   display,
   shared,
+  sounding,
   onToggle,
 }: {
   shape: KeyShape;
@@ -88,6 +89,8 @@ function PianoKey({
   display: ToneDisplay;
   /** Marks the key with a dot: a tone the compared chords have in common. */
   shared: boolean;
+  /** The key's tone is sounding now: a dashed outline and a bar under the key, besides the colour. */
+  sounding: boolean;
   onToggle?: (midi: number) => void;
 }) {
   const width = shape.black ? BLACK_WIDTH : WHITE_WIDTH;
@@ -113,6 +116,7 @@ function PianoKey({
       data-role={tone?.role}
       data-bass={tone?.isBass ? "true" : undefined}
       data-shared={shared ? "true" : undefined}
+      data-sounding={sounding ? "true" : undefined}
       {...(onToggle
         ? {
             role: "button",
@@ -130,6 +134,16 @@ function PianoKey({
     >
       <rect x={shape.x} y={0} width={width} height={height} rx={shape.black ? 3 : 4} />
       {shared && <circle className="key__shared" cx={centre} cy={shape.black ? 14 : 20} r={5} />}
+      {sounding && (
+        <rect
+          className="key__sounding"
+          x={shape.x + 3}
+          y={height - 8}
+          width={width - 6}
+          height={5}
+          rx={2}
+        />
+      )}
       {label !== undefined ? (
         <text
           className="key__label"
@@ -153,6 +167,9 @@ function PianoKey({
 const isShared = (tone: KeyboardTone | undefined, shared: ReadonlySet<number> | undefined) =>
   tone !== undefined && shared?.has(tone.midi % 12) === true;
 
+const isSounding = (tone: KeyboardTone | undefined, sounding: ReadonlySet<number> | undefined) =>
+  tone !== undefined && sounding?.has(tone.midi) === true;
+
 interface PianoProps {
   /** Keys to highlight. */
   tones: readonly KeyboardTone[];
@@ -166,10 +183,20 @@ interface PianoProps {
   display?: ToneDisplay;
   /** Pitch classes to mark as common tones when two chords are compared. */
   shared?: ReadonlySet<number>;
+  /** MIDI numbers that sound right now (see `useSounding`): the highlighted keys among them are marked. */
+  sounding?: ReadonlySet<number>;
 }
 
 /** A keyboard from C4 to at least B5, wide enough for all of `tones`, with `tones` highlighted. */
-export function Piano({ tones, name, legend, onToggleKey, display = "names", shared }: PianoProps) {
+export function Piano({
+  tones,
+  name,
+  legend,
+  onToggleKey,
+  display = "names",
+  shared,
+  sounding,
+}: PianoProps) {
   const narrow = useSyncExternalStore(subscribeNarrow, isNarrow, () => false);
   const midis = tones.map((tone) => tone.midi);
   const keys = keyboard(
@@ -205,6 +232,7 @@ export function Piano({ tones, name, legend, onToggleKey, display = "names", sha
             tone={toneAt.get(shape.midi)}
             display={display}
             shared={isShared(toneAt.get(shape.midi), shared)}
+            sounding={isSounding(toneAt.get(shape.midi), sounding)}
             onToggle={onToggleKey}
           />
         ))}
@@ -215,6 +243,7 @@ export function Piano({ tones, name, legend, onToggleKey, display = "names", sha
             tone={toneAt.get(shape.midi)}
             display={display}
             shared={isShared(toneAt.get(shape.midi), shared)}
+            sounding={isSounding(toneAt.get(shape.midi), sounding)}
             onToggle={onToggleKey}
           />
         ))}
