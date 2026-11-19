@@ -175,6 +175,61 @@ describe("CircleOfFifthsView", () => {
     });
   });
 
+  describe("secondary leading-tone chords", () => {
+    const list = () => screen.getByRole("list", { name: "Secondary leading-tone chords" });
+    const column = (selector: string) =>
+      within(list())
+        .getAllByRole("listitem")
+        .map((item) => item.querySelector(selector)?.textContent);
+
+    it("shows C major's leading-tone chords with the chord each one leads to", () => {
+      render(<Harness />);
+      expect(column(".triad__roman")).toEqual([
+        "vii°7/ii",
+        "vii°7/iii",
+        "vii°7/IV",
+        "vii°7/V",
+        "vii°7/vi",
+      ]);
+      expect(column(".triad__symbol")).toEqual(["C♯°7", "D♯°7", "E°7", "F♯°7", "G♯°7"]);
+      expect(column(".triad__function")).toEqual(["→ Dm", "→ Em", "→ F", "→ G", "→ Am"]);
+    });
+
+    it("writes out the notes from outside the key, not only by styling", () => {
+      render(<Harness />);
+      expect(column(".triad__foreign")).toEqual([
+        "● C♯ B♭",
+        "● D♯ F♯",
+        "● B♭ D♭",
+        "● F♯ E♭",
+        "● G♯",
+      ]);
+      expect(
+        screen.getByRole("button", {
+          name: "Open F♯°7 in Chords & scales, vii°7/V, resolves to G, with F♯ and E♭ from outside the key",
+        }),
+      ).toBeInTheDocument();
+    });
+
+    it("follows the key's spelling", async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+      await user.click(screen.getByRole("radio", { name: "F♯ major / G♭ major" }));
+      expect(column(".triad__symbol")).toEqual(["F𝄪°7", "G𝄪°7", "A♯°7", "B♯°7", "C𝄪°7"]);
+    });
+
+    it("opens a leading-tone chord as a diminished seventh", async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+      await user.click(
+        screen.getByRole("button", {
+          name: "Open F♯°7 in Chords & scales, vii°7/V, resolves to G, with F♯ and E♭ from outside the key",
+        }),
+      );
+      expect(opened).toHaveBeenLastCalledWith(note("F", 1), "diminished7");
+    });
+  });
+
   it("has 12 major and 12 minor keys", () => {
     render(<Harness />);
     const circle = screen.getByRole("radiogroup", { name: /Circle of fifths/ });
