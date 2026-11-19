@@ -2773,3 +2773,52 @@ body {
 .tonnetz__toggle {
   font-size: 0.9rem;
 }
+
+/*
+ * Tones that sound right now. The keys get a dashed outline and a bar under them and the neck dots
+ * a dashed ring, so the mark does not rest on colour alone. The pulse stops under reduced motion.
+ */
+:root {
+  --sounding: #b45309;
+}
+
+:root[data-theme="dark"] {
+  --sounding: #ffd43b;
+}
+
+.key[data-sounding="true"] rect:first-of-type {
+  stroke: var(--sounding);
+  stroke-width: 3px;
+  stroke-dasharray: 6 3;
+}
+
+.key__sounding {
+  fill: var(--sounding);
+  stroke: var(--text);
+  stroke-width: 1px;
+  pointer-events: none;
+}
+
+.fret-dot circle.fret-dot__sounding {
+  fill: none;
+  stroke: var(--sounding);
+  stroke-width: 3px;
+  stroke-dasharray: 5 3;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .key__sounding,
+  .fret-dot circle.fret-dot__sounding {
+    animation: sounding-pulse 0.7s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes sounding-pulse {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.55;
+  }
+}

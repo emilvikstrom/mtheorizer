@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { stopPlayback } from "../audio/playback";
+import { useSounding } from "../audio/sounding";
 import { ChordInfo } from "./ChordInfo";
 import { ChordsThatFit, ScalesThatFit } from "./ChordScaleFit";
 import { ChordBuilder } from "./ChordBuilder";
@@ -378,8 +380,11 @@ function InstrumentView({
   left,
   display,
 }: InstrumentViewProps) {
+  const sounding = useSounding();
+  // Choosing another chord or scale ends the sound of the old one, so nothing stays lit.
+  useEffect(() => stopPlayback, [name]);
   return instrument === "piano" ? (
-    <Piano tones={keys} name={name} legend={legend} display={display} />
+    <Piano tones={keys} name={name} legend={legend} display={display} sounding={sounding} />
   ) : (
     <Fretboard
       views={neck.views}
@@ -390,6 +395,7 @@ function InstrumentView({
       tuning={tuning}
       left={left}
       display={display}
+      sounding={sounding}
     />
   );
 }
