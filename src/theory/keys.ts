@@ -325,16 +325,21 @@ export function secondaryDominants(k: Key): SecondaryDominant[] {
     });
 }
 
+/** Which seventh chord a secondary leading-tone chord is: fully (°7) or half (ø7) diminished. */
+export type LeadingToneVariant = "diminished" | "halfDiminished";
+
 export interface SecondaryLeadingToneChord {
   /** Scale degree of the chord it resolves to, 2–7 (never the tonic: vii°7/I is just vii°7). */
   readonly target: number;
-  /** Roman numeral with the target: vii°7/V, vii°7/ii. */
+  /** Roman numeral with the target: vii°7/V, viiø7/V, vii°7/ii. */
   readonly roman: string;
   /** The chord it resolves to, e.g. "G" or "Am". */
   readonly targetSymbol: string;
   readonly notes: readonly Note[];
-  /** Chord symbol of the diminished seventh, e.g. "F♯°7". */
+  /** Chord symbol of the seventh chord, e.g. "F♯°7" or "F♯m7♭5". */
   readonly symbol: string;
+  /** The quality built: diminished7, or halfDiminished7 for a major target in the ø7 variant. */
+  readonly quality: ChordQualityId;
   /** Notes that are not in the key's scale: F♯ and A♭ in F♯°7 (C major). */
   readonly foreign: readonly Note[];
 }
@@ -348,20 +353,30 @@ export interface SecondaryLeadingToneChord {
  *
  * Roots are spelled a major seventh above the target (F♯ for G, never G♭), so
  * the leading tone sits a letter and a half step below the target's root.
+ *
+ * With the "halfDiminished" variant a major target gets viiø7/x instead (F♯ø7 → G,
+ * which is the key's own viiø7 over that target). Minor targets keep °7, since
+ * harmonic minor gives the fully diminished chord there.
  */
-export function secondaryLeadingToneChords(k: Key): SecondaryLeadingToneChord[] {
+export function secondaryLeadingToneChords(
+  k: Key,
+  variant: LeadingToneVariant = "diminished",
+): SecondaryLeadingToneChord[] {
   const scale = new Set(keyScale(k).map((n) => formatNote(n)));
   return diatonicTriads(k)
     .filter((t) => t.degree !== 1 && (t.quality === "major" || t.quality === "minor"))
     .map((t) => {
       const root = transpose(t.notes[0] ?? k.tonic, MAJOR_SEVENTH);
-      const notes = buildChord(root, "diminished7").tones.map((tone) => tone.note);
+      const quality: ChordQualityId =
+        variant === "halfDiminished" && t.quality === "major" ? "halfDiminished7" : "diminished7";
+      const notes = buildChord(root, quality).tones.map((tone) => tone.note);
       return {
         target: t.degree,
-        roman: `vii°7/${t.roman}`,
+        roman: `vii${quality === "halfDiminished7" ? "ø" : "°"}7/${t.roman}`,
         targetSymbol: t.symbol,
         notes,
-        symbol: chordSymbol(root, "diminished7"),
+        symbol: chordSymbol(root, quality),
+        quality,
         foreign: notes.filter((n) => !scale.has(formatNote(n))),
       };
     });

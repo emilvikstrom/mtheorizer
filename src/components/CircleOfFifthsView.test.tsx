@@ -218,6 +218,37 @@ describe("CircleOfFifthsView", () => {
       expect(column(".triad__symbol")).toEqual(["F𝄪°7", "G𝄪°7", "A♯°7", "B♯°7", "C𝄪°7"]);
     });
 
+    it("switches to half-diminished sevenths before major chords only", async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+      const toggle = screen.getByRole("button", { name: "Half-diminished ø7" });
+      expect(toggle).toHaveAttribute("aria-pressed", "false");
+      await user.click(toggle);
+      expect(toggle).toHaveAttribute("aria-pressed", "true");
+      expect(column(".triad__roman")).toEqual([
+        "vii°7/ii",
+        "vii°7/iii",
+        "viiø7/IV",
+        "viiø7/V",
+        "vii°7/vi",
+      ]);
+      expect(column(".triad__symbol")).toEqual(["C♯°7", "D♯°7", "Em7♭5", "F♯m7♭5", "G♯°7"]);
+      await user.click(screen.getByRole("button", { name: "Diminished °7" }));
+      expect(column(".triad__symbol")).toEqual(["C♯°7", "D♯°7", "E°7", "F♯°7", "G♯°7"]);
+    });
+
+    it("opens a half-diminished leading-tone chord as a half-diminished seventh", async () => {
+      const user = userEvent.setup();
+      render(<Harness />);
+      await user.click(screen.getByRole("button", { name: "Half-diminished ø7" }));
+      await user.click(
+        screen.getByRole("button", {
+          name: "Open F♯m7♭5 in Chords & scales, viiø7/V, resolves to G, with F♯ from outside the key",
+        }),
+      );
+      expect(opened).toHaveBeenLastCalledWith(note("F", 1), "halfDiminished7");
+    });
+
     it("opens a leading-tone chord as a diminished seventh", async () => {
       const user = userEvent.setup();
       render(<Harness />);

@@ -26,8 +26,11 @@ import {
   type StringInstrumentId,
   TUNING_IDS,
   type TuningId,
+  FRET_WINDOW_STARTS,
+  type FretPick,
   circlePosition,
   formatBuilderChords,
+  formatPicks,
   identifyQuality,
   isListeningLevel,
   isProgressionId,
@@ -38,7 +41,9 @@ import {
   normalizeSpec,
   note,
   parseBuilderChords,
+  parsePicks,
   specOf,
+  tuningFor,
 } from "./theory";
 import { DEFAULT_TONE_DISPLAY, type ToneDisplay, isToneDisplay } from "./toneLabels";
 
@@ -54,7 +59,9 @@ import { DEFAULT_TONE_DISPLAY, type ToneDisplay, isToneDisplay } from "./toneLab
  *   #/circle/Bb/major              circle of fifths with B♭ major selected
  *   #/progression/Ab/pop           the I–V–vi–IV progression in A♭ major
  *   #/build/C/major?c=1,5,6s,4     a progression built from the key's chords (`s` = seventh chord)
- *   #/identify                     "What chord is this?" (the keys you pick are not in the link)
+ *   #/identify                     "What chord is this?" (the keys you pick on the piano are not in the link)
+ *   #/identify?on=guitar&frets=6.0,5.2,4.2,3.0&from=13  the same on a guitar neck: pressed `string.fret`
+ *                                  places, and the first fret shown (13 = frets 13–24)
  *   #/tonnetz/C/major              the Tonnetz with the C major triad selected
  *
  * The chord is a base chord (`major`, `minor`, `diminished`, `augmented`, `sus2`,
@@ -134,8 +141,15 @@ export interface BuildRoute {
   readonly steps: readonly BuilderChord[];
 }
 
+/**
+ * "What chord is this?". `instrument` is a string instrument when the neck is shown (the piano
+ * when absent), `frets` the places pressed on it and `from` the first fret shown (1 when absent).
+ */
 export interface IdentifyRoute {
   readonly page: "identify";
+  readonly instrument?: StringInstrumentId;
+  readonly frets?: readonly FretPick[];
+  readonly from?: number;
 }
 
 /**
@@ -329,12 +343,36 @@ export function formatRoute(route: Route): string {
       return `#/build/${formatRouteNote(route.key.tonic)}/${route.key.mode}${chords ? `?c=${chords}` : ""}`;
     }
     case "identify":
-      return "#/identify";
+      return formatIdentify(route);
     case "quiz":
       return formatQuiz(route);
     case "tonnetz":
       return `#/tonnetz/${formatRouteNote(route.root)}/${route.mode}`;
   }
+}
+
+function formatIdentify(route: IdentifyRoute): string {
+  if (!route.instrument) return "#/identify";
+  const parts = [`on=${route.instrument}`];
+  if (route.frets && route.frets.length > 0) parts.push(`frets=${formatPicks(route.frets)}`);
+  if (route.from !== undefined && route.from !== 1) parts.push(`from=${route.from}`);
+  return `#/identify?${parts.join("&")}`;
+}
+
+function parseIdentify(query: URLSearchParams): IdentifyRoute {
+  const on = query.get("on");
+  const instrument = (STRING_INSTRUMENT_IDS as readonly unknown[]).includes(on)
+    ? (on as StringInstrumentId)
+    : undefined;
+  if (!instrument) return { page: "identify" };
+  const frets = parsePicks(query.get("frets"), tuningFor(instrument).strings.length);
+  const from = Number(query.get("from"));
+  return {
+    page: "identify",
+    instrument,
+    ...(frets.length > 0 ? { frets } : {}),
+    ...(FRET_WINDOW_STARTS.includes(from) && from !== 1 ? { from } : {}),
+  };
 }
 
 /**
@@ -500,7 +538,7 @@ function parseLink(
   const query = new URLSearchParams(queryAt === -1 ? "" : trimmed.slice(queryAt + 1));
   const parts = path.split("/").filter(Boolean).map(safeDecode);
 
-  if (parts[0] === "identify") return { page: "identify" };
+  if (parts[0] === "identify") return parseIdentify(query);
   if (parts[0] === "quiz") return parseQuiz(parts[1], query);
 
   if (parts[0] === "tonnetz") {

@@ -3,11 +3,21 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ChordFinder } from "./ChordFinder";
+import type { IdentifyRoute } from "../route";
 import type { ChordMatch } from "../theory";
 
 function Harness({ onOpen = () => {} }: { onOpen?: (match: ChordMatch) => void }) {
   const [selected, setSelected] = useState<readonly number[]>([]);
-  return <ChordFinder selected={selected} onChange={setSelected} onOpen={onOpen} />;
+  const [route, setRoute] = useState<IdentifyRoute>({ page: "identify" });
+  return (
+    <ChordFinder
+      route={route}
+      onRoute={setRoute}
+      selected={selected}
+      onChange={setSelected}
+      onOpen={onOpen}
+    />
+  );
 }
 
 const key = (name: string) => screen.getByRole("button", { name });
