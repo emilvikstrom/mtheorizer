@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { type QuizRoute } from "../route";
 import {
   type Key,
   type KeyMode,
   type KeyQuestion,
+  type KeyQuizOptions,
+  MAX_ACCIDENTALS,
   type Note,
   type Random,
   type SignatureAnswer,
@@ -11,7 +14,9 @@ import {
   formatKey,
   formatNote,
   isCorrect,
+  keyDeck,
   keySignature,
+  keysFor,
   newDeck,
   signatureOf,
 } from "../theory";
@@ -42,13 +47,18 @@ interface Given {
   readonly right: boolean;
 }
 
-/**
- * Key-signature practice: how many sharps or flats a key has, and which key has a given
- * signature. Every key is asked both ways before any is repeated. The circle of fifths
- * shows the answer afterwards.
- */
-export function KeyQuiz({ random }: { random?: Random }) {
-  const [deck, setDeck] = useState(() => newDeck(random));
+interface DrillProps {
+  seed: number;
+  options: KeyQuizOptions;
+  random?: Random;
+}
+
+/** The questions, one deck after another; the first deck is the one the seed gives. */
+function Drill({ seed, options, random }: DrillProps) {
+  const [round, setRound] = useState(0);
+  const [deck, setDeck] = useState(() =>
+    random ? newDeck(random, options) : keyDeck(seed, 0, options),
+  );
   const [asked, setAsked] = useState(0);
   const [right, setRight] = useState(0);
   const [given, setGiven] = useState<Given | undefined>();
@@ -65,7 +75,12 @@ export function KeyQuiz({ random }: { random?: Random }) {
 
   function next() {
     const rest = deck.slice(1);
-    setDeck(rest.length > 0 ? rest : newDeck(random));
+    if (rest.length > 0) {
+      setDeck(rest);
+    } else {
+      setDeck(random ? newDeck(random, options) : keyDeck(seed, round + 1, options));
+      setRound(round + 1);
+    }
     setGiven(undefined);
   }
 
@@ -80,10 +95,7 @@ export function KeyQuiz({ random }: { random?: Random }) {
         : "quiz__choice";
 
   return (
-    <section className="quiz" aria-labelledby="quiz-heading">
-      <h2 id="quiz-heading" className="quiz__heading">
-        Key signatures
-      </h2>
+    <>
       <p className="quiz__score" aria-live="polite">
         {asked === 0 ? "Nothing answered yet." : `${right} of ${asked} right.`}
       </p>
@@ -162,6 +174,113 @@ export function KeyQuiz({ random }: { random?: Random }) {
           </button>
         </div>
       )}
+    </>
+  );
+}
+
+const SEED_LIMIT = 1_000_000_000;
+const randomSeed = () => Math.floor(Math.random() * SEED_LIMIT);
+
+const KEY_CHOICES: readonly { readonly id: KeyMode | "all"; readonly label: string }[] = [
+  { id: "all", label: "Major and minor" },
+  { id: "major", label: "Major" },
+  { id: "minor", label: "Minor" },
+];
+
+interface KeyQuizProps {
+  route?: QuizRoute;
+  onChange?: (route: QuizRoute, options?: { replace?: boolean }) => void;
+  /** Where the order of the questions comes from instead of the seed; for tests. */
+  random?: Random;
+}
+
+/**
+ * Key-signature practice: how many sharps or flats a key has, and which key has a given
+ * signature. Every key is asked both ways before any is repeated. The circle of fifths
+ * shows the answer afterwards. The link carries the seed of the set and what to practise
+ * (major or minor keys, and up to so many accidentals), so the same set can be asked again.
+ */
+export function KeyQuiz({ route = { page: "quiz" }, onChange, random }: KeyQuizProps) {
+  const [fallbackSeed] = useState(randomSeed);
+  const seed = route.seed ?? fallbackSeed;
+  const upTo = route.upTo ?? MAX_ACCIDENTALS;
+
+  // Put the seed in the link, replacing the entry so that Back does not come to a link without one.
+  useEffect(() => {
+    if (route.seed === undefined) onChange?.({ ...route, seed: fallbackSeed }, { replace: true });
+  }, [route, fallbackSeed, onChange]);
+
+  const options = useMemo<KeyQuizOptions>(
+    () => ({ ...(route.keys ? { mode: route.keys } : {}), maxAccidentals: upTo }),
+    [route.keys, upTo],
+  );
+
+  const change = (next: { seed?: number; keys?: KeyMode | "all"; upTo?: number }) => {
+    const keys = next.keys === undefined ? route.keys : next.keys === "all" ? undefined : next.keys;
+    const limit = next.upTo ?? upTo;
+    onChange?.({
+      page: "quiz",
+      seed: next.seed ?? seed,
+      ...(keys ? { keys } : {}),
+      ...(limit < MAX_ACCIDENTALS ? { upTo: limit } : {}),
+    });
+  };
+
+  const count = keysFor(options).length * 2;
+
+  return (
+    <section className="quiz" aria-labelledby="quiz-heading">
+      <h2 id="quiz-heading" className="quiz__heading">
+        Key signatures
+      </h2>
+
+      <fieldset className="spelling__groups">
+        <legend>Practise</legend>
+        {KEY_CHOICES.map(({ id, label }) => (
+          <label key={id} className="spelling__group">
+            <input
+              type="radio"
+              name="quiz-keys"
+              checked={(route.keys ?? "all") === id}
+              onChange={() => change({ keys: id })}
+            />
+            {label}
+          </label>
+        ))}
+        <label className="spelling__group">
+          Signatures
+          <select
+            className="quiz__limit"
+            value={upTo}
+            onChange={(event) => change({ upTo: Number(event.target.value) })}
+          >
+            <option value={MAX_ACCIDENTALS}>Any number of accidentals</option>
+            <option value={0}>No sharps or flats</option>
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <option key={n} value={n}>
+                Up to {n} {n === 1 ? "accidental" : "accidentals"}
+              </option>
+            ))}
+          </select>
+        </label>
+      </fieldset>
+      <p className="spelling__hint">
+        Set {seed}, {count} questions. The link asks the same questions in the same order.{" "}
+        <button
+          type="button"
+          className="spelling__link"
+          onClick={() => change({ seed: randomSeed() })}
+        >
+          New set
+        </button>
+      </p>
+
+      <Drill
+        key={`${seed}:${route.keys ?? "all"}:${upTo}`}
+        seed={seed}
+        options={options}
+        random={random}
+      />
     </section>
   );
 }

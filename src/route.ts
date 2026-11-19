@@ -140,14 +140,18 @@ export interface IdentifyRoute {
 
 /**
  * Practice: the key-signature quiz, the spelling drill (`mode: "spelling"`) or the listening
- * drill (`mode: "listening"`). A drill's `seed` repeats a set of questions. The spelling drill's
- * `groups` limit them (all of them when absent); the listening drill has a `level` (triads when
- * absent) and can turn chords over (`inversions`).
+ * drill (`mode: "listening"`). A drill's `seed` repeats a set of questions. The key-signature
+ * quiz can be limited to major or minor `keys` and to signatures of `upTo` accidentals or fewer
+ * (no limit when absent). The spelling drill's `groups` limit its questions (all of them when
+ * absent); the listening drill has a `level` (triads when absent) and can turn chords over
+ * (`inversions`).
  */
 export interface QuizRoute {
   readonly page: "quiz";
   readonly mode?: "spelling" | "listening";
   readonly seed?: number;
+  readonly keys?: KeyMode;
+  readonly upTo?: number;
   readonly groups?: readonly SpellingGroupId[];
   readonly level?: ListeningLevelId;
   readonly inversions?: true;
@@ -347,7 +351,13 @@ function formatQuiz(route: QuizRoute): string {
     if (route.inversions) listening.push("inversions=1");
     return `#/quiz/listening${listening.length > 0 ? `?${listening.join("&")}` : ""}`;
   }
-  if (route.mode !== "spelling") return "#/quiz";
+  if (route.mode !== "spelling") {
+    const signatures: string[] = [];
+    if (route.seed !== undefined) signatures.push(`seed=${route.seed}`);
+    if (route.keys) signatures.push(`keys=${route.keys}`);
+    if (route.upTo !== undefined) signatures.push(`upto=${route.upTo}`);
+    return `#/quiz${signatures.length > 0 ? `?${signatures.join("&")}` : ""}`;
+  }
   const params: string[] = [];
   if (route.seed !== undefined) params.push(`seed=${route.seed}`);
   if (route.groups) params.push(`groups=${route.groups.join(",")}`);
@@ -423,10 +433,24 @@ function parseQuizGroups(text: string | null): readonly SpellingGroupId[] | unde
   return groups.length === 0 || groups.length === ALL_SPELLING_GROUPS.length ? undefined : groups;
 }
 
+/** The most accidentals a link can limit the key-signature quiz to; seven is no limit at all. */
+const MAX_UP_TO = 6;
+
 function parseQuiz(mode: string | undefined, query: URLSearchParams): QuizRoute {
-  if (mode !== "spelling" && mode !== "listening") return { page: "quiz" };
+  if (mode !== undefined && mode !== "spelling" && mode !== "listening") return { page: "quiz" };
   const seedText = query.get("seed");
   const seed = seedText !== null && /^\d+$/.test(seedText) ? Number(seedText) : undefined;
+  if (mode === undefined) {
+    const keys = query.get("keys");
+    const upToText = query.get("upto");
+    const upTo = upToText !== null && /^\d$/.test(upToText) ? Number(upToText) : undefined;
+    return {
+      page: "quiz",
+      ...(seed !== undefined && seed <= MAX_SEED ? { seed } : {}),
+      ...(keys === "major" || keys === "minor" ? { keys } : {}),
+      ...(upTo !== undefined && upTo <= MAX_UP_TO ? { upTo } : {}),
+    };
+  }
   if (mode === "listening") {
     const levelText = query.get("level") ?? "";
     const level =

@@ -58,9 +58,26 @@ export function allKeys(): Key[] {
   return [...majors, ...majors.map(relativeKey)];
 }
 
+/** The most accidentals a key signature has; asking for up to this many is no limit at all. */
+export const MAX_ACCIDENTALS = 7;
+
+/** What to practise: only major or only minor keys, and only signatures of up to so many accidentals. */
+export interface KeyQuizOptions {
+  readonly mode?: KeyMode;
+  readonly maxAccidentals?: number;
+}
+
+/** The keys that match `options` (all of them with no options). */
+export function keysFor(options: KeyQuizOptions = {}): Key[] {
+  const { mode, maxAccidentals = MAX_ACCIDENTALS } = options;
+  return allKeys().filter(
+    (k) => (mode === undefined || k.mode === mode) && signatureOf(k).count <= maxAccidentals,
+  );
+}
+
 /** Every question once: each key asked both ways, "how many?" and "which key?". */
-export function allQuestions(): KeyQuestion[] {
-  const keys = allKeys();
+export function allQuestions(options: KeyQuizOptions = {}): KeyQuestion[] {
+  const keys = keysFor(options);
   return [
     ...keys.map((k): KeyQuestion => ({ type: "count", key: k })),
     ...keys.map((k): KeyQuestion => ({
@@ -116,6 +133,15 @@ export function shuffled<T>(items: readonly T[], random: Random = Math.random): 
 }
 
 /** A deck of every question in random order. Draw from the front; build a new deck when it is empty. */
-export function newDeck(random: Random = Math.random): KeyQuestion[] {
-  return shuffled(allQuestions(), random);
+export function newDeck(random: Random = Math.random, options: KeyQuizOptions = {}): KeyQuestion[] {
+  return shuffled(allQuestions(options), random);
+}
+
+/**
+ * The deck of round `round` (0 is the first pass through the questions) of the session that
+ * `seed` gives. The same seed and options always give the same questions in the same order.
+ */
+export function keyDeck(seed: number, round = 0, options: KeyQuizOptions = {}): KeyQuestion[] {
+  const mixed = (seed + Math.imul(round, 0x9e3779b1)) >>> 0;
+  return newDeck(seededRandom(mixed), options);
 }

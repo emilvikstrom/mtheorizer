@@ -161,6 +161,39 @@ describe("parseRoute", () => {
     expect(parseRouteStrict("#/quiz")).toEqual({ page: "quiz" });
   });
 
+  it("carries the seed and what to practise in the key-signature quiz link", () => {
+    expect(formatRoute({ page: "quiz", seed: 42 })).toBe("#/quiz?seed=42");
+    const route = { page: "quiz", seed: 42, keys: "minor", upTo: 4 } as const;
+    expect(formatRoute(route)).toBe("#/quiz?seed=42&keys=minor&upto=4");
+    expect(parseRoute("#/quiz?seed=42&keys=minor&upto=4")).toEqual(route);
+    expect(parseRouteStrict("#/quiz?seed=42&keys=minor&upto=4")).toEqual(route);
+    expect(formatRoute({ page: "quiz", upTo: 0 })).toBe("#/quiz?upto=0");
+    expect(parseRoute("#/quiz?upto=0")).toEqual({ page: "quiz", upTo: 0 });
+    expect(parseRoute("#/quiz?keys=major")).toEqual({ page: "quiz", keys: "major" });
+  });
+
+  it.each(["major", "minor"] as const)("round-trips the %s keys with every limit", (keys) => {
+    for (let upTo = 0; upTo <= 6; upTo++) {
+      const route = { page: "quiz", seed: 7, keys, upTo } as const;
+      expect(parseRoute(formatRoute(route))).toEqual(route);
+    }
+  });
+
+  it("ignores what makes no sense in the key-signature quiz link", () => {
+    expect(parseRoute("#/quiz?seed=abc&keys=both&upto=x")).toEqual({ page: "quiz" });
+    expect(parseRoute("#/quiz?seed=-1&upto=-1")).toEqual({ page: "quiz" });
+    expect(parseRoute("#/quiz?seed=99999999999")).toEqual({ page: "quiz" });
+    // Seven accidentals is no limit at all, and more than that is nonsense.
+    expect(parseRoute("#/quiz?upto=7")).toEqual({ page: "quiz" });
+    expect(parseRoute("#/quiz?upto=12")).toEqual({ page: "quiz" });
+    // The options belong to the key-signature quiz alone.
+    expect(parseRoute("#/quiz/spelling?keys=minor&upto=2")).toEqual({
+      page: "quiz",
+      mode: "spelling",
+    });
+    expect(parseRoute("#/quiz/other?seed=3")).toEqual({ page: "quiz" });
+  });
+
   it("links to the spelling drill with its seed and groups", () => {
     expect(formatRoute({ page: "quiz", mode: "spelling" })).toBe("#/quiz/spelling");
     expect(formatRoute({ page: "quiz", mode: "spelling", seed: 42 })).toBe(
