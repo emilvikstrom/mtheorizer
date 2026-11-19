@@ -21,6 +21,7 @@ import {
   type ChordSpec,
   availableQualities,
   chordSymbolFor,
+  circlePosition,
   commonSpellings,
   identifyQuality,
   key,
@@ -530,5 +531,74 @@ describe("chords built from a base chord and qualities", () => {
     expect(parseRouteStrict("#/H/major")).toBeUndefined();
     expect(parseRouteStrict("#/circle/Ds/major")).toBeUndefined();
     expect(parseRouteStrict("#/C/major")).toMatchObject({ page: "chord" });
+  });
+});
+
+describe("build links", () => {
+  const cMajor = key(note("C"), "major");
+
+  it("writes the key and the chords", () => {
+    expect(
+      formatRoute({
+        page: "build",
+        key: key(note("A", -1), "major"),
+        steps: [
+          { degree: 1, size: "triad" },
+          { degree: 5, size: "seventh" },
+        ],
+      }),
+    ).toBe("#/build/Ab/major?c=1,5s");
+    expect(formatRoute({ page: "build", key: key(note("F", 1), "minor"), steps: [] })).toBe(
+      "#/build/Fs/minor",
+    );
+  });
+
+  it("reads every key and a list back", () => {
+    const lists = [[], [1], [1, 5, 6, 4], [2, 5, 1], [7, 6, 5, 4, 3, 2, 1]];
+    for (const mode of ["major", "minor"] as const) {
+      for (const pc of PITCH_CLASSES) {
+        for (const tonic of commonSpellings(pc)) {
+          const k = key(tonic, mode);
+          if (!keysAt(circlePosition(k), mode).some((c) => noteEquals(c.tonic, tonic))) continue;
+          for (const degrees of lists) {
+            const steps = degrees.map((degree, i) => ({
+              degree,
+              size: i % 2 === 0 ? ("triad" as const) : ("seventh" as const),
+            }));
+            const route: Route = { page: "build", key: k, steps };
+            expect(parseRouteStrict(formatRoute(route))).toEqual(route);
+          }
+        }
+      }
+    }
+  });
+
+  it("falls back to an empty progression for chords that make no sense", () => {
+    for (const hash of [
+      "#/build/G/major?c=9",
+      "#/build/G/major?c=1,,5",
+      "#/build/G/major?c=x",
+      "#/build/G/major?c=1s7",
+    ]) {
+      expect(parseRoute(hash), hash).toEqual({
+        page: "build",
+        key: key(note("G"), "major"),
+        steps: [],
+      });
+      expect(parseRouteStrict(hash), hash).toBeUndefined();
+    }
+  });
+
+  it("falls back to an empty progression in C major for a bad key", () => {
+    for (const hash of [
+      "#/build",
+      "#/build/C",
+      "#/build/C/dorian",
+      "#/build/H/major",
+      "#/build/Ds/major",
+    ]) {
+      expect(parseRoute(hash), hash).toEqual({ page: "build", key: cMajor, steps: [] });
+      expect(parseRouteStrict(hash), hash).toBeUndefined();
+    }
   });
 });
