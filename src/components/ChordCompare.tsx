@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { audioSupported, planProgression, playNotes } from "../audio/playback";
 import type { ChordVs } from "../route";
 import type { ToneDisplay } from "../toneLabels";
@@ -5,16 +6,28 @@ import {
   type Chord,
   type ChordSpec,
   type Note,
+  type ScaleId,
+  type Tuning,
+  SCALE_GROUPS,
+  SCALES,
   chordFromSpec,
+  chordHighlights,
   chordOnKeyboard,
+  chordShapes,
+  compareChordWithScale,
   compareChords,
   formatCommonTone,
   formatNote,
   nearestQuality,
   pitchClass,
   preferredRootSpelling,
+  scaleLabel,
+  scaleOnKeyboard,
+  scaleOnPitchClass,
+  scalesForChord,
 } from "../theory";
 import { ChordSymbolField } from "./ChordSymbolField";
+import { Fretboard } from "./Fretboard";
 import { Piano } from "./Piano";
 
 interface ChordCompareProps {
@@ -26,6 +39,8 @@ interface ChordCompareProps {
   vs: ChordVs | undefined;
   onChange: (vs: ChordVs | undefined) => void;
   display: ToneDisplay;
+  /** A string instrument to show the chords on instead of the keyboard (the piano when absent). */
+  neck?: { tuning: Tuning; left: boolean };
 }
 
 const LEGEND = { root: "Root", tone: "Chord tone" };
@@ -69,11 +84,52 @@ function ToneList({
   );
 }
 
+/** A chord on the neck, with the tones it shares with the other chord marked. */
+function NeckOf({
+  chord,
+  shared,
+  neck,
+  display,
+}: {
+  chord: Chord;
+  shared: ReadonlySet<number>;
+  neck: { tuning: Tuning; left: boolean };
+  display: ToneDisplay;
+}) {
+  const tones = useMemo(() => chordHighlights(chord), [chord]);
+  const { tuning } = neck;
+  const shapes = useMemo(
+    () => chordShapes(tones, tuning.strings, { rootInBass: tuning.rootInBass }),
+    [tones, tuning],
+  );
+  return (
+    <Fretboard
+      views={shapes}
+      kind="shape"
+      tones={tones}
+      name={chord.name}
+      legend={LEGEND}
+      tuning={tuning}
+      left={neck.left}
+      display={display}
+      shared={shared}
+    />
+  );
+}
+
 /**
  * Compare the open chord with a second one: which tones they share (matched on the key they
  * press, so E♭ and D♯ count as the same, and said so), as a list and as dots on two keyboards.
  */
-export function ChordCompare({ root, spec, inversion, vs, onChange, display }: ChordCompareProps) {
+export function ChordCompare({
+  root,
+  spec,
+  inversion,
+  vs,
+  onChange,
+  display,
+  neck,
+}: ChordCompareProps) {
   if (!vs) {
     return (
       <section className="compare" aria-labelledby="compare-title">
@@ -139,20 +195,29 @@ export function ChordCompare({ root, spec, inversion, vs, onChange, display }: C
         <ToneList chord={first} shared={sharedPitchClasses} label={first.symbol} />
         <ToneList chord={second} shared={sharedPitchClasses} label={second.symbol} />
       </ul>
-      <Piano
-        tones={firstKeys}
-        name={first.name}
-        legend={LEGEND}
-        display={display}
-        shared={sharedPitchClasses}
-      />
-      <Piano
-        tones={secondKeys}
-        name={second.name}
-        legend={LEGEND}
-        display={display}
-        shared={sharedPitchClasses}
-      />
+      {neck ? (
+        <>
+          <NeckOf chord={first} shared={sharedPitchClasses} neck={neck} display={display} />
+          <NeckOf chord={second} shared={sharedPitchClasses} neck={neck} display={display} />
+        </>
+      ) : (
+        <>
+          <Piano
+            tones={firstKeys}
+            name={first.name}
+            legend={LEGEND}
+            display={display}
+            shared={sharedPitchClasses}
+          />
+          <Piano
+            tones={secondKeys}
+            name={second.name}
+            legend={LEGEND}
+            display={display}
+            shared={sharedPitchClasses}
+          />
+        </>
+      )}
       <div className="compare__actions">
         {audioSupported() && (
           <button
@@ -170,6 +235,138 @@ export function ChordCompare({ root, spec, inversion, vs, onChange, display }: C
         )}
         <button type="button" className="play__button" onClick={() => onChange(undefined)}>
           Stop comparing
+        </button>
+      </div>
+    </section>
+  );
+}
+
+const SCALE_LEGEND = { root: "Tonic", tone: "Scale tone" };
+const TONICS = Array.from({ length: 12 }, (_, pc) => pc);
+
+/** Starting scale: the first one listed for the chord, on the chord's own root. */
+function startingScale(chord: Chord): { pc: number; id: ScaleId } {
+  return { pc: pitchClass(chord.root), id: scalesForChord(chord)[0] ?? "major" };
+}
+
+/**
+ * Hold the open chord against a scale: which of the chord's tones the scale has, as a sentence,
+ * a list marked in words, and the scale on a keyboard with the chord's keys marked.
+ */
+export function ChordScaleCompare({ chord }: { chord: Chord }) {
+  const [pick, setPick] = useState<{ pc: number; id: ScaleId } | undefined>(undefined);
+  if (!pick) {
+    return (
+      <section className="compare" aria-labelledby="compare-scale-title">
+        <h3 id="compare-scale-title" className="compare__title">
+          Compare with a scale
+        </h3>
+        <div className="compare__actions">
+          <button
+            type="button"
+            className="play__button"
+            onClick={() => setPick(startingScale(chord))}
+          >
+            Compare with a scale
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  const scale = scaleOnPitchClass(pick.pc, pick.id);
+  const result = compareChordWithScale(chord, scale);
+  const keys = scaleOnKeyboard(scale, 4);
+  const outside = result.outside.map((t) => formatNote(t.tone.note));
+  const optionalOutside = result.outside.every((t) => t.tone.optional);
+  return (
+    <section className="compare" aria-labelledby="compare-scale-title">
+      <h3 id="compare-scale-title" className="compare__title">
+        Compare with a scale
+      </h3>
+      <div className="compare__scale-pick">
+        <label className="compare__field">
+          <span>Scale tonic</span>
+          <select
+            className="pivots__select"
+            value={pick.pc}
+            onChange={(e) => setPick({ ...pick, pc: Number(e.target.value) })}
+          >
+            {TONICS.map((pc) => (
+              <option key={pc} value={pc}>
+                {formatNote(scaleOnPitchClass(pc, pick.id).tonic)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="compare__field">
+          <span>Scale</span>
+          <select
+            className="pivots__select"
+            value={pick.id}
+            onChange={(e) => setPick({ ...pick, id: e.target.value as ScaleId })}
+          >
+            {SCALE_GROUPS.map((group) => (
+              <optgroup key={group.id} label={group.name}>
+                {group.scales.map((id) => (
+                  <option key={id} value={id}>
+                    {scaleLabel(SCALES[id])}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+      </div>
+      <p className="compare__summary" aria-live="polite">
+        {result.outside.length === 0 ? (
+          <>
+            All {result.tones.length} tones of {chord.symbol} are in {scale.name}.
+          </>
+        ) : (
+          <>
+            {result.inside.length} of {result.tones.length} tones of {chord.symbol} are in{" "}
+            {scale.name}; <strong>{outside.join(", ")}</strong>{" "}
+            {result.outside.length === 1 ? "is" : "are"} not.
+            {result.fits &&
+              optionalOutside &&
+              " The chord still fits, since that tone is optional."}
+          </>
+        )}
+      </p>
+      <ul className="compare__list">
+        <li className="compare__chord">
+          <span className="compare__name">{chord.symbol}</span>
+          <ul className="compare__tones" aria-label={`Tones of ${chord.name} against the scale`}>
+            {result.tones.map(({ tone, inScale, scaleNote, sameSpelling }) => (
+              <li
+                key={tone.role}
+                className={`compare__tone${inScale ? " compare__tone--common" : ""}`}
+                data-in-scale={inScale ? "true" : "false"}
+              >
+                {formatNote(tone.note)}
+                <span className="compare__mark">
+                  {inScale
+                    ? sameSpelling || !scaleNote
+                      ? " (in scale)"
+                      : ` (in scale, as ${formatNote(scaleNote)})`
+                    : " (not in scale)"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </li>
+      </ul>
+      <Piano
+        tones={keys}
+        name={scale.name}
+        legend={SCALE_LEGEND}
+        display="names"
+        shared={result.sharedPitchClasses}
+      />
+      <div className="compare__actions">
+        <button type="button" className="play__button" onClick={() => setPick(undefined)}>
+          Stop comparing with a scale
         </button>
       </div>
     </section>
