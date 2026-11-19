@@ -3,11 +3,21 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ChordFinder } from "./ChordFinder";
+import type { IdentifyRoute } from "../route";
 import type { ChordMatch } from "../theory";
 
 function Harness({ onOpen = () => {} }: { onOpen?: (match: ChordMatch) => void }) {
   const [selected, setSelected] = useState<readonly number[]>([]);
-  return <ChordFinder selected={selected} onChange={setSelected} onOpen={onOpen} />;
+  const [route, setRoute] = useState<IdentifyRoute>({ page: "identify" });
+  return (
+    <ChordFinder
+      route={route}
+      onRoute={setRoute}
+      selected={selected}
+      onChange={setSelected}
+      onOpen={onOpen}
+    />
+  );
 }
 
 const cell = (string: number, fret: number) =>
@@ -113,5 +123,22 @@ describe("ChordFinder on a string instrument", () => {
     await user.click(screen.getByRole("radio", { name: "Guitar" }));
     await user.click(screen.getByRole("radio", { name: "Piano" }));
     expect(screen.getByRole("button", { name: "C4" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("shows frets 13–24 from the window picker and presses places there", async () => {
+    const user = await playOn("Guitar");
+    expect(cell(1, 13)).toBeNull();
+    await user.click(screen.getByRole("radio", { name: "13–24" }));
+    expect(cell(1, 12)).toBeNull();
+    expect(cell(1, 24)).toHaveAttribute("aria-label", "String 1, fret 24, E");
+    // The open string stays on the neck: open E, then B3 (A string, fret 14) and E4 (D string, fret 14).
+    await user.click(cell(6, 0));
+    await user.click(cell(5, 14));
+    await user.click(cell(4, 14));
+    expect(cell(5, 14)).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("Notes: E–B")).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "1–12" }));
+    expect(cell(1, 1)).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByText("Notes: E–B")).toBeInTheDocument();
   });
 });

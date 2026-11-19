@@ -21,6 +21,7 @@ import {
   type ChordSpec,
   availableQualities,
   chordSymbolFor,
+  STRING_INSTRUMENT_IDS,
   circlePosition,
   commonSpellings,
   identifyQuality,
@@ -30,6 +31,7 @@ import {
   noteEquals,
   note,
   specOf,
+  tuningFor,
 } from "./theory";
 
 const PITCH_CLASSES = Array.from({ length: 12 }, (_, pc) => pc);
@@ -133,6 +135,46 @@ describe("parseRoute", () => {
     expect(formatRoute({ page: "identify" })).toBe("#/identify");
     expect(parseRoute("#/identify")).toEqual({ page: "identify" });
     expect(parseRouteStrict("#/identify")).toEqual({ page: "identify" });
+  });
+
+  it("keeps the instrument, pressed frets and fret window of the chord finder in the link", () => {
+    expect(formatRoute({ page: "identify", instrument: "guitar" })).toBe("#/identify?on=guitar");
+    for (const instrument of STRING_INSTRUMENT_IDS) {
+      const strings = tuningFor(instrument).strings.length;
+      const frets = Array.from({ length: strings }, (_, i) => ({ string: i + 1, fret: i * 4 }));
+      for (const route of [
+        { page: "identify" as const, instrument },
+        { page: "identify" as const, instrument, frets },
+        { page: "identify" as const, instrument, frets, from: 13 },
+        { page: "identify" as const, instrument, from: 13 },
+      ]) {
+        expect(parseRoute(formatRoute(route))).toEqual(route);
+        expect(parseRouteStrict(formatRoute(route))).toEqual(route);
+      }
+    }
+    expect(
+      formatRoute({
+        page: "identify",
+        instrument: "guitar",
+        frets: [
+          { string: 5, fret: 14 },
+          { string: 6, fret: 0 },
+        ],
+        from: 13,
+      }),
+    ).toBe("#/identify?on=guitar&frets=5.14,6.0&from=13");
+  });
+
+  it("repairs a chord finder link that does not fit its instrument", () => {
+    // The piano has no neck, so the frets and window are dropped.
+    expect(parseRoute("#/identify?on=piano&frets=1.0&from=13")).toEqual({ page: "identify" });
+    expect(parseRoute("#/identify?frets=1.0")).toEqual({ page: "identify" });
+    expect(parseRoute("#/identify?on=harp")).toEqual({ page: "identify" });
+    expect(parseRoute("#/identify?on=ukulele&frets=5.3,2.1,9.9&from=7")).toEqual({
+      page: "identify",
+      instrument: "ukulele",
+      frets: [{ string: 2, fret: 1 }],
+    });
   });
 
   it("links to the Tonnetz with a triad selected", () => {
