@@ -445,7 +445,11 @@ function ChordView({
   const tones = useMemo(() => chordHighlights(chord), [chord]);
   const tuning = tuningFor(instrument === "piano" ? "guitar" : instrument, route.tuning);
   const shapes = useMemo(
-    () => chordShapes(tones, tuning.strings, { rootInBass: tuning.rootInBass }),
+    () =>
+      chordShapes(tones, tuning.strings, {
+        rootInBass: tuning.rootInBass,
+        openChordMaxFret: tuning.openChordMaxFret,
+      }),
     [tones, tuning],
   );
   // The inversion is clamped to what this chord has: a triad has no third inversion.

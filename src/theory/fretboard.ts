@@ -52,6 +52,12 @@ export interface Tuning {
    * Ukulele and mandolin grips often start on the third or fifth (Am is 2000, C is 0230).
    */
   readonly rootInBass: boolean;
+  /**
+   * The highest fret an open chord may use: with an open string played, nothing is fretted above
+   * it. Three on the guitar and bass; four on the ukulele and mandolin, whose short necks put the
+   * fingers closer together (the ukulele's Em is 0432).
+   */
+  readonly openChordMaxFret: number;
 }
 
 const stringsOf = (...open: readonly (readonly [Letter, number])[]): OpenString[] =>
@@ -64,6 +70,7 @@ export const TUNINGS: Readonly<Record<TuningId, Tuning>> = {
     instrument: "guitar",
     strings: STANDARD_TUNING,
     rootInBass: true,
+    openChordMaxFret: 3,
   },
   dropD: {
     id: "dropD",
@@ -71,6 +78,7 @@ export const TUNINGS: Readonly<Record<TuningId, Tuning>> = {
     instrument: "guitar",
     strings: stringsOf(["E", 4], ["B", 3], ["G", 3], ["D", 3], ["A", 2], ["D", 2]),
     rootInBass: true,
+    openChordMaxFret: 3,
   },
   dadgad: {
     id: "dadgad",
@@ -78,6 +86,7 @@ export const TUNINGS: Readonly<Record<TuningId, Tuning>> = {
     instrument: "guitar",
     strings: stringsOf(["D", 4], ["A", 3], ["G", 3], ["D", 3], ["A", 2], ["D", 2]),
     rootInBass: true,
+    openChordMaxFret: 3,
   },
   // Re-entrant: the high G on string 4 sits above the C string.
   ukulele: {
@@ -86,6 +95,7 @@ export const TUNINGS: Readonly<Record<TuningId, Tuning>> = {
     instrument: "ukulele",
     strings: stringsOf(["A", 4], ["E", 4], ["C", 4], ["G", 4]),
     rootInBass: false,
+    openChordMaxFret: 4,
   },
   // Sounding pitch: the bass guitar sounds an octave below the guitar's E A D G.
   bass: {
@@ -94,6 +104,7 @@ export const TUNINGS: Readonly<Record<TuningId, Tuning>> = {
     instrument: "bass",
     strings: stringsOf(["G", 2], ["D", 2], ["A", 1], ["E", 1]),
     rootInBass: true,
+    openChordMaxFret: 3,
   },
   bass5: {
     id: "bass5",
@@ -101,6 +112,7 @@ export const TUNINGS: Readonly<Record<TuningId, Tuning>> = {
     instrument: "bass5",
     strings: stringsOf(["G", 2], ["D", 2], ["A", 1], ["E", 1], ["B", 0]),
     rootInBass: true,
+    openChordMaxFret: 3,
   },
   mandolin: {
     id: "mandolin",
@@ -108,6 +120,7 @@ export const TUNINGS: Readonly<Record<TuningId, Tuning>> = {
     instrument: "mandolin",
     strings: stringsOf(["E", 5], ["A", 4], ["D", 4], ["G", 3]),
     rootInBass: false,
+    openChordMaxFret: 4,
   },
 };
 
