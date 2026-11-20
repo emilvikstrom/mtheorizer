@@ -30,6 +30,7 @@ import {
 import { OptionPicker } from "./OptionPicker";
 import { RootPicker } from "./RootPicker";
 import { SoundSettings } from "./SoundSettings";
+import { VoiceLeadingPiano } from "./VoiceLeadingPiano";
 
 interface ProgressionViewProps {
   tonic: Note;
@@ -210,6 +211,15 @@ export function ProgressionView({
                   {chords[i]?.chord.symbol} → {chords[i + 1]?.chord.symbol}
                 </span>
                 <span className="voice-leading__text">{describeVoiceLeading(transition)}</span>
+                <details className="voice-leading__piano">
+                  <summary>
+                    Show on the piano: {chords[i]?.chord.symbol} → {chords[i + 1]?.chord.symbol}
+                  </summary>
+                  <VoiceLeadingPiano
+                    leading={transition}
+                    names={[chords[i]?.chord.symbol ?? "", chords[i + 1]?.chord.symbol ?? ""]}
+                  />
+                </details>
               </li>
             ))}
           </ol>
