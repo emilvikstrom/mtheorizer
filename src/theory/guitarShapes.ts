@@ -61,8 +61,8 @@ export interface ChordShape extends NeckView {
 
 const MIN_STRINGS = 4;
 const MAX_FINGERS = 4;
-/** Open chords keep the fretting hand by the nut; with open strings nothing is fretted above this. */
-const OPEN_CHORD_MAX_FRET = 3;
+/** Open chords keep the fretting hand by the nut; with open strings nothing is fretted above this (a tuning can allow more). */
+const DEFAULT_OPEN_CHORD_MAX_FRET = 3;
 
 /** The barre `frets` (string 1 first, 0 = open) allow: one at the lowest fretted fret, if it covers two or more strings. */
 function barreOf(frets: readonly number[]): Barre | undefined {
@@ -159,6 +159,7 @@ function shapesInWindow(
   stringCount: number,
   first: number,
   rootInBass: boolean,
+  openMaxFret: number,
 ): Omit<ChordShape, "firstFret" | "frets">[] {
   const last = first + VIEW_FRETS - 1;
   const reachable = (p: NeckTone) =>
@@ -192,7 +193,7 @@ function shapesInWindow(
         const fretOf = new Map(positions.map((p) => [p.string, p.fret]));
         const frets = Array.from({ length: stringCount }, (_, i) => fretOf.get(i + 1) ?? -1);
         const played = positions.map((p) => p.fret);
-        if (played.includes(0) && Math.max(...played) > OPEN_CHORD_MAX_FRET) continue;
+        if (played.includes(0) && Math.max(...played) > openMaxFret) continue;
         const fingers = fingersNeeded(frets);
         if (fingers > MAX_FINGERS) continue;
         const shape = {
@@ -264,18 +265,28 @@ export function formatFingering(view: NeckView, stringCount = STANDARD_TUNING.le
  * fifth of a seventh chord may be left out), the strings from the bass up to
  * string 1 are all played, and at most four fingers are needed (a barre counts
  * as one). Open strings are only used in open chords, with nothing fretted
- * above the third fret. For a major or
+ * above the tuning's open-chord limit (the third fret unless the tuning says otherwise). For a major or
  * minor triad this finds the familiar CAGED shapes.
  */
 export function chordShapes(
   tones: readonly HighlightTone[],
   tuning: readonly OpenString[] = STANDARD_TUNING,
-  { rootInBass = true }: { rootInBass?: boolean } = {},
+  {
+    rootInBass = true,
+    openChordMaxFret = DEFAULT_OPEN_CHORD_MAX_FRET,
+  }: { rootInBass?: boolean; openChordMaxFret?: number } = {},
 ): ChordShape[] {
   const onNeck = positionsOnNeck(tones, tuning, NECK_FRETS);
   const shapes = new Map<string, ChordShape>();
   for (let first = 1; first + VIEW_FRETS - 1 <= NECK_FRETS; first++) {
-    for (const found of shapesInWindow(tones, onNeck, tuning.length, first, rootInBass)) {
+    for (const found of shapesInWindow(
+      tones,
+      onNeck,
+      tuning.length,
+      first,
+      rootInBass,
+      openChordMaxFret,
+    )) {
       const fretted = found.positions.map((p) => p.fret).filter((f) => f > 0);
       const usesOpen = found.positions.some((p) => p.fret === 0);
       // Show the shape from its lowest fretted fret, the way chord diagrams do.
