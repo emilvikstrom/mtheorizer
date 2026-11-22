@@ -3029,3 +3029,61 @@ body {
 .compare__field select {
   min-height: 2.75rem;
 }
+
+/* Voice leading on the piano: two keyboards with a line from every tone to where it goes. */
+.voice-leading__piano {
+  flex-basis: 100%;
+}
+
+.voice-leading__piano summary {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.voice-piano {
+  margin: 4px 0 8px;
+}
+
+.voice-piano__legend {
+  margin-top: 6px;
+}
+
+.voice-link line {
+  stroke: var(--text);
+  stroke-width: 3;
+}
+
+.voice-link--stay line {
+  stroke-width: 5;
+}
+
+.voice-link--stay .voice-link__bar {
+  stroke-width: 5;
+}
+
+.voice-link--dropped line,
+.voice-link--added line {
+  stroke-dasharray: 5 4;
+}
+
+.voice-link__arrowhead {
+  fill: var(--text);
+}
+
+.voice-link__label {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--text);
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+}
+
+.voice-link__sign {
+  font-size: 22px;
+  font-weight: 700;
+  fill: var(--text);
+}

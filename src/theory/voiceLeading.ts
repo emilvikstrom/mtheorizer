@@ -234,3 +234,37 @@ export function describeVoiceLeading(leading: VoiceLeading): string {
   parts.push(`${leading.total} ${leading.total === 1 ? "semitone" : "semitones"} in total`);
   return parts.join(" · ");
 }
+
+/** What happens to one tone between two chords, for drawing a line on the keyboard. */
+export type LinkKind = "stay" | "up" | "down" | "dropped" | "added";
+
+/** One line between the two keyboards: from a key of the first chord, to a key of the second, or to neither. */
+export interface VoiceLink {
+  readonly kind: LinkKind;
+  /** The tone's key in the first chord; absent for an added tone. */
+  readonly from?: VoicedTone;
+  /** The tone's key in the second chord; absent for a dropped tone. */
+  readonly to?: VoicedTone;
+  /** The movement in words and signs that do not rely on colour: "stays", "+2", "−3", "dropped", "added". */
+  readonly label: string;
+}
+
+/**
+ * The lines to draw between a chord and the next on the keyboard: a straight
+ * line for each tone that stays, a slanted one for each that moves (up or
+ * down, with the distance), and a stub for each tone that drops out or joins.
+ * Ordered from the lowest tone up.
+ */
+export function voiceLinks(leading: VoiceLeading): VoiceLink[] {
+  const links: VoiceLink[] = [];
+  for (const m of leading.moves) {
+    const kind: LinkKind = m.semitones === 0 ? "stay" : m.semitones > 0 ? "up" : "down";
+    const label =
+      kind === "stay" ? "stays" : `${m.semitones > 0 ? "+" : "−"}${Math.abs(m.semitones)}`;
+    links.push({ kind, from: m.from, to: m.to, label });
+  }
+  for (const tone of leading.dropped) links.push({ kind: "dropped", from: tone, label: "dropped" });
+  for (const tone of leading.added) links.push({ kind: "added", to: tone, label: "added" });
+  const pitch = (link: VoiceLink) => (link.from ?? link.to)?.midi ?? 0;
+  return links.sort((a, b) => pitch(a) - pitch(b));
+}

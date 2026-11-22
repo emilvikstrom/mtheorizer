@@ -7,10 +7,10 @@ import { ToneLegend } from "./ToneLegend";
 const MIN_OCTAVE = 4;
 const MAX_OCTAVE = 5;
 
-const WHITE_WIDTH = 40;
-const WHITE_HEIGHT = 160;
-const BLACK_WIDTH = 24;
-const BLACK_HEIGHT = 100;
+export const WHITE_WIDTH = 40;
+export const WHITE_HEIGHT = 160;
+export const BLACK_WIDTH = 24;
+export const BLACK_HEIGHT = 100;
 const BLACK_PITCH_CLASSES = new Set([1, 3, 6, 8, 10]);
 
 /** Below this width the keyboard shows only the part around the tones, so the labels stay readable. */
@@ -34,7 +34,7 @@ export interface KeyShape {
 }
 
 /** Key positions for whole octaves `fromOctave`–`toOctave`. Black keys sit centred on the gap between two white keys. */
-function keyboard(fromOctave: number, toOctave: number): KeyShape[] {
+export function keyboard(fromOctave: number, toOctave: number): KeyShape[] {
   const firstMidi = midiOf(0, fromOctave);
   const keys: KeyShape[] = [];
   let whiteCount = 0;
@@ -57,7 +57,7 @@ function keyboard(fromOctave: number, toOctave: number): KeyShape[] {
  */
 export function visibleSpan(
   keys: readonly KeyShape[],
-  tones: readonly KeyboardTone[],
+  tones: readonly { readonly midi: number }[],
 ): { x: number; width: number } {
   const total = keys.filter((k) => !k.black).length * WHITE_WIDTH;
   const shapes = keys.filter((k) => tones.some((t) => t.midi === k.midi));
@@ -71,7 +71,7 @@ export function visibleSpan(
   return { x: Math.min(Math.max(centred, 0), total - width), width };
 }
 
-const octaveOf = (midi: number) => Math.floor(midi / 12) - 1;
+export const octaveOf = (midi: number) => Math.floor(midi / 12) - 1;
 
 /** Names for the keys' accessible labels, which can't tell C♯ from D♭. */
 const NOTE_NAMES = ["C", "C♯/D♭", "D", "D♯/E♭", "E", "F", "F♯/G♭", "G", "G♯/A♭", "A", "A♯/B♭", "B"];

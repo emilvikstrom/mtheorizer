@@ -20,6 +20,7 @@ const grips = (id: (typeof INSTRUMENT_TUNINGS)[number], pc: number, quality: Cho
   const tuning = TUNINGS[id];
   return chordShapes(chordHighlights(chordOnPitchClass(pc, quality)), tuning.strings, {
     rootInBass: tuning.rootInBass,
+    openChordMaxFret: tuning.openChordMaxFret,
   }).map((s) => formatShape(s, tuning.strings.length));
 };
 
@@ -76,6 +77,49 @@ describe("string instruments", () => {
     expect(lowest?.role).toBe("third");
   });
 
+  it("keeps the open-chord limit in the tuning: four frets on ukulele and mandolin, three elsewhere", () => {
+    expect(Object.values(TUNINGS).map((t) => [t.id, t.openChordMaxFret])).toEqual([
+      ["standard", 3],
+      ["dropD", 3],
+      ["dadgad", 3],
+      ["ukulele", 4],
+      ["bass", 3],
+      ["bass5", 3],
+      ["mandolin", 4],
+    ]);
+  });
+
+  it("finds Em on the ukulele as 0432, which needs the fourth fret", () => {
+    expect(grips("ukulele", 4, "minor")).toContain("0 4 3 2");
+    // With the guitar's limit of three the grip is not found.
+    const tuning = TUNINGS.ukulele;
+    const capped = chordShapes(chordHighlights(chordOnPitchClass(4, "minor")), tuning.strings, {
+      rootInBass: false,
+      openChordMaxFret: 3,
+    }).map((s) => formatShape(s, tuning.strings.length));
+    expect(capped).not.toContain("0 4 3 2");
+  });
+
+  it.each(PITCH_CLASSES)("never uses an open string above the limit, for root %i", (pc) => {
+    for (const id of INSTRUMENT_TUNINGS) {
+      const tuning = TUNINGS[id];
+      for (const quality of CHORD_QUALITY_IDS) {
+        const shapes = chordShapes(
+          chordHighlights(chordOnPitchClass(pc, quality)),
+          tuning.strings,
+          { rootInBass: tuning.rootInBass, openChordMaxFret: tuning.openChordMaxFret },
+        );
+        for (const shape of shapes) {
+          if (shape.positions.some((p) => p.fret === 0)) {
+            expect(Math.max(...shape.positions.map((p) => p.fret))).toBeLessThanOrEqual(
+              tuning.openChordMaxFret,
+            );
+          }
+        }
+      }
+    }
+  });
+
   it("finds the familiar mandolin chords, written from the G string to the E string", () => {
     expect(grips("mandolin", 0, "major")[0]).toBe("0 2 3 0");
     expect(grips("mandolin", 7, "major")[0]).toBe("0 0 2 3");
@@ -112,7 +156,10 @@ describe("string instruments", () => {
         const tones = chordHighlights(chord);
         const required = tones.filter((t) => !t.optional).map((t) => pitchClass(t.note));
         const inChord = new Set(chord.tones.map((t) => pitchClass(t.note)));
-        const shapes = chordShapes(tones, tuning.strings, { rootInBass: tuning.rootInBass });
+        const shapes = chordShapes(tones, tuning.strings, {
+          rootInBass: tuning.rootInBass,
+          openChordMaxFret: tuning.openChordMaxFret,
+        });
         for (const shape of shapes) {
           const sounded = new Set(shape.positions.map((p) => pitchClass(p.note)));
           expect(required.every((r) => sounded.has(r))).toBe(true);
