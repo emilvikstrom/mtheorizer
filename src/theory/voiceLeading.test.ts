@@ -8,7 +8,13 @@ import {
 } from "./chords";
 import { formatNote, mod12, note, pitchClass } from "./notes";
 import { PROGRESSIONS, progressionChords, progressionKeyOn } from "./progressions";
-import { describeVoiceLeading, voiceLeading, voiceProgression, voicingsOf } from "./voiceLeading";
+import {
+  describeVoiceLeading,
+  voiceLeading,
+  voiceLinks,
+  voiceProgression,
+  voicingsOf,
+} from "./voiceLeading";
 import { rootPosition } from "./voicing";
 
 const C = note("C");
@@ -227,5 +233,62 @@ describe("describeVoiceLeading", () => {
     expect(describeVoiceLeading(voiceLeading(chord("C", "major"), chord("C", "minor")))).toBe(
       "C and G stay · E → E♭ · 1 semitone in total",
     );
+  });
+});
+
+describe("voiceLinks", () => {
+  it("draws C → Am as two straight lines and one slanted line up two semitones", () => {
+    const links = voiceLinks(voiceLeading(chord("C", "major"), chord("A", "minor")));
+    expect(links.map((l) => [l.kind, l.label])).toEqual([
+      ["stay", "stays"],
+      ["stay", "stays"],
+      ["up", "+2"],
+    ]);
+  });
+
+  it("marks the tone that drops out in C7 → F as a stub and the others as lines", () => {
+    const links = voiceLinks(voiceLeading(chord("C", "dominant7"), chord("F", "major")));
+    expect(
+      links.filter((l) => l.kind === "dropped").map((l) => formatNote(l.from?.note ?? C)),
+    ).toEqual(["G"]);
+    expect(links.find((l) => l.kind === "dropped")?.to).toBeUndefined();
+    expect(links.filter((l) => l.kind === "up" || l.kind === "down").map((l) => l.label)).toEqual(
+      expect.arrayContaining(["+1", "−1"]),
+    );
+  });
+
+  it("has a line for every tone of both chords on all 12 roots, in the chords' own spelling", () => {
+    for (const pc of PITCH_CLASSES) {
+      for (const [a, b] of [
+        ["major", "minor"],
+        ["major", "dominant7"],
+        ["dominant7", "major"],
+        ["minor7", "dominant7"],
+        ["major", "major7"],
+        ["diminished", "minor"],
+      ] as const) {
+        const from = chordOnPitchClass(pc, a);
+        const to = chordOnPitchClass(mod12(pc + 7), b);
+        const leading = voiceLeading(from, to);
+        const links = voiceLinks(leading);
+        // Every tone of the first chord is the start of exactly one link, every tone of the second the end of one.
+        expect(links.filter((l) => l.from).length).toBe(leading.from.length);
+        expect(links.filter((l) => l.to).length).toBe(leading.to.length);
+        const starts = links.flatMap((l) => (l.from ? [formatNote(l.from.note)] : []));
+        expect(starts.sort()).toEqual(from.tones.map((t) => formatNote(t.note)).sort());
+        const ends = links.flatMap((l) => (l.to ? [formatNote(l.to.note)] : []));
+        expect(ends.sort()).toEqual(to.tones.map((t) => formatNote(t.note)).sort());
+        // The kind and the label agree with the distance.
+        for (const l of links) {
+          if (!l.from || !l.to) continue;
+          const d = l.to.midi - l.from.midi;
+          expect(l.kind).toBe(d === 0 ? "stay" : d > 0 ? "up" : "down");
+          expect(l.label).toBe(d === 0 ? "stays" : `${d > 0 ? "+" : "−"}${Math.abs(d)}`);
+        }
+        // Ordered from the lowest tone up.
+        const pitches = links.map((l) => (l.from ?? l.to)?.midi ?? 0);
+        expect(pitches).toEqual([...pitches].sort((x, y) => x - y));
+      }
+    }
   });
 });

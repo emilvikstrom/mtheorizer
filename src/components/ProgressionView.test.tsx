@@ -147,7 +147,11 @@ describe("ProgressionView", () => {
   const voiceLeadingSteps = () =>
     within(screen.getByRole("list", { name: "Voice leading between the chords" }))
       .getAllByRole("listitem")
-      .map((item) => item.textContent);
+      .map(
+        (item) =>
+          (item.querySelector(".voice-leading__chords")?.textContent ?? "") +
+          (item.querySelector(".voice-leading__text")?.textContent ?? ""),
+      );
 
   it("shows how the chords move once smooth voicing is on", async () => {
     const user = userEvent.setup();
@@ -171,6 +175,38 @@ describe("ProgressionView", () => {
     expect(
       screen.queryByRole("list", { name: "Voice leading between the chords" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("draws each step on two keyboards with a line for every tone", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole("button", { name: "Smooth voicing" }));
+    const steps = within(
+      screen.getByRole("list", { name: "Voice leading between the chords" }),
+    ).getAllByRole("listitem");
+
+    // C → G: G stays, C → B (down 1), E → D (down 2).
+    const first = steps[0] as HTMLElement;
+    const piano = within(first).getByRole("img", {
+      name: "Voice leading from C to G: G stays · C → B · E → D · 3 semitones in total",
+    });
+    const kinds = [...piano.querySelectorAll("[data-kind]")].map((el) =>
+      el.getAttribute("data-kind"),
+    );
+    expect(kinds.sort()).toEqual(["down", "down", "stay"]);
+    // The distance is written out, so the direction does not rest on the arrow or colour.
+    const labels = [...piano.querySelectorAll(".voice-link__label")].map((el) => el.textContent);
+    expect(labels.sort()).toEqual(["stays", "−1", "−2"]);
+    // Both chords are on the keyboards: three highlighted keys on each.
+    expect(piano.querySelectorAll('[data-row="from"] [data-highlighted]')).toHaveLength(3);
+    expect(piano.querySelectorAll('[data-row="to"] [data-highlighted]')).toHaveLength(3);
+
+    // Am → F: C and A stay, E → F.
+    const last = within(steps[2] as HTMLElement).getByRole("img");
+    const lastKinds = [...last.querySelectorAll("[data-kind]")].map((el) =>
+      el.getAttribute("data-kind"),
+    );
+    expect(lastKinds.sort()).toEqual(["stay", "stay", "up"]);
   });
 
   it("plays the progression close together when smooth voicing is on", async () => {
