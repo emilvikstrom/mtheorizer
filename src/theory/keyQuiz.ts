@@ -4,6 +4,7 @@ import {
   type KeyMode,
   type SignatureKind,
   key,
+  formatKey,
   keySignature,
   relativeKey,
 } from "./keys";
@@ -65,14 +66,53 @@ export const MAX_ACCIDENTALS = 7;
 export interface KeyQuizOptions {
   readonly mode?: KeyMode;
   readonly maxAccidentals?: number;
+  /** Only these keys, for practising the ones that went wrong. */
+  readonly only?: readonly Key[];
 }
 
 /** The keys that match `options` (all of them with no options). */
 export function keysFor(options: KeyQuizOptions = {}): Key[] {
-  const { mode, maxAccidentals = MAX_ACCIDENTALS } = options;
+  const { mode, maxAccidentals = MAX_ACCIDENTALS, only } = options;
+  const wanted = only && new Set(only.map(formatKey));
   return allKeys().filter(
-    (k) => (mode === undefined || k.mode === mode) && signatureOf(k).count <= maxAccidentals,
+    (k) =>
+      (mode === undefined || k.mode === mode) &&
+      signatureOf(k).count <= maxAccidentals &&
+      (wanted === undefined || wanted.has(formatKey(k))),
   );
+}
+
+/** Whether `signature` has more accidentals than the set allows, so it cannot be the answer. */
+export function overLimit(signature: SignatureAnswer, maxAccidentals = MAX_ACCIDENTALS): boolean {
+  return signature.count > maxAccidentals;
+}
+
+/** Whether the key on `tonic` in `mode` has more accidentals than the set allows. */
+export function tonicOverLimit(
+  tonic: Note,
+  mode: KeyMode,
+  maxAccidentals = MAX_ACCIDENTALS,
+): boolean {
+  return overLimit(signatureOf(key(tonic, mode)), maxAccidentals);
+}
+
+/**
+ * The log of keys answered wrong, as names ("D♭ major"), oldest first. A key stays in the
+ * log until it is answered right.
+ */
+export type MissLog = readonly string[];
+
+/** The log after `k` was answered, right or wrong. */
+export function recordResult(log: MissLog, k: Key, correct: boolean): string[] {
+  const name = formatKey(k);
+  const rest = log.filter((entry) => entry !== name);
+  return correct ? rest : [...rest, name];
+}
+
+/** The keys in the log, in the order of `allKeys()`; names that are not keys are dropped. */
+export function missedKeys(log: MissLog): Key[] {
+  const names = new Set(log);
+  return allKeys().filter((k) => names.has(formatKey(k)));
 }
 
 /** Every question once: each key asked both ways, "how many?" and "which key?". */

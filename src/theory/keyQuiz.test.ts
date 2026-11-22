@@ -11,15 +11,19 @@ import {
   keyDeck,
   keySignature,
   keysFor,
+  missedKeys,
   newDeck,
   note,
+  overLimit,
   parseNote,
   pitchClass,
+  recordResult,
   relativeKey,
   sameSignature,
   seededRandom,
   shuffled,
   signatureOf,
+  tonicOverLimit,
 } from ".";
 
 describe("the keys that can be asked", () => {
@@ -238,5 +242,72 @@ describe("a seeded session", () => {
   it.each([0, 1, 4_000_000_000, 0xffffffff])("holds every question for seed %i", (seed) => {
     expect(keyDeck(seed)).toHaveLength(allQuestions().length);
     expect(keyDeck(seed, 3, { mode: "minor", maxAccidentals: 1 })).toHaveLength(6);
+  });
+});
+
+describe("answers over the limit", () => {
+  const ups = Array.from({ length: MAX_ACCIDENTALS + 1 }, (_, n) => n);
+
+  it.each(ups)("greys exactly the signatures with more than %i accidentals", (max) => {
+    for (const s of SIGNATURES) expect(overLimit(s, max)).toBe(s.count > max);
+  });
+
+  it("never greys the right answer of a question in the set", () => {
+    for (const max of ups) {
+      for (const q of allQuestions({ maxAccidentals: max })) {
+        expect(overLimit(signatureOf(q.key), max)).toBe(false);
+        expect(tonicOverLimit(q.key.tonic, q.key.mode, max)).toBe(false);
+      }
+    }
+  });
+
+  it("greys a tonic by the signature of its own key", () => {
+    // D♭ major has five flats, C♯ major seven sharps, and C major none.
+    expect(tonicOverLimit(note("D", -1), "major", 4)).toBe(true);
+    expect(tonicOverLimit(note("D", -1), "major", 5)).toBe(false);
+    expect(tonicOverLimit(note("C", 1), "major", 6)).toBe(true);
+    expect(tonicOverLimit(note("C"), "major", 0)).toBe(false);
+  });
+
+  it("is no limit with no number", () => {
+    for (const s of SIGNATURES) expect(overLimit(s)).toBe(false);
+  });
+});
+
+describe("the log of keys answered wrong", () => {
+  const dFlat = key(note("D", -1), "major");
+  const aMinor = key(note("A"), "minor");
+
+  it("adds a key answered wrong once, and drops it when answered right", () => {
+    let log: readonly string[] = [];
+    log = recordResult(log, dFlat, false);
+    log = recordResult(log, dFlat, false);
+    expect(log).toEqual(["D♭ major"]);
+    log = recordResult(log, aMinor, false);
+    expect(log).toEqual(["D♭ major", "A minor"]);
+    log = recordResult(log, dFlat, true);
+    expect(log).toEqual(["A minor"]);
+    expect(recordResult(log, dFlat, true)).toEqual(["A minor"]);
+  });
+
+  it.each(allKeys().map((k) => [formatKey(k), k] as const))(
+    "finds %s again from its name",
+    (name, k) => {
+      expect(missedKeys([name])).toEqual([k]);
+    },
+  );
+
+  it("gives the keys in circle order and drops names that are not keys", () => {
+    expect(missedKeys(["A minor", "nonsense", "C major"]).map(formatKey)).toEqual([
+      "C major",
+      "A minor",
+    ]);
+  });
+
+  it("limits the set to those keys", () => {
+    expect(keysFor({ only: [dFlat, aMinor] }).map(formatKey)).toEqual(["D♭ major", "A minor"]);
+    expect(keysFor({ only: [dFlat, aMinor], mode: "minor" }).map(formatKey)).toEqual(["A minor"]);
+    expect(keysFor({ only: [dFlat], maxAccidentals: 4 })).toEqual([]);
+    expect(allQuestions({ only: [dFlat] })).toHaveLength(2);
   });
 });

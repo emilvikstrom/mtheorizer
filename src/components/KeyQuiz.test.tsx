@@ -23,6 +23,13 @@ const seedWith = (type: "count" | "find") => {
   throw new Error("no seed");
 };
 
+/** A seed whose first question, with these options, is of this type. */
+const seedFor = (type: "count" | "find", options: { maxAccidentals?: number }) => {
+  for (let seed = 1; seed < 100; seed++)
+    if (keyDeck(seed, 0, options)[0]?.type === type) return seed;
+  throw new Error("no seed");
+};
+
 /** The answer buttons (not the controls above them). */
 const answers = () => within(screen.getByRole("group", { name: "Answers" })).getAllByRole("button");
 
@@ -265,6 +272,82 @@ describe("KeyQuiz: the link", () => {
     const [next] = onChange.mock.calls.at(-1) as [QuizRoute];
     expect(next).toMatchObject({ page: "quiz", keys: "minor", upTo: 3 });
     expect(next.seed).toBeTypeOf("number");
+  });
+
+  it("greys the answers over the limit, keeps them reachable and explains them", async () => {
+    const user = userEvent.setup();
+    const seed = seedFor("count", { maxAccidentals: 2 });
+    render(<KeyQuiz route={route({ seed, upTo: 2 })} />);
+    const over = screen.getByRole("button", { name: "3 sharps" });
+    expect(over).toHaveAttribute("aria-disabled", "true");
+    expect(over).not.toBeDisabled();
+    expect(over).toHaveAccessibleDescription(/more than 2 accidentals/);
+    expect(screen.getByRole("button", { name: "2 flats" })).not.toHaveAttribute("aria-disabled");
+    // Choosing one does nothing: it is not an answer.
+    await user.click(over);
+    expect(screen.getByText("Nothing answered yet.")).toBeInTheDocument();
+  });
+
+  it("greys the tonics over the limit too, and has no note with no limit", () => {
+    const seed = seedFor("find", { maxAccidentals: 1 });
+    const view = render(<KeyQuiz route={route({ seed, upTo: 1 })} />);
+    const question = screen.getByText(/^(How many|Which)/).textContent ?? "";
+    expect(question).toMatch(/^Which/);
+    const grey = answers().filter((b) => b.getAttribute("aria-disabled") === "true");
+    // Of 15 keys in a mode, 3 have one accidental or none.
+    expect(grey).toHaveLength(12);
+    view.unmount();
+    render(<KeyQuiz route={route({ seed })} />);
+    expect(screen.queryByText(/Greyed answers/)).not.toBeInTheDocument();
+  });
+
+  it("remembers a key answered wrong, and forgets it when answered right", async () => {
+    const user = userEvent.setup();
+    const seed = seedWith("count");
+    const question = sessionOf(seed)[0] as KeyQuestion;
+    const wrong = signatureOf(question.key).count === 7 ? "1 sharp" : "7 sharps";
+    const first = render(<KeyQuiz random={seededRandom(seed)} />);
+    expect(screen.getByText("No keys answered wrong yet.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: wrong }));
+    expect(
+      screen.getByText(new RegExp(`Answered wrong: ${formatKey(question.key)}`)),
+    ).toBeInTheDocument();
+    first.unmount();
+    // A later visit still has it.
+    render(<KeyQuiz random={seededRandom(seed)} />);
+    expect(
+      screen.getByText(new RegExp(`Answered wrong: ${formatKey(question.key)}`)),
+    ).toBeInTheDocument();
+  });
+
+  it("practises only the keys answered wrong, and drops one when it is answered right", async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem("mtheorizer.keyQuizMisses", JSON.stringify(["E♭ major"]));
+    render(<KeyQuiz route={route({ seed: 5 })} />);
+    const box = screen.getByRole("checkbox", { name: "Practise only the keys answered wrong" });
+    await user.click(box);
+    expect(screen.getByText(/^Set 5, 2 questions\./)).toBeInTheDocument();
+    // Both questions are about E♭ major.
+    for (let i = 0; i < 2; i++) {
+      const text = screen.getByText(/^(How many|Which)/).textContent ?? "";
+      expect(text).toMatch(/E♭ major|major key has 3 flats/);
+      const right = text.startsWith("How many")
+        ? screen.getByRole("button", { name: "3 flats" })
+        : screen.getByRole("button", { name: "E♭ major" });
+      await user.click(right);
+      await user.click(screen.getByRole("button", { name: "Next question" }));
+    }
+    expect(screen.getByText("No keys answered wrong yet.")).toBeInTheDocument();
+    expect(window.localStorage.getItem("mtheorizer.keyQuizMisses")).toBeNull();
+  });
+
+  it("cannot practise missed keys that do not fit the choices", () => {
+    window.localStorage.setItem("mtheorizer.keyQuizMisses", JSON.stringify(["E♭ major"]));
+    render(<KeyQuiz route={route({ seed: 5, keys: "minor" })} />);
+    expect(
+      screen.getByRole("checkbox", { name: "Practise only the keys answered wrong" }),
+    ).toBeDisabled();
+    expect(screen.getByText(/None of them fit/)).toBeInTheDocument();
   });
 
   it("starts the score again when the choices change", () => {

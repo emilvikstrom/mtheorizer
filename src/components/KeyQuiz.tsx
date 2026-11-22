@@ -6,6 +6,7 @@ import {
   type KeyQuestion,
   type KeyQuizOptions,
   MAX_ACCIDENTALS,
+  type MissLog,
   type Note,
   type Random,
   type SignatureAnswer,
@@ -17,9 +18,14 @@ import {
   keyDeck,
   keySignature,
   keysFor,
+  missedKeys,
   newDeck,
+  overLimit,
+  recordResult,
   signatureOf,
+  tonicOverLimit,
 } from "../theory";
+import { loadMissLog, saveMissLog } from "../keyQuizLog";
 import { CircleOfFifths } from "./CircleOfFifths";
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
@@ -47,14 +53,19 @@ interface Given {
   readonly right: boolean;
 }
 
+const OVER_NOTE_ID = "quiz-over-note";
+
 interface DrillProps {
   seed: number;
   options: KeyQuizOptions;
   random?: Random;
+  /** Called with the key asked and whether it was answered right. */
+  onResult?: (key: Key, correct: boolean) => void;
 }
 
 /** The questions, one deck after another; the first deck is the one the seed gives. */
-function Drill({ seed, options, random }: DrillProps) {
+function Drill({ seed, options, random, onResult }: DrillProps) {
+  const limit = options.maxAccidentals ?? MAX_ACCIDENTALS;
   const [round, setRound] = useState(0);
   const [deck, setDeck] = useState(() =>
     random ? newDeck(random, options) : keyDeck(seed, 0, options),
@@ -71,6 +82,7 @@ function Drill({ seed, options, random }: DrillProps) {
     setGiven({ answer: a, right: correct });
     setAsked(asked + 1);
     if (correct) setRight(right + 1);
+    onResult?.(question.key, correct);
   }
 
   function next() {
@@ -92,7 +104,12 @@ function Drill({ seed, options, random }: DrillProps) {
       ? "quiz__choice quiz__choice--right"
       : given && !given.right && given.answer === s
         ? "quiz__choice quiz__choice--wrong"
-        : "quiz__choice";
+        : overLimit(s, limit)
+          ? "quiz__choice quiz__choice--over"
+          : "quiz__choice";
+  // A greyed answer stays in the tab order and is read as unavailable; choosing it does nothing.
+  const overProps = (over: boolean) =>
+    over ? { "aria-disabled": true, "aria-describedby": OVER_NOTE_ID } : {};
 
   return (
     <>
@@ -101,6 +118,13 @@ function Drill({ seed, options, random }: DrillProps) {
       </p>
 
       <p className="quiz__question">{questionText(question)}</p>
+
+      {limit < MAX_ACCIDENTALS && (
+        <p id={OVER_NOTE_ID} className="quiz__over-note">
+          Greyed answers (dashed outline) have more than {plural(limit, "accidental")}, so they
+          cannot be right in this set. They stay here so the choices look the same in every set.
+        </p>
+      )}
 
       {question.type === "count" ? (
         <div className="quiz__answers" role="group" aria-label="Answers">
@@ -111,7 +135,8 @@ function Drill({ seed, options, random }: DrillProps) {
                 type="button"
                 className={choose(s)}
                 disabled={given !== undefined}
-                onClick={() => answer(s)}
+                onClick={() => !overLimit(s, limit) && answer(s)}
+                {...overProps(overLimit(s, limit))}
               >
                 None
               </button>
@@ -125,7 +150,8 @@ function Drill({ seed, options, random }: DrillProps) {
                   type="button"
                   className={choose(s)}
                   disabled={given !== undefined}
-                  onClick={() => answer(s)}
+                  onClick={() => !overLimit(s, limit) && answer(s)}
+                  {...overProps(overLimit(s, limit))}
                 >
                   {describeSignature(s)}
                 </button>
@@ -139,14 +165,16 @@ function Drill({ seed, options, random }: DrillProps) {
             {answerTonics(mode).map((tonic) => {
               const isRight = given !== undefined && isCorrect(question, tonic);
               const isWrong = given !== undefined && !given.right && given.answer === tonic;
+              const over = !isRight && !isWrong && tonicOverLimit(tonic, mode, limit);
               return (
                 <button
                   key={formatNote(tonic)}
                   type="button"
-                  className={`quiz__choice${isRight ? " quiz__choice--right" : ""}${isWrong ? " quiz__choice--wrong" : ""}`}
+                  className={`quiz__choice${isRight ? " quiz__choice--right" : ""}${isWrong ? " quiz__choice--wrong" : ""}${over ? " quiz__choice--over" : ""}`}
                   aria-label={`${formatNote(tonic)} ${mode}`}
                   disabled={given !== undefined}
-                  onClick={() => answer(tonic)}
+                  onClick={() => !tonicOverLimit(tonic, mode, limit) && answer(tonic)}
+                  {...overProps(over)}
                 >
                   {formatNote(tonic)}
                 </button>
@@ -210,14 +238,36 @@ export function KeyQuiz({ route = { page: "quiz" }, onChange, random }: KeyQuizP
     if (route.seed === undefined) onChange?.({ ...route, seed: fallbackSeed }, { replace: true });
   }, [route, fallbackSeed, onChange]);
 
+  // The keys answered wrong, remembered between visits. Practising them again takes a copy,
+  // so the set does not shrink under the drill as the keys are answered right.
+  const [log, setLog] = useState<MissLog>(loadMissLog);
+  const [redo, setRedo] = useState<readonly Key[] | undefined>();
+
   const options = useMemo<KeyQuizOptions>(
-    () => ({ ...(route.keys ? { mode: route.keys } : {}), maxAccidentals: upTo }),
-    [route.keys, upTo],
+    () => ({
+      ...(route.keys ? { mode: route.keys } : {}),
+      maxAccidentals: upTo,
+      ...(redo ? { only: redo } : {}),
+    }),
+    [route.keys, upTo, redo],
   );
+  const missedHere = keysFor({
+    ...(route.keys ? { mode: route.keys } : {}),
+    maxAccidentals: upTo,
+    only: missedKeys(log),
+  });
+
+  const record = (k: Key, correct: boolean) => {
+    const next = recordResult(log, k, correct);
+    setLog(next);
+    saveMissLog(next);
+  };
 
   const change = (next: { seed?: number; keys?: KeyMode | "all"; upTo?: number }) => {
     const keys = next.keys === undefined ? route.keys : next.keys === "all" ? undefined : next.keys;
     const limit = next.upTo ?? upTo;
+    // The copy of the missed keys was made for the old choices.
+    if (next.keys !== undefined || next.upTo !== undefined) setRedo(undefined);
     onChange?.({
       page: "quiz",
       seed: next.seed ?? seed,
@@ -227,6 +277,7 @@ export function KeyQuiz({ route = { page: "quiz" }, onChange, random }: KeyQuizP
   };
 
   const count = keysFor(options).length * 2;
+  const missedNames = missedKeys(log).map(formatKey);
 
   return (
     <section className="quiz" aria-labelledby="quiz-heading">
@@ -275,11 +326,30 @@ export function KeyQuiz({ route = { page: "quiz" }, onChange, random }: KeyQuizP
         </button>
       </p>
 
+      <p className="spelling__hint">
+        {missedNames.length === 0
+          ? "No keys answered wrong yet."
+          : `Answered wrong: ${missedNames.join(", ")}.`}{" "}
+        <label className="spelling__group">
+          <input
+            type="checkbox"
+            checked={redo !== undefined}
+            disabled={redo === undefined && missedHere.length === 0}
+            onChange={(event) => setRedo(event.target.checked ? missedHere : undefined)}
+          />
+          Practise only the keys answered wrong
+        </label>
+        {redo === undefined && missedNames.length > 0 && missedHere.length === 0 && (
+          <> None of them fit the choices above.</>
+        )}
+      </p>
+
       <Drill
-        key={`${seed}:${route.keys ?? "all"}:${upTo}`}
+        key={`${seed}:${route.keys ?? "all"}:${upTo}:${redo ? redo.map(formatKey).join() : ""}`}
         seed={seed}
         options={options}
         random={random}
+        onResult={record}
       />
     </section>
   );
