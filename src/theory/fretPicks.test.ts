@@ -73,6 +73,7 @@ describe("pressing places on the neck", () => {
         const chord = chordOnPitchClass(root, "major");
         for (const grip of chordShapes(chordHighlights(chord), tuning.strings, {
           rootInBass: tuning.rootInBass,
+          openChordMaxFret: tuning.openChordMaxFret,
         })) {
           const picks = grip.positions.map((p) => ({ string: p.string, fret: p.fret }));
           const midi = pickedMidi(picks, tuning.strings);

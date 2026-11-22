@@ -99,7 +99,11 @@ function NeckOf({
   const tones = useMemo(() => chordHighlights(chord), [chord]);
   const { tuning } = neck;
   const shapes = useMemo(
-    () => chordShapes(tones, tuning.strings, { rootInBass: tuning.rootInBass }),
+    () =>
+      chordShapes(tones, tuning.strings, {
+        rootInBass: tuning.rootInBass,
+        openChordMaxFret: tuning.openChordMaxFret,
+      }),
     [tones, tuning],
   );
   return (
