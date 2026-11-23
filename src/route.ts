@@ -24,6 +24,7 @@ import {
   type TriadMode,
   STRING_INSTRUMENT_IDS,
   type StringInstrumentId,
+  type Tonality,
   TUNING_IDS,
   type TuningId,
   FRET_WINDOW_STARTS,
@@ -35,7 +36,9 @@ import {
   identifyQuality,
   isListeningLevel,
   isProgressionId,
+  isReadableTonic,
   isSpellingGroup,
+  isTonalityId,
   key,
   keyEquals,
   keysAt,
@@ -45,6 +48,7 @@ import {
   parsePicks,
   parseTune,
   specOf,
+  tonality,
   tuningFor,
 } from "./theory";
 import { type GuitarOptions, type NeckSetup, rememberNeck, storedNeck } from "./neck";
@@ -64,6 +68,7 @@ export type { GuitarOptions } from "./neck";
  *   #/circle/Bb/major              circle of fifths with B♭ major selected
  *   #/progression/Ab/pop           the I–V–vi–IV progression in A♭ major
  *   #/build/C/major?c=1,5,6s,4     a progression built from the key's chords (`s` = seventh chord)
+ *   #/build/D/dorian?c=1,4         the same from any tonality (`minor` is natural minor)
  *   #/identify                     "What chord is this?" (the keys you pick on the piano are not in the link)
  *   #/identify?on=guitar&frets=6.0,5.2,4.2,3.0&from=13  the same on a guitar neck: pressed `string.fret`
  *                                  places, and the first fret shown (13 = frets 13–24)
@@ -135,12 +140,12 @@ export interface ProgressionRoute {
 }
 
 /**
- * A progression built chord by chord from a key's own chords. `steps` is empty for a new one (and
- * for a link whose chords make no sense).
+ * A progression built chord by chord from a tonality's own chords. `steps` is empty for a new one
+ * (and for a link whose chords make no sense).
  */
 export interface BuildRoute {
   readonly page: "build";
-  readonly key: Key;
+  readonly tonality: Tonality;
   readonly steps: readonly BuilderChord[];
 }
 
@@ -329,7 +334,7 @@ export const defaultProgressionRoute = (): ProgressionRoute => ({
 
 export const defaultBuildRoute = (): BuildRoute => ({
   page: "build",
-  key: key(note("C"), "major"),
+  tonality: tonality(note("C"), "major"),
   steps: [],
 });
 
@@ -395,7 +400,8 @@ export function formatRoute(route: Route): string {
       return `#/progression/${formatRouteNote(route.tonic)}/${route.id}`;
     case "build": {
       const chords = formatBuilderChords(route.steps);
-      return `#/build/${formatRouteNote(route.key.tonic)}/${route.key.mode}${chords ? `?c=${chords}` : ""}`;
+      const { tonic, scale } = route.tonality;
+      return `#/build/${formatRouteNote(tonic)}/${scale === "naturalMinor" ? "minor" : scale}${chords ? `?c=${chords}` : ""}`;
     }
     case "identify":
       return formatIdentify(route);
@@ -531,6 +537,16 @@ function parseCircleKey(
     : undefined;
 }
 
+/** A tonic and tonality from a link, when the spelling reads well (not D♯ major, say). */
+function parseTonality(
+  tonicText: string | undefined,
+  scaleText: string | undefined,
+): Tonality | undefined {
+  const tonic = parseRouteNote(tonicText);
+  if (!tonic || scaleText === undefined || !isTonalityId(scaleText)) return undefined;
+  return isReadableTonic(tonic, scaleText) ? tonality(tonic, scaleText) : undefined;
+}
+
 const isBase = (text: string): text is ChordBase =>
   (CHORD_BASES as readonly string[]).includes(text);
 const isModifier = (text: string): text is ChordModifier =>
@@ -656,19 +672,19 @@ function parseLink(
   if (parts[0] === "progression") {
     const id = parts[2];
     if (id !== undefined && isProgressionId(id)) {
-      const k = parseCircleKey(parts[1], PROGRESSIONS[id].mode);
-      if (k) return { page: "progression", tonic: k.tonic, id };
+      const t = parseTonality(parts[1], PROGRESSIONS[id].tonality);
+      if (t) return { page: "progression", tonic: t.tonic, id };
     }
     return strict ? undefined : defaultProgressionRoute();
   }
 
   if (parts[0] === "build") {
-    const k = parseCircleKey(parts[1], parts[2]);
-    if (!k) return strict ? undefined : defaultBuildRoute();
+    const t = parseTonality(parts[1], parts[2] === "minor" ? "naturalMinor" : parts[2]);
+    if (!t) return strict ? undefined : defaultBuildRoute();
     // A list that makes no sense gives an empty progression, not a different key.
     const steps = parseBuilderChords(query.get("c") ?? "");
     if (!steps && strict) return undefined;
-    return { page: "build", key: k, steps: steps ?? [] };
+    return { page: "build", tonality: t, steps: steps ?? [] };
   }
 
   const onParam = query.get("on");

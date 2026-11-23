@@ -1,18 +1,19 @@
-import { type ChordQualityId, buildChord } from "./chords";
-import { type Key, diatonicSevenths, diatonicTriads } from "./keys";
-import type { ProgressionChord } from "./progressions";
+import { buildChord } from "./chords";
+import type { Progression, ProgressionChord } from "./progressions";
+import { type Tonality, tonality, tonalitySevenths, tonalityTriads } from "./tonality";
+import type { Note } from "./notes";
 
 /**
- * A progression put together chord by chord from the key's own chords. Each entry is a scale
+ * A progression put together chord by chord from a tonality's own chords. Each entry is a scale
  * degree and whether to use the triad or the seventh chord built on it, so the list is the same
- * in every key of the mode and only the spelling changes: [1, 5, 6, 4] is C–G–Am–F in C major and
- * A♭–E♭–Fm–D♭ in A♭ major.
+ * on every tonic of the tonality and only the spelling changes: [1, 5, 6, 4] is C–G–Am–F in
+ * C major and A♭–E♭–Fm–D♭ in A♭ major, and [1, 4] is Dm–G in D dorian.
  */
 
 export type BuilderSize = "triad" | "seventh";
 
 export interface BuilderChord {
-  /** Scale degree of the key (1–7). */
+  /** Scale degree of the tonality (1–7). */
   readonly degree: number;
   readonly size: BuilderSize;
 }
@@ -22,32 +23,45 @@ export const MAX_BUILDER_CHORDS = 16;
 
 const isDegree = (n: number): boolean => Number.isInteger(n) && n >= 1 && n <= 7;
 
-const TRIAD_QUALITY = {
-  major: "major",
-  minor: "minor",
-  diminished: "diminished",
-  augmented: "augmented",
-} as const satisfies Record<string, ChordQualityId>;
-
-/** The chord of the key that `item` stands for, with its step number and tones. */
-export function builderChord(k: Key, item: BuilderChord): ProgressionChord {
-  const triad = diatonicTriads(k)[item.degree - 1];
-  const seventh = diatonicSevenths(k)[item.degree - 1];
-  const found = item.size === "seventh" ? seventh : triad;
-  if (!triad || !seventh || !found) throw new Error(`No scale degree ${item.degree}`);
-  const quality: ChordQualityId =
-    item.size === "seventh" ? seventh.quality : TRIAD_QUALITY[triad.quality];
-  const root = found.notes[0];
-  if (!root) throw new Error("A chord has a root");
+/** The chord of the tonality that `item` stands for, with its step number and tones. */
+export function builderChord(t: Tonality, item: BuilderChord): ProgressionChord {
+  const found = (item.size === "seventh" ? tonalitySevenths(t) : tonalityTriads(t))[
+    item.degree - 1
+  ];
+  const root = found?.notes[0];
+  if (!found || !root) throw new Error(`No scale degree ${item.degree}`);
   return {
-    step: { degree: item.degree, quality, roman: found.roman },
-    chord: buildChord(root, quality),
+    step: { degree: item.degree, quality: found.quality, roman: found.roman },
+    chord: buildChord(root, found.quality),
   };
 }
 
-/** All the chords of `items` in `k`, in order. */
-export const builderChords = (k: Key, items: readonly BuilderChord[]): ProgressionChord[] =>
-  items.map((item) => builderChord(k, item));
+/** All the chords of `items` in `t`, in order. */
+export const builderChords = (t: Tonality, items: readonly BuilderChord[]): ProgressionChord[] =>
+  items.map((item) => builderChord(t, item));
+
+/**
+ * A ready-made progression as builder chords, when every chord is one of the tonality's own triads
+ * or seventh chords (I–V–vi–IV, ii7–V7–Imaj7); undefined when one comes from outside it (the
+ * major V of the Andalusian cadence, the ♭VI of a major key) or when it is too long.
+ */
+export function builderStepsFor(progression: Progression): readonly BuilderChord[] | undefined {
+  // Qualities do not depend on the tonic, so C stands for every tonic.
+  const t = tonality({ letter: "C", accidental: 0 } satisfies Note, progression.tonality);
+  const triads = tonalityTriads(t);
+  const sevenths = tonalitySevenths(t);
+  if (progression.steps.length > MAX_BUILDER_CHORDS) return undefined;
+  const items: BuilderChord[] = [];
+  for (const s of progression.steps) {
+    if (s.alter) return undefined;
+    if (triads[s.degree - 1]?.quality === s.quality)
+      items.push({ degree: s.degree, size: "triad" });
+    else if (sevenths[s.degree - 1]?.quality === s.quality)
+      items.push({ degree: s.degree, size: "seventh" });
+    else return undefined;
+  }
+  return items;
+}
 
 /** `items` with `item` added at the end (unchanged when the list is full). */
 export const addBuilderChord = (

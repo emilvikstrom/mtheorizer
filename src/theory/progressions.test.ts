@@ -3,15 +3,27 @@ import { type Note, formatNote, note, pitchClass } from "./notes";
 import {
   PROGRESSIONS,
   PROGRESSION_IDS,
+  PROGRESSION_TAGS,
   type ProgressionId,
+  findProgressions,
   progressionChords,
-  progressionKey,
-  progressionKeyOn,
+  progressionTonality,
+  progressionTonalityOn,
 } from "./progressions";
-import { type KeyMode, formatKey, keyScale, keysAt } from "./keys";
+import { type KeyMode, formatKey, keysAt } from "./keys";
+import { builderStepsFor } from "./progressionBuilder";
+import {
+  TONALITY_IDS,
+  type Tonality,
+  type TonalityId,
+  formatTonality,
+  tonality,
+  tonalityScale,
+  tonalitySpellings,
+} from "./tonality";
 
 const symbols = (id: ProgressionId, tonic: Note) =>
-  progressionChords(PROGRESSIONS[id], progressionKeyOn(PROGRESSIONS[id], tonic))
+  progressionChords(PROGRESSIONS[id], progressionTonalityOn(PROGRESSIONS[id], tonic))
     .map(({ chord }) => chord.symbol)
     .join(" ");
 
@@ -59,14 +71,76 @@ const AEOLIAN: Record<string, string> = {
 const allKeys = (mode: KeyMode) =>
   Array.from({ length: 12 }, (_, position) => keysAt(position, mode)).flat();
 
+/** Every readable tonic of a tonality, both spellings of a black key where both read well. */
+const allTonalities = (id: TonalityId): Tonality[] =>
+  Array.from({ length: 12 }, (_, pc) =>
+    tonalitySpellings(pc, id).map((n) => tonality(n, id)),
+  ).flat();
+
+// Every progression on C (or C minor, C dorian …): the spelling of each chord.
+const ON_C: Record<ProgressionId, string> = {
+  pop: "C G Am F",
+  fifties: "C Am F G",
+  sensitive: "Am F C G",
+  rock: "C F G F",
+  royalRoad: "Fmaj7 G7 Em7 Am",
+  twoFiveOne: "Dm7 G7 Cmaj7",
+  turnaround: "Cmaj7 Am7 Dm7 G7",
+  circleMajor: "Em7 Am7 Dm7 G7 Cmaj7",
+  ragtime: "E7 A7 D7 G7 C",
+  pachelbel: "C G Am Em F C F G",
+  minorPlagal: "C F Fm C",
+  heroic: "C A♭ B♭ C",
+  backdoor: "Fm7 B♭7 Cmaj7",
+  blues: "C7 C7 C7 C7 F7 F7 C7 C7 G7 F7 C7 G7",
+  aeolian: "Cm A♭ E♭ B♭",
+  andalusian: "Cm B♭ A♭ G",
+  minorClimb: "Cm A♭ B♭ Cm",
+  minorRock: "Cm B♭ A♭ B♭",
+  circleMinor: "Cm Fm B♭ E♭ A♭ D° G Cm",
+  lineCliche: "Cm Cm(maj7) Cm7 Cm6",
+  minorBlues: "Cm7 Cm7 Cm7 Cm7 Fm7 Fm7 Cm7 Cm7 A♭7 G7 Cm7 G7",
+  classicalMinor: "Cm Fm G Cm",
+  minorTwoFiveOne: "Dm7♭5 G7 Cm",
+  minorDrama: "Cm A♭ Fm G",
+  dorianVamp: "Cm7 F7",
+  dorianLoop: "Cm B♭ F Cm",
+  mixolydianLoop: "C B♭ F C",
+  mixolydianVamp: "C Gm B♭ F",
+  lydianVamp: "C D",
+  phrygianVamp: "Cm D♭",
+  phrygianMetal: "Cm D♭ E♭ D♭",
+  hijaz: "C D♭ B♭m C",
+  melodicMinorVamp: "Cm(maj7) F7",
+};
+
 describe("progression data", () => {
-  it("has every progression under its own id, in major or minor", () => {
+  it("has every progression under its own id, with keywords", () => {
     for (const id of PROGRESSION_IDS) {
       expect(PROGRESSIONS[id].id).toBe(id);
       expect(PROGRESSIONS[id].steps.length).toBeGreaterThan(0);
+      expect(PROGRESSIONS[id].tags.length).toBeGreaterThan(0);
+      expect(new Set(PROGRESSIONS[id].tags).size).toBe(PROGRESSIONS[id].tags.length);
     }
-    expect(PROGRESSIONS.aeolian.mode).toBe("minor");
-    expect(PROGRESSIONS.pop.mode).toBe("major");
+    expect(PROGRESSIONS.aeolian.tonality).toBe("naturalMinor");
+    expect(PROGRESSIONS.pop.tonality).toBe("major");
+    expect(PROGRESSIONS.dorianVamp.tonality).toBe("dorian");
+  });
+
+  it("uses every keyword at least twice and has progressions beyond major and minor", () => {
+    for (const tag of PROGRESSION_TAGS) {
+      expect(findProgressions([tag]).length, tag).toBeGreaterThanOrEqual(2);
+    }
+    const tonalities = new Set(PROGRESSION_IDS.map((id) => PROGRESSIONS[id].tonality));
+    expect(tonalities.size).toBeGreaterThanOrEqual(8);
+  });
+
+  it("names each progression by its step numbers", () => {
+    for (const id of PROGRESSION_IDS) {
+      const p = PROGRESSIONS[id];
+      if (p.name.includes("blues")) continue;
+      expect(p.name, id).toBe(p.steps.map((s) => s.roman).join("–"));
+    }
   });
 
   it("writes the 12-bar blues as twelve bars", () => {
@@ -101,39 +175,70 @@ describe("progressions in every key", () => {
     expect(symbols("blues", spelled("E"))).toBe("E7 E7 E7 E7 A7 A7 E7 E7 B7 A7 E7 B7");
   });
 
-  it.each(PROGRESSION_IDS)("%s: the roots are the scale degrees of the key", (id) => {
+  it.each(PROGRESSION_IDS)("%s: spelled on C", (id) => {
+    expect(symbols(id, note("C"))).toBe(ON_C[id]);
+  });
+
+  it.each(PROGRESSION_IDS)("%s: the roots are the scale degrees, on every tonic", (id) => {
     const progression = PROGRESSIONS[id];
-    for (const k of allKeys(progression.mode)) {
-      const kk = progressionKeyOn(progression, k.tonic);
-      const scale = keyScale(kk);
-      const chords = progressionChords(progression, kk);
+    for (const t of allTonalities(progression.tonality)) {
+      const scale = tonalityScale(t);
+      const chords = progressionChords(progression, t);
       expect(chords).toHaveLength(progression.steps.length);
       for (const { step, chord } of chords) {
-        expect(chord.root, `${formatKey(kk)} ${step.roman}`).toEqual(scale[step.degree - 1]);
+        const degree = scale[step.degree - 1];
+        expect(chord.root.letter, `${formatTonality(t)} ${step.roman}`).toBe(degree?.letter);
+        expect(chord.root.accidental).toBe((degree?.accidental ?? 0) + (step.alter ?? 0));
+        // A flat in the step number means a lowered root: ♭VI is a half step below VI.
+        expect(chord.tones.length).toBeGreaterThan(0);
       }
     }
   });
 
-  it.each(["pop", "fifties", "twoFiveOne", "pachelbel", "aeolian"] as const)(
-    "%s: every chord tone is in the key's scale",
+  it.each(PROGRESSION_IDS.filter((id) => builderStepsFor(PROGRESSIONS[id])))(
+    "%s: every chord tone is in the scale, on every tonic",
     (id) => {
       const progression = PROGRESSIONS[id];
-      for (const k of allKeys(progression.mode)) {
-        const kk = progressionKeyOn(progression, k.tonic);
-        const scale = keyScale(kk).map((n) => formatNote(n));
-        for (const { chord } of progressionChords(progression, kk)) {
+      for (const t of allTonalities(progression.tonality)) {
+        const scale = tonalityScale(t).map((n) => formatNote(n));
+        for (const { chord } of progressionChords(progression, t)) {
           for (const tone of chord.tones) {
-            expect(scale, `${formatKey(kk)} ${chord.symbol}`).toContain(formatNote(tone.note));
+            expect(scale, `${formatTonality(t)} ${chord.symbol}`).toContain(formatNote(tone.note));
           }
         }
       }
     },
   );
+
+  it("keeps most progressions inside their tonality", () => {
+    const inside = PROGRESSION_IDS.filter((id) => builderStepsFor(PROGRESSIONS[id]));
+    expect(inside.length).toBeGreaterThan(PROGRESSION_IDS.length / 2);
+    // The ones that borrow are the ones that say so.
+    expect(builderStepsFor(PROGRESSIONS.heroic)).toBeUndefined();
+    expect(builderStepsFor(PROGRESSIONS.andalusian)).toBeUndefined();
+  });
 });
 
-describe("progressionKey", () => {
+describe("findProgressions", () => {
+  it("finds by every keyword given, and by tonality", () => {
+    const jazzSad = findProgressions(["jazz", "sad"]).map((p) => p.id);
+    expect(jazzSad).toContain("minorTwoFiveOne");
+    expect(jazzSad).not.toContain("twoFiveOne");
+    expect(findProgressions([], "dorian").map((p) => p.id)).toEqual(["dorianVamp", "dorianLoop"]);
+    expect(findProgressions(["metal"], "phrygian").map((p) => p.id)).toEqual([
+      "phrygianVamp",
+      "phrygianMetal",
+    ]);
+    expect(findProgressions([])).toHaveLength(PROGRESSION_IDS.length);
+    expect(findProgressions(["jazz", "metal"])).toEqual([]);
+  });
+});
+
+describe("progressionTonality", () => {
   const names = (id: ProgressionId) =>
-    Array.from({ length: 12 }, (_, pc) => formatKey(progressionKey(PROGRESSIONS[id], pc)));
+    Array.from({ length: 12 }, (_, pc) =>
+      formatTonality(progressionTonality(PROGRESSIONS[id], pc)),
+    );
 
   it("spells a major key with the fewest accidentals", () => {
     expect(names("pop")).toEqual([
@@ -169,14 +274,32 @@ describe("progressionKey", () => {
     ]);
   });
 
-  it("is a key on the circle for every pitch class", () => {
+  it("spells a mode with the fewest accidentals", () => {
+    expect(names("dorianVamp").slice(0, 4)).toEqual([
+      "C dorian",
+      "C♯ dorian",
+      "D dorian",
+      "E♭ dorian",
+    ]);
+  });
+
+  it("is a readable tonality for every pitch class", () => {
     for (const id of PROGRESSION_IDS) {
       const progression = PROGRESSIONS[id];
       for (let pc = 0; pc < 12; pc++) {
-        const k = progressionKey(progression, pc);
-        expect(pitchClass(k.tonic)).toBe(pc);
-        expect(allKeys(progression.mode).map(formatKey)).toContain(formatKey(k));
+        const t = progressionTonality(progression, pc);
+        expect(pitchClass(t.tonic)).toBe(pc);
+        expect(allTonalities(progression.tonality).map(formatTonality)).toContain(
+          formatTonality(t),
+        );
       }
     }
+  });
+
+  it("offers the same tonics as the circle of fifths for major and minor", () => {
+    const circle = (mode: KeyMode) => allKeys(mode).map(formatKey).sort();
+    expect(allTonalities("major").map(formatTonality).sort()).toEqual(circle("major"));
+    expect(allTonalities("naturalMinor").map(formatTonality).sort()).toEqual(circle("minor"));
+    for (const id of TONALITY_IDS) expect(allTonalities(id).length).toBeGreaterThanOrEqual(12);
   });
 });

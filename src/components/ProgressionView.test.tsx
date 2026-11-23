@@ -95,7 +95,7 @@ describe("ProgressionView", () => {
   it("shows the 12-bar blues as twelve bars", async () => {
     const user = userEvent.setup();
     render(<Harness />);
-    await user.click(screen.getByRole("radio", { name: "12-bar blues" }));
+    await user.click(screen.getByRole("button", { name: /^12-bar blues:/ }));
     expect(chords()).toEqual([
       "I7C7",
       "I7C7",
@@ -112,12 +112,79 @@ describe("ProgressionView", () => {
     ]);
   });
 
-  it("respells the key when the progression is in the other mode", async () => {
+  it("keeps the tonic's spelling when the progression is in another tonality", async () => {
     const user = userEvent.setup();
     render(<Harness start={note("E", -1)} />);
-    await user.click(screen.getByRole("radio", { name: "i–♭VI–♭III–♭VII" }));
+    await user.click(screen.getByRole("button", { name: /^Aeolian loop:/ }));
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("in E♭ minor");
     expect(chords()).toEqual(["iE♭m", "♭VIC♭", "♭IIIG♭", "♭VIID♭"]);
+  });
+
+  it("respells the tonic when it would not read well in the new tonality", async () => {
+    const user = userEvent.setup();
+    render(<Harness start={note("D", -1)} />);
+    await user.click(screen.getByRole("button", { name: /^Classical minor:/ }));
+    // D♭ harmonic minor would need eight flats and a double flat.
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
+      "i–iv–V–i in C♯ harmonic minor",
+    );
+    expect(chords()).toEqual(["iC♯m", "ivF♯m", "VG♯", "iC♯m"]);
+  });
+
+  it("finds progressions by keyword and tonality", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const list = () =>
+      within(screen.getByRole("list", { name: "Progressions" }))
+        .getAllByRole("button")
+        .map((b) => b.getAttribute("aria-label"));
+    await user.click(screen.getByRole("button", { name: "metal", pressed: false }));
+    expect(list().every((name) => /phrygian|minor/.test(name ?? ""))).toBe(true);
+    await user.click(screen.getByRole("button", { name: "loop", pressed: false }));
+    expect(list()).toEqual([
+      "Minor climb: i–♭VI–♭VII–i, minor",
+      "Phrygian vamp: i–♭II, phrygian",
+      "Phrygian riff: i–♭II–♭III–♭II, phrygian",
+    ]);
+    await user.click(screen.getByRole("radio", { name: "Phrygian" }));
+    expect(list()).toHaveLength(2);
+    await user.click(screen.getByRole("button", { name: "Phrygian vamp: i–♭II, phrygian" }));
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("i–♭II in C phrygian");
+    expect(chords()).toEqual(["iCm", "♭IID♭"]);
+    await user.click(screen.getByRole("button", { name: "Clear keywords" }));
+    await user.click(screen.getByRole("radio", { name: "Any" }));
+    expect(list().length).toBeGreaterThan(30);
+  });
+
+  it("hides cadences and chromatic chords for a mode, which are about major and minor keys", async () => {
+    const user = userEvent.setup();
+    render(<Harness startId="dorianVamp" />);
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("i7–IV7 in C dorian");
+    expect(chords()).toEqual(["i7Cm7", "IV7F7"]);
+    expect(screen.queryByText(/Cadences in/)).toBeNull();
+    await user.click(screen.getByRole("button", { name: /^Pop progression:/ }));
+    expect(screen.getByText("Cadences in C major")).toBeInTheDocument();
+  });
+
+  it("opens the builder with the progression's chords when they all belong to the tonality", async () => {
+    const build = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ProgressionView
+        tonic={note("D")}
+        id="dorianLoop"
+        onChange={() => {}}
+        onBuild={build}
+        onOpenChord={opened}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Edit this progression" }));
+    expect(build).toHaveBeenCalledWith({ tonic: note("D"), scale: "dorian" }, [
+      { degree: 1, size: "triad" },
+      { degree: 7, size: "triad" },
+      { degree: 4, size: "triad" },
+      { degree: 1, size: "triad" },
+    ]);
   });
 
   it("opens a chord in the chord view", async () => {
@@ -256,7 +323,7 @@ describe("ProgressionView", () => {
   it("spells the cadences of a minor progression with the harmonic-minor dominant", async () => {
     const user = userEvent.setup();
     render(<Harness />);
-    await user.click(screen.getByRole("radio", { name: "i–♭VI–♭III–♭VII" }));
+    await user.click(screen.getByRole("button", { name: /^Aeolian loop:/ }));
     expect(screen.getByRole("region", { name: "Cadences in C minor" })).toBeInTheDocument();
     expect(cadenceList().map((item) => item.textContent)).toEqual([
       expect.stringContaining("AuthenticV–i: G → Cm"),

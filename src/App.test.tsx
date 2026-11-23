@@ -227,7 +227,7 @@ describe("App", () => {
       render(<App />);
       await user.click(screen.getByRole("tab", { name: "Progressions" }));
       expect(window.location.hash).toBe("#/progression/C/pop");
-      await user.click(screen.getByRole("radio", { name: "12-bar blues" }));
+      await user.click(screen.getByRole("button", { name: /^12-bar blues:/ }));
       expect(window.location.hash).toBe("#/progression/C/blues");
 
       await user.click(screen.getByRole("tab", { name: "Chords" }));

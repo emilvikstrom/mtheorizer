@@ -22,10 +22,12 @@ import {
   availableQualities,
   chordSymbolFor,
   STRING_INSTRUMENT_IDS,
-  circlePosition,
   commonSpellings,
   identifyQuality,
+  TONALITY_IDS,
   key,
+  tonality,
+  tonalitySpellings,
   keysAt,
   normalizeSpec,
   noteEquals,
@@ -333,9 +335,9 @@ describe("parseRoute", () => {
       }
     }
     for (const id of PROGRESSION_IDS) {
-      for (let position = 0; position < CIRCLE_OF_FIFTHS.length; position++) {
-        for (const k of keysAt(position, PROGRESSIONS[id].mode)) {
-          routes.push({ page: "progression", tonic: k.tonic, id });
+      for (const pc of PITCH_CLASSES) {
+        for (const tonic of tonalitySpellings(pc, PROGRESSIONS[id].tonality)) {
+          routes.push({ page: "progression", tonic, id });
         }
       }
     }
@@ -610,42 +612,58 @@ describe("chords built from a base chord and qualities", () => {
 });
 
 describe("build links", () => {
-  const cMajor = key(note("C"), "major");
+  const cMajor = tonality(note("C"), "major");
 
-  it("writes the key and the chords", () => {
+  it("writes the tonality and the chords", () => {
     expect(
       formatRoute({
         page: "build",
-        key: key(note("A", -1), "major"),
+        tonality: tonality(note("A", -1), "major"),
         steps: [
           { degree: 1, size: "triad" },
           { degree: 5, size: "seventh" },
         ],
       }),
     ).toBe("#/build/Ab/major?c=1,5s");
-    expect(formatRoute({ page: "build", key: key(note("F", 1), "minor"), steps: [] })).toBe(
-      "#/build/Fs/minor",
-    );
+    expect(
+      formatRoute({ page: "build", tonality: tonality(note("F", 1), "naturalMinor"), steps: [] }),
+    ).toBe("#/build/Fs/minor");
+    expect(
+      formatRoute({
+        page: "build",
+        tonality: tonality(note("D"), "dorian"),
+        steps: [{ degree: 1, size: "seventh" }],
+      }),
+    ).toBe("#/build/D/dorian?c=1s");
   });
 
-  it("reads every key and a list back", () => {
+  it("reads every tonality and a list back", () => {
     const lists = [[], [1], [1, 5, 6, 4], [2, 5, 1], [7, 6, 5, 4, 3, 2, 1]];
-    for (const mode of ["major", "minor"] as const) {
+    for (const id of TONALITY_IDS) {
       for (const pc of PITCH_CLASSES) {
-        for (const tonic of commonSpellings(pc)) {
-          const k = key(tonic, mode);
-          if (!keysAt(circlePosition(k), mode).some((c) => noteEquals(c.tonic, tonic))) continue;
+        for (const tonic of tonalitySpellings(pc, id)) {
           for (const degrees of lists) {
             const steps = degrees.map((degree, i) => ({
               degree,
               size: i % 2 === 0 ? ("triad" as const) : ("seventh" as const),
             }));
-            const route: Route = { page: "build", key: k, steps };
+            const route: Route = { page: "build", tonality: tonality(tonic, id), steps };
             expect(parseRouteStrict(formatRoute(route))).toEqual(route);
           }
         }
       }
     }
+  });
+
+  it("reads old minor links as natural minor", () => {
+    expect(parseRoute("#/build/A/minor?c=1,6")).toEqual({
+      page: "build",
+      tonality: tonality(note("A"), "naturalMinor"),
+      steps: [
+        { degree: 1, size: "triad" },
+        { degree: 6, size: "triad" },
+      ],
+    });
   });
 
   it("falls back to an empty progression for chords that make no sense", () => {
@@ -657,22 +675,23 @@ describe("build links", () => {
     ]) {
       expect(parseRoute(hash), hash).toEqual({
         page: "build",
-        key: key(note("G"), "major"),
+        tonality: tonality(note("G"), "major"),
         steps: [],
       });
       expect(parseRouteStrict(hash), hash).toBeUndefined();
     }
   });
 
-  it("falls back to an empty progression in C major for a bad key", () => {
+  it("falls back to an empty progression in C major for a bad tonality", () => {
     for (const hash of [
       "#/build",
       "#/build/C",
-      "#/build/C/dorian",
+      "#/build/C/bebopDominant",
       "#/build/H/major",
       "#/build/Ds/major",
+      "#/build/Cs/lydian",
     ]) {
-      expect(parseRoute(hash), hash).toEqual({ page: "build", key: cMajor, steps: [] });
+      expect(parseRoute(hash), hash).toEqual({ page: "build", tonality: cMajor, steps: [] });
       expect(parseRouteStrict(hash), hash).toBeUndefined();
     }
   });

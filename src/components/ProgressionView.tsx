@@ -1,54 +1,50 @@
 import { type CSSProperties, useState } from "react";
 import { audioSupported, planProgression, playNotes } from "../audio/playback";
 import {
+  type BuilderChord,
   CADENCES,
   CADENCE_IDS,
   type Cadence,
   type ChordQualityId,
-  type KeyMode,
   type Note,
   PROGRESSIONS,
-  PROGRESSION_IDS,
+  PROGRESSION_TAGS,
   type ProgressionId,
+  type ProgressionTag,
+  TONALITY_DESCRIPTIONS,
+  type Tonality,
+  type TonalityId,
+  builderStepsFor,
+  cadenceChords,
   chordOnKeyboard,
-  commonSpellings,
-  type Key,
+  describeVoiceLeading,
+  findProgressions,
   formatKey,
   formatNote,
-  keyScale,
-  keysAt,
-  cadenceChords,
-  describeVoiceLeading,
-  circlePosition,
-  noteEquals,
-  pitchClass,
+  formatTonality,
+  type Key,
   progressionChords,
-  progressionKey,
-  progressionKeyOn,
+  progressionTonalityOn,
+  retune,
+  tonalityKey,
+  tonalityLabel,
+  tonalityScale,
   voiceProgression,
 } from "../theory";
 import { ChromaticChords } from "./ChromaticChords";
 import { LeadingToneChords } from "./LeadingToneChords";
-import { OptionPicker } from "./OptionPicker";
-import { RootPicker } from "./RootPicker";
 import { SoundSettings } from "./SoundSettings";
+import { TonalityPicker, TonicPicker } from "./TonalityPicker";
 import { VoiceLeadingPiano } from "./VoiceLeadingPiano";
 
 interface ProgressionViewProps {
   tonic: Note;
   id: ProgressionId;
   onChange: (tonic: Note, id: ProgressionId) => void;
-  /** Start building a progression of one's own in this key. */
-  onBuild?: () => void;
+  /** Open the builder in this tonality, with these chords (empty to start from scratch). */
+  onBuild?: (tonality: Tonality, steps: readonly BuilderChord[]) => void;
   /** Open a chord of the progression in the chord view. */
   onOpenChord: (root: Note, quality: ChordQualityId) => void;
-}
-
-/** The spellings of this tonic that are keys on the circle of fifths (so not D♯ major). */
-function keySpellings(pc: number, mode: KeyMode): Note[] {
-  return commonSpellings(pc).filter((n) =>
-    keysAt(circlePosition({ tonic: n, mode }), mode).some((k) => noteEquals(k.tonic, n)),
-  );
 }
 
 /** The four cadences in the key of the shown progression, each with its own play button. */
@@ -95,7 +91,88 @@ function Cadences({ k }: { k: Key }) {
   );
 }
 
-/** Common chord progressions put in a key, with step numbers; each chord opens in the chord view. */
+interface FinderProps {
+  selected: ProgressionId;
+  onPick: (id: ProgressionId) => void;
+}
+
+/** Keywords and a tonality to narrow the list of ready-made progressions down, then the matches. */
+function ProgressionFinder({ selected, onPick }: FinderProps) {
+  const [tags, setTags] = useState<readonly ProgressionTag[]>([]);
+  const [only, setOnly] = useState<TonalityId | undefined>(undefined);
+  const found = findProgressions(tags, only);
+  const toggle = (tag: ProgressionTag) =>
+    setTags((current) =>
+      current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag],
+    );
+
+  return (
+    <section className="finder" aria-labelledby="finder-title">
+      <h3 id="finder-title" className="cadences__title">
+        Find a progression
+      </h3>
+      <div className="finder__tags" role="group" aria-label="Keywords">
+        {PROGRESSION_TAGS.map((tag) => (
+          <button
+            key={tag}
+            type="button"
+            className="finder__tag"
+            aria-pressed={tags.includes(tag)}
+            onClick={() => toggle(tag)}
+          >
+            {tag}
+          </button>
+        ))}
+        {tags.length > 0 && (
+          <button type="button" className="finder__tag finder__clear" onClick={() => setTags([])}>
+            Clear keywords
+          </button>
+        )}
+      </div>
+      <details className="finder__tonality">
+        <summary>
+          Tonality: {only === undefined ? "any" : tonalityLabel(only).toLowerCase()}
+        </summary>
+        <TonalityPicker
+          name="finder-tonality"
+          legend="Only progressions in"
+          value={only}
+          onChange={setOnly}
+          anyLabel="Any"
+        />
+      </details>
+      <p className="finder__count" aria-live="polite">
+        {found.length === 0
+          ? "No progression has all of these keywords. Try fewer."
+          : `${found.length} progression${found.length === 1 ? "" : "s"}`}
+      </p>
+      <ul className="finder__list" aria-label="Progressions">
+        {found.map((p) => (
+          <li key={p.id}>
+            <button
+              type="button"
+              className="finder__item"
+              aria-label={`${p.title}: ${p.name}, ${tonalityLabel(p.tonality).toLowerCase()}`}
+              aria-pressed={p.id === selected}
+              onClick={() => onPick(p.id)}
+            >
+              <span className="finder__title">{p.title}</span>
+              <span className="finder__name">{p.name}</span>
+              <span className="finder__meta">
+                {tonalityLabel(p.tonality)} · {p.tags.join(", ")}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * Common chord progressions in major, minor and the modes, found by keyword or tonality and put
+ * on any tonic. Each chord opens in the chord view.
+ */
 export function ProgressionView({
   tonic,
   id,
@@ -104,10 +181,11 @@ export function ProgressionView({
   onOpenChord,
 }: ProgressionViewProps) {
   const progression = PROGRESSIONS[id];
-  const k = progressionKeyOn(progression, tonic);
-  const chords = progressionChords(progression, k);
-  const pc = pitchClass(tonic);
-  const spellings = keySpellings(pc, progression.mode);
+  const t = progressionTonalityOn(progression, tonic);
+  const chords = progressionChords(progression, t);
+  const name = formatTonality(t);
+  const k: Key | undefined = tonalityKey(t);
+  const editable = builderStepsFor(progression);
 
   // Smooth voicing: each chord in the inversion and octave that keeps the movement small.
   const [smooth, setSmooth] = useState(false);
@@ -117,56 +195,46 @@ export function ProgressionView({
     playNotes(
       planProgression(
         voiced
-          ? voiced.voicings.map((tones) => tones.map((t) => t.midi))
-          : chords.map(({ chord }) => chordOnKeyboard(chord).map((t) => t.midi)),
+          ? voiced.voicings.map((tones) => tones.map((x) => x.midi))
+          : chords.map(({ chord }) => chordOnKeyboard(chord).map((x) => x.midi)),
       ),
     );
 
   return (
     <div className="progression">
+      <ProgressionFinder
+        selected={id}
+        onPick={(next) => onChange(retune(t, PROGRESSIONS[next].tonality).tonic, next)}
+      />
+
       <div className="progression__pickers">
-        <OptionPicker
-          legend="Progression"
-          name="progression"
-          options={PROGRESSION_IDS.map((pid) => ({ value: pid, label: PROGRESSIONS[pid].name }))}
-          value={id}
-          onChange={(next) =>
-            onChange(
-              // Keep the tonic when the new progression is in the same mode, otherwise respell it.
-              PROGRESSIONS[next].mode === progression.mode
-                ? tonic
-                : progressionKey(PROGRESSIONS[next], pc).tonic,
-              next,
-            )
-          }
+        <TonicPicker
+          name="progression-spelling"
+          value={t}
+          onChange={(next) => onChange(next, id)}
         />
-        <RootPicker
-          legend="Tonic"
-          value={pc}
-          onChange={(newPc) => onChange(progressionKey(progression, newPc).tonic, id)}
-        />
-        {spellings.length > 1 && (
-          <OptionPicker
-            legend="Spelling"
-            name="progression-spelling"
-            options={spellings.map((n) => ({ value: formatNote(n), label: formatNote(n) }))}
-            value={formatNote(tonic)}
-            onChange={(name) => {
-              const chosen = spellings.find((n) => formatNote(n) === name);
-              if (chosen) onChange(chosen, id);
-            }}
-          />
-        )}
       </div>
 
       <section className="progression__result" aria-labelledby="progression-name">
         <header>
-          <p className="key-details__eyebrow">Chord progression</p>
+          <p className="key-details__eyebrow">{progression.title}</p>
           <h2 id="progression-name" className="key-details__name" aria-live="polite">
-            {progression.name} in {formatKey(k)}
+            {progression.name} in {name}
           </h2>
           <p className="progression__description">{progression.description}</p>
-          <p className="progression__scale">Key scale: {keyScale(k).map(formatNote).join(" ")}</p>
+          <p className="progression__scale">
+            {name} scale: {tonalityScale(t).map(formatNote).join(" ")}
+          </p>
+          {progression.tonality !== "major" && (
+            <p className="progression__scale">{TONALITY_DESCRIPTIONS[progression.tonality]}</p>
+          )}
+          <ul className="progression__tags" aria-label="Keywords">
+            {progression.tags.map((tag) => (
+              <li key={tag} className="progression__tag">
+                {tag}
+              </li>
+            ))}
+          </ul>
         </header>
 
         <ol
@@ -232,7 +300,7 @@ export function ProgressionView({
             <button
               type="button"
               className="play__button"
-              aria-label={`Play ${progression.name} in ${formatKey(k)}${smooth ? " with smooth voicing" : ""}`}
+              aria-label={`Play ${progression.name} in ${name}${smooth ? " with smooth voicing" : ""}`}
               onClick={play}
             >
               ▶ Play progression
@@ -240,28 +308,35 @@ export function ProgressionView({
             <SoundSettings />
           </div>
         )}
+
+        {onBuild && (
+          <div className="builder__footer">
+            {editable && (
+              <button type="button" className="play__button" onClick={() => onBuild(t, editable)}>
+                Edit this progression
+              </button>
+            )}
+            <button type="button" className="play__button" onClick={() => onBuild(t, [])}>
+              Build your own progression in {name}
+            </button>
+          </div>
+        )}
       </section>
 
-      <Cadences k={k} />
+      {k && <Cadences k={k} />}
 
-      <section className="key-details chromatic-harmony" aria-labelledby="chromatic-harmony">
-        <h3 id="chromatic-harmony" className="key-details__name">
-          Chromatic chords in {formatKey(k)}
-        </h3>
-        <p className="key-details__text">
-          Chords from outside the key that lead into one of its chords by a half step. Use them to
-          colour a progression. Click one to open it.
-        </p>
-        <LeadingToneChords value={k} onOpenChord={onOpenChord} />
-        <ChromaticChords value={k} onOpenChord={onOpenChord} />
-      </section>
-
-      {onBuild && (
-        <div className="builder__footer">
-          <button type="button" className="play__button" onClick={onBuild}>
-            Build your own progression in {formatKey(k)}
-          </button>
-        </div>
+      {k && (
+        <section className="key-details chromatic-harmony" aria-labelledby="chromatic-harmony">
+          <h3 id="chromatic-harmony" className="key-details__name">
+            Chromatic chords in {formatKey(k)}
+          </h3>
+          <p className="key-details__text">
+            Chords from outside the key that lead into one of its chords by a half step. Use them to
+            colour a progression. Click one to open it.
+          </p>
+          <LeadingToneChords value={k} onOpenChord={onOpenChord} />
+          <ChromaticChords value={k} onOpenChord={onOpenChord} />
+        </section>
       )}
     </div>
   );

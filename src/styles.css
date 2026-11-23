@@ -3271,3 +3271,175 @@ body {
 .key-details__circle-label {
   font-weight: 700;
 }
+
+/* Progression finder: keywords and a tonality narrow the ready-made progressions down. */
+.finder {
+  display: grid;
+  gap: 10px;
+}
+
+.finder__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.finder__tag {
+  min-height: 36px;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.finder__tag:hover {
+  border-color: var(--muted);
+}
+
+.finder__tag:focus-visible,
+.finder__item:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Pressed keywords are filled and get a check mark, so the state is not shown by colour alone. */
+.finder__tag[aria-pressed="true"] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+
+.finder__tag[aria-pressed="true"]::before {
+  content: "✓ ";
+}
+
+.finder__clear {
+  border-style: dashed;
+}
+
+.finder__tonality summary {
+  cursor: pointer;
+  color: var(--muted);
+  min-height: 36px;
+  line-height: 36px;
+}
+
+.finder__tonality[open] summary {
+  margin-bottom: 8px;
+}
+
+.finder__count {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.finder__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.finder__item {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  align-content: start;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.finder__item:hover {
+  border-color: var(--muted);
+}
+
+/* The chosen progression: a thick border in the text colour, not only a tint. */
+.finder__item[aria-pressed="true"] {
+  border: 2px solid var(--text);
+  padding: 7px 9px;
+  background: color-mix(in srgb, var(--accent-tone) 10%, var(--surface));
+}
+
+.finder__title {
+  font-weight: 700;
+}
+
+.finder__name {
+  font-family: Georgia, "Times New Roman", serif;
+  overflow-wrap: anywhere;
+}
+
+.finder__meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.progression__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progression__tag {
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Chords that hold the tonality's characteristic note: a thicker accent border and a label. */
+.triad--colour {
+  border: 2px solid var(--accent-ink-tone);
+  padding: 7px 3px 5px;
+}
+
+.triad--colour .triad__function {
+  color: var(--accent-ink-tone);
+  font-weight: 600;
+}
+
+/* "What could come next?": a chord to add and the reason it works. */
+.builder__ideas {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+}
+
+.builder__idea-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.builder__idea {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.builder__idea-reason {
+  font-size: 0.85rem;
+  color: var(--muted);
+}

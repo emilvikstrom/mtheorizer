@@ -7,7 +7,7 @@ import {
   chordOnPitchClass,
 } from "./chords";
 import { formatNote, mod12, note, pitchClass } from "./notes";
-import { PROGRESSIONS, progressionChords, progressionKeyOn } from "./progressions";
+import { PROGRESSIONS, progressionChords, progressionTonalityOn } from "./progressions";
 import {
   describeVoiceLeading,
   voiceLeading,
@@ -170,7 +170,7 @@ describe("voiceProgression", () => {
   });
 
   it("starts in root position and gives one transition per step", () => {
-    const k = progressionKeyOn(PROGRESSIONS["pop"], C);
+    const k = progressionTonalityOn(PROGRESSIONS["pop"], C);
     const chords = progressionChords(PROGRESSIONS["pop"], k).map((c) => c.chord);
     const result = voiceProgression(chords);
     expect(result.voicings).toHaveLength(chords.length);
@@ -180,7 +180,7 @@ describe("voiceProgression", () => {
   });
 
   it("voices I–V–vi–IV in C with little movement (C–Am keeps C and E, C–G keeps G)", () => {
-    const k = progressionKeyOn(PROGRESSIONS["pop"], C);
+    const k = progressionTonalityOn(PROGRESSIONS["pop"], C);
     const chords = progressionChords(PROGRESSIONS["pop"], k).map((c) => c.chord);
     const { voicings, total } = voiceProgression(chords);
     expect(names(voicings[1] ?? [])).toContain("G");
@@ -194,7 +194,7 @@ describe("voiceProgression", () => {
       for (const pc of PITCH_CLASSES) {
         const progression = PROGRESSIONS[id];
         const tonic = chordOnPitchClass(pc, "major").root;
-        const kk = progressionKeyOn(progression, tonic);
+        const kk = progressionTonalityOn(progression, tonic);
         const chords = progressionChords(progression, kk).map((c) => c.chord);
         const whole = voiceProgression(chords).total;
         let greedy = 0;
