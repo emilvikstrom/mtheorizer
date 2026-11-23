@@ -121,6 +121,7 @@ Uppgifter: M7-01–M7-04 under **Nästa**, resten under **Senare**.
 Mål: Gå från att slå upp enskilda ackord till att förstå hur de hänger ihop i en låt. Begreppen nedan kan vara nya, så här är en kort förklaring av var och en:
 
 - **Ackordföljder:** I–V–vi–IV, ii–V–I, 12-takts blues m.fl. som stegnummer i valfri tonart.
+- **Modal harmoni:** ackord ur en modus i stället för dur eller moll. D-dorisk har ett durackord på fjärde steget (G), C-mixolydisk ett B♭ på sjunde. Ackorden som har modusens karaktärston (dorisk ♮6, lydisk ♯4) är de som får den att höras.
 - **Sekundära dominanter:** en dominant till ett annat steg än tonikan. D7 är dominant till G och kan lånas in i C-dur som V7/V. Ger en ton utanför tonarten (F♯) och mycket framåtrörelse.
 - **Lånade ackord (modal interchange):** ackord lånade från parallellmollen i en durtonart, t.ex. A♭, B♭ och Fm i C-dur. Ger det "mörka" som många poplåtar har.
 - **Tritonussubstitution:** G7 byts mot D♭7. Båda innehåller tritonen B–F (som bara byter roll), och D♭7 → C ger en kromatisk basgång. Standard inom jazz.

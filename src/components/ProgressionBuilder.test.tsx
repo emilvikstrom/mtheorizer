@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { type BuilderChord, key, note } from "../theory";
+import { type BuilderChord, type Tonality, note, tonality } from "../theory";
 import { ProgressionBuilder } from "./ProgressionBuilder";
 
 const audio = vi.hoisted(() => ({ play: vi.fn(() => 4), stop: vi.fn() }));
@@ -17,13 +17,13 @@ beforeEach(() => {
   audio.stop.mockClear();
 });
 
-const c = key(note("C"), "major");
+const c = tonality(note("C"), "major");
 const triad = (degree: number): BuilderChord => ({ degree, size: "triad" });
 
-function setup(steps: readonly BuilderChord[], onChange = vi.fn()) {
+function setup(steps: readonly BuilderChord[], onChange = vi.fn(), value: Tonality = c) {
   render(
     <ProgressionBuilder
-      keyValue={c}
+      value={value}
       steps={steps}
       onChange={onChange}
       onOpenChord={() => {}}
@@ -78,10 +78,45 @@ describe("ProgressionBuilder", () => {
     expect(onChange).toHaveBeenLastCalledWith(c, []);
   });
 
-  it("changes the key and keeps the chords", async () => {
+  it("changes the tonality and keeps the chords", async () => {
     const onChange = setup([triad(1), triad(5)]);
     await userEvent.click(screen.getByRole("radio", { name: "Minor" }));
-    expect(onChange).toHaveBeenLastCalledWith(key(note("C"), "minor"), [triad(1), triad(5)]);
+    expect(onChange).toHaveBeenLastCalledWith(tonality(note("C"), "naturalMinor"), [
+      triad(1),
+      triad(5),
+    ]);
+    await userEvent.click(screen.getByRole("radio", { name: "Dorian" }));
+    expect(onChange).toHaveBeenLastCalledWith(tonality(note("C"), "dorian"), [triad(1), triad(5)]);
+  });
+
+  it("offers a mode's chords and marks the ones with its colour", () => {
+    setup([], vi.fn(), tonality(note("D"), "dorian"));
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
+      "Build a progression in D dorian",
+    );
+    expect(screen.getByText(/D dorian scale: D E F G A B C/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Add G (IV), holds the dorian colour" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add C (♭VII)" })).toBeInTheDocument();
+    expect(screen.getByText(/natural minor: ♮6/)).toBeInTheDocument();
+  });
+
+  it("suggests where to start, then what could follow the last chord", async () => {
+    const onChange = setup([]);
+    expect(screen.getByRole("heading", { name: "Where to start" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Add C (I) next" }));
+    expect(onChange).toHaveBeenLastCalledWith(c, [triad(1)]);
+  });
+
+  it("suggests the strong moves after V", async () => {
+    const onChange = setup([triad(1), triad(5)]);
+    expect(screen.getByRole("heading", { name: "What could come after G?" })).toBeInTheDocument();
+    const ideas = screen.getAllByRole("button", { name: / next$/ }).map((b) => b.textContent);
+    expect(ideas[0]).toBe("IC");
+    expect(ideas).toContain("viAm");
+    await userEvent.click(screen.getByRole("button", { name: "Add Am (vi) next" }));
+    expect(onChange).toHaveBeenLastCalledWith(c, [triad(1), triad(5), triad(6)]);
   });
 
   it("plays the progression once, and again while Loop is on", async () => {

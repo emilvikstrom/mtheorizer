@@ -4,61 +4,54 @@ import {
   type BuilderChord,
   type BuilderSize,
   type ChordQualityId,
-  type Key,
-  type KeyMode,
-  MAJOR_SCALE,
   MAX_BUILDER_CHORDS,
-  NATURAL_MINOR_SCALE,
+  NEXT_REASONS,
   type Note,
+  TONALITY_DESCRIPTIONS,
+  type Tonality,
   addBuilderChord,
   builderChord,
   builderChords,
+  characteristic,
   chordOnKeyboard,
-  diatonicSevenths,
-  diatonicTriads,
-  formatKey,
   formatNote,
-  key,
-  keyScale,
+  formatTonality,
   moveBuilderChord,
-  pitchClass,
-  preferredTonicSpelling,
+  nextChords,
   removeBuilderChord,
+  retune,
+  tonality,
+  tonalityName,
+  tonalityScale,
+  tonalitySevenths,
+  tonalityTriads,
 } from "../theory";
 import { OptionPicker } from "./OptionPicker";
-import { RootPicker } from "./RootPicker";
 import { SoundSettings } from "./SoundSettings";
+import { TonalityPicker, TonicPicker } from "./TonalityPicker";
 
 interface ProgressionBuilderProps {
-  keyValue: Key;
+  value: Tonality;
   steps: readonly BuilderChord[];
-  onChange: (key: Key, steps: readonly BuilderChord[]) => void;
+  onChange: (tonality: Tonality, steps: readonly BuilderChord[]) => void;
   /** Open a chord of the progression in the chord view. */
   onOpenChord: (root: Note, quality: ChordQualityId) => void;
   /** Go back to the ready-made progressions. */
   onBack: () => void;
 }
 
-const MODES: readonly { value: KeyMode; label: string }[] = [
-  { value: "major", label: "Major" },
-  { value: "minor", label: "Minor" },
-];
-
 const SIZES: readonly { value: BuilderSize; label: string }[] = [
   { value: "triad", label: "Triads" },
   { value: "seventh", label: "Sevenths" },
 ];
 
-/** The key with this tonic pitch class and the fewest accidentals. */
-const keyOnPitchClass = (pc: number, mode: KeyMode): Key =>
-  key(preferredTonicSpelling(pc, mode === "major" ? MAJOR_SCALE : NATURAL_MINOR_SCALE), mode);
-
 /**
- * Builds a progression from the key's own chords: pick chords from the key, then move or remove
- * them. Every chord shows its step number and tones, and the whole list is in the link.
+ * Builds a progression from a tonality's own chords: pick a major or minor key or a mode, add its
+ * chords, then move or remove them. The chords that carry the mode's colour are marked, and a row
+ * of suggestions offers chords that follow well after the last one.
  */
 export function ProgressionBuilder({
-  keyValue,
+  value,
   steps,
   onChange,
   onOpenChord,
@@ -70,9 +63,12 @@ export function ProgressionBuilder({
   const loopRef = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const chords = builderChords(keyValue, steps);
-  const palette = size === "seventh" ? diatonicSevenths(keyValue) : diatonicTriads(keyValue);
+  const chords = builderChords(value, steps);
+  const palette = size === "seventh" ? tonalitySevenths(value) : tonalityTriads(value);
+  const colour = characteristic(value.scale);
   const full = steps.length >= MAX_BUILDER_CHORDS;
+  const name = formatTonality(value);
+  const ideas = nextChords(value, steps.at(-1)?.degree);
 
   const halt = () => {
     clearTimeout(timer.current);
@@ -85,7 +81,7 @@ export function ProgressionBuilder({
   useEffect(() => halt, []);
   useEffect(() => {
     if (timer.current !== undefined) halt();
-  }, [keyValue, steps]);
+  }, [value, steps]);
 
   const run = () => {
     const seconds = playNotes(
@@ -107,22 +103,21 @@ export function ProgressionBuilder({
     setLoop(!loop);
   };
 
-  const change = (next: readonly BuilderChord[]) => onChange(keyValue, next);
+  const change = (next: readonly BuilderChord[]) => onChange(value, next);
+  const add = (degree: number) => change(addBuilderChord(steps, { degree, size }));
 
   return (
     <div className="builder">
       <div className="progression__pickers">
-        <OptionPicker
-          legend="Mode"
-          name="builder-mode"
-          options={MODES}
-          value={keyValue.mode}
-          onChange={(mode) => onChange(keyOnPitchClass(pitchClass(keyValue.tonic), mode), steps)}
+        <TonalityPicker
+          name="builder-tonality"
+          value={value.scale}
+          onChange={(id) => id && onChange(retune(value, id), steps)}
         />
-        <RootPicker
-          legend="Tonic"
-          value={pitchClass(keyValue.tonic)}
-          onChange={(pc) => onChange(keyOnPitchClass(pc, keyValue.mode), steps)}
+        <TonicPicker
+          name="builder-spelling"
+          value={value}
+          onChange={(tonic) => onChange(tonality(tonic, value.scale), steps)}
         />
       </div>
 
@@ -131,16 +126,21 @@ export function ProgressionBuilder({
           <p className="key-details__eyebrow">Your progression</p>
           <h2 id="builder-name" className="key-details__name" aria-live="polite">
             {steps.length === 0
-              ? `Build a progression in ${formatKey(keyValue)}`
+              ? `Build a progression in ${name}`
               : chords.map(({ step }) => step.roman).join("–")}
           </h2>
           <p className="progression__scale">
-            Key scale: {keyScale(keyValue).map(formatNote).join(" ")}
+            {name} scale: {tonalityScale(value).map(formatNote).join(" ")}
+          </p>
+          <p className="progression__description">
+            {TONALITY_DESCRIPTIONS[value.scale]}
+            {colour.labels.length > 0 &&
+              ` Its colour against ${colour.reference === "major" ? "major" : "natural minor"}: ${colour.labels.join(", ")}.`}
           </p>
         </header>
 
         <fieldset className="builder__palette">
-          <legend className="picker__legend">Add a chord from {formatKey(keyValue)}</legend>
+          <legend className="picker__legend">Add a chord from {name}</legend>
           <OptionPicker
             legend="Chord size"
             name="builder-size"
@@ -149,32 +149,74 @@ export function ProgressionBuilder({
             onChange={setSize}
           />
           <ul className="builder__choices">
-            {palette.map((choice) => (
-              <li key={choice.degree}>
-                <button
-                  type="button"
-                  className="triad"
-                  disabled={full}
-                  aria-label={`Add ${choice.symbol} (${choice.roman})`}
-                  onClick={() => change(addBuilderChord(steps, { degree: choice.degree, size }))}
-                >
-                  <span className="triad__roman">{choice.roman}</span>
-                  <span className="triad__symbol">{choice.symbol}</span>
-                </button>
-              </li>
-            ))}
+            {palette.map((choice) => {
+              const coloured = colour.chordDegrees.includes(choice.degree);
+              return (
+                <li key={choice.degree}>
+                  <button
+                    type="button"
+                    className={`triad${coloured ? " triad--colour" : ""}`}
+                    disabled={full}
+                    aria-label={`Add ${choice.symbol} (${choice.roman})${coloured ? `, holds the ${tonalityName(value.scale)} colour` : ""}`}
+                    onClick={() => add(choice.degree)}
+                  >
+                    <span className="triad__roman">{choice.roman}</span>
+                    <span className="triad__symbol">{choice.symbol}</span>
+                    <span className="triad__function" aria-hidden="true">
+                      {coloured ? "colour" : ""}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
+          {colour.chordDegrees.length > 0 && (
+            <p className="builder__hint">
+              Chords marked “colour” hold {colour.labels.join(" or ")}, the note that sets{" "}
+              {tonalityName(value.scale)} apart. Use them to make the tonality heard.
+            </p>
+          )}
           {full && (
             <p className="builder__hint">The progression is full ({MAX_BUILDER_CHORDS} chords).</p>
           )}
         </fieldset>
 
+        {!full && (
+          <section className="builder__ideas" aria-labelledby="builder-ideas">
+            <h3 id="builder-ideas" className="cadences__title">
+              {steps.length === 0
+                ? "Where to start"
+                : `What could come after ${chords.at(-1)?.chord.symbol ?? ""}?`}
+            </h3>
+            <ul className="builder__idea-list">
+              {ideas.map((idea) => {
+                const chord = palette[idea.degree - 1];
+                if (!chord) return null;
+                return (
+                  <li key={idea.degree} className="builder__idea">
+                    <button
+                      type="button"
+                      className="triad"
+                      aria-label={`Add ${chord.symbol} (${chord.roman}) next`}
+                      onClick={() => add(idea.degree)}
+                    >
+                      <span className="triad__roman">{chord.roman}</span>
+                      <span className="triad__symbol">{chord.symbol}</span>
+                    </button>
+                    <span className="builder__idea-reason">{NEXT_REASONS[idea.reason]}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+
         {steps.length === 0 ? (
-          <p className="builder__hint">No chords yet. Add some from the key above.</p>
+          <p className="builder__hint">No chords yet. Add some from {name} above.</p>
         ) : (
           <ol className="builder__list" aria-label="Chords of your progression">
             {steps.map((item, i) => {
-              const { step, chord } = builderChord(keyValue, item);
+              const { step, chord } = builderChord(value, item);
               const label = `${chord.symbol}, chord ${i + 1} of ${steps.length}`;
               return (
                 <li key={`${i}-${item.degree}-${item.size}`} className="builder__item">
@@ -243,11 +285,7 @@ export function ProgressionBuilder({
             <button
               type="button"
               className="play__button"
-              aria-label={
-                playing
-                  ? "Stop your progression"
-                  : `Play your progression in ${formatKey(keyValue)}`
-              }
+              aria-label={playing ? "Stop your progression" : `Play your progression in ${name}`}
               onClick={playing ? halt : run}
             >
               {playing ? "■ Stop" : "▶ Play progression"}

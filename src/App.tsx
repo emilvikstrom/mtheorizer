@@ -35,7 +35,7 @@ import {
   useRoute,
   withNeck,
 } from "./route";
-import { PROGRESSIONS, key, matchInversion, specOf } from "./theory";
+import { matchInversion, specOf } from "./theory";
 
 type Tab =
   | "chords"
@@ -189,9 +189,9 @@ export function App() {
           />
         ) : route.page === "build" ? (
           <ProgressionBuilder
-            keyValue={route.key}
+            value={route.tonality}
             steps={route.steps}
-            onChange={(key, steps) => navigate({ page: "build", key, steps })}
+            onChange={(tonality, steps) => navigate({ page: "build", tonality, steps })}
             onBack={() => navigate(lastProgression.current ?? defaultProgressionRoute())}
             onOpenChord={(root, quality) =>
               navigate({
@@ -208,13 +208,7 @@ export function App() {
             tonic={route.tonic}
             id={route.id}
             onChange={(tonic, id) => navigate({ page: "progression", tonic, id })}
-            onBuild={() =>
-              navigate({
-                page: "build",
-                key: key(route.tonic, PROGRESSIONS[route.id].mode),
-                steps: [],
-              })
-            }
+            onBuild={(tonality, steps) => navigate({ page: "build", tonality, steps })}
             onOpenChord={(root, quality) =>
               navigate({
                 page: "chord",

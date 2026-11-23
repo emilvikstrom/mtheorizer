@@ -16,6 +16,14 @@ import {
   keysAt,
   circlePosition,
   formatNote,
+  keyTonality,
+  PROGRESSIONS,
+  PROGRESSION_IDS,
+  builderStepsFor,
+  progressionChords,
+  tonality,
+  TONALITY_IDS,
+  tonalitySpellings,
 } from "./index";
 
 const triad = (degree: number): BuilderChord => ({ degree, size: "triad" });
@@ -28,19 +36,27 @@ const KEYS = (["major", "minor"] as const).flatMap((mode) =>
       .map((tonic) => key(tonic, mode))
       .filter((k) =>
         keysAt(circlePosition(k), mode).some((c) => formatNote(c.tonic) === formatNote(k.tonic)),
-      ),
+      )
+      .map((k) => ({ ...keyTonality(k), mode })),
   ),
+);
+
+/** Every tonality on every readable tonic. */
+const TONALITIES = TONALITY_IDS.flatMap((id) =>
+  Array.from({ length: 12 }, (_, pc) =>
+    tonalitySpellings(pc, id).map((n) => tonality(n, id)),
+  ).flat(),
 );
 
 describe("builderChord", () => {
   it("spells I–V–vi–IV in A♭ major as A♭–E♭–Fm–D♭", () => {
-    const k = key(note("A", -1), "major");
+    const k = tonality(note("A", -1), "major");
     const symbols = builderChords(k, [1, 5, 6, 4].map(triad)).map((c) => c.chord.symbol);
     expect(symbols).toEqual(["A♭", "E♭", "Fm", "D♭"]);
   });
 
   it("gives step numbers and sevenths", () => {
-    const c = key(note("C"), "major");
+    const c = tonality(note("C"), "major");
     expect(builderChords(c, [2, 5, 1].map(seventh)).map((x) => x.step.roman)).toEqual([
       "ii7",
       "V7",
@@ -50,7 +66,7 @@ describe("builderChord", () => {
     expect(builderChord(c, triad(7)).step.roman).toBe("vii°");
   });
 
-  it.each(KEYS)("builds all seven triads and sevenths of $tonic.letter $mode", (k) => {
+  it.each(TONALITIES)("builds all seven triads and sevenths of $tonic.letter $scale", (k) => {
     for (let degree = 1; degree <= 7; degree++) {
       const t = builderChord(k, triad(degree));
       const s = builderChord(k, seventh(degree));
@@ -71,10 +87,43 @@ describe("builderChord", () => {
       expect(romans).toEqual(
         k.mode === "major"
           ? ["I", "ii", "iii", "IV", "V", "vi", "vii°"]
-          : ["i", "ii°", "III", "iv", "v", "VI", "VII"],
+          : ["i", "ii°", "♭III", "iv", "v", "♭VI", "♭VII"],
       );
     }
   });
+
+  it("builds from a mode: D dorian has a major IV", () => {
+    const d = tonality(note("D"), "dorian");
+    expect(builderChords(d, [1, 4, 7].map(triad)).map((c) => c.chord.symbol)).toEqual([
+      "Dm",
+      "G",
+      "C",
+    ]);
+    expect(builderChords(d, [1, 4].map(seventh)).map((c) => c.step.roman)).toEqual(["i7", "IV7"]);
+  });
+});
+
+describe("builderStepsFor", () => {
+  it("turns a progression of the tonality's own chords into builder chords", () => {
+    expect(builderStepsFor(PROGRESSIONS.pop)).toEqual([1, 5, 6, 4].map(triad));
+    expect(builderStepsFor(PROGRESSIONS.twoFiveOne)).toEqual([2, 5, 1].map(seventh));
+    expect(builderStepsFor(PROGRESSIONS.dorianVamp)).toEqual([1, 4].map(seventh));
+    expect(builderStepsFor(PROGRESSIONS.blues)).toBeUndefined();
+    expect(builderStepsFor(PROGRESSIONS.heroic)).toBeUndefined();
+  });
+
+  it.each(PROGRESSION_IDS.filter((id) => builderStepsFor(PROGRESSIONS[id])))(
+    "%s: the builder gives the same chords on every tonic",
+    (id) => {
+      const progression = PROGRESSIONS[id];
+      const steps = builderStepsFor(progression) ?? [];
+      for (const t of TONALITIES.filter((x) => x.scale === progression.tonality)) {
+        expect(builderChords(t, steps).map((c) => c.chord.symbol)).toEqual(
+          progressionChords(progression, t).map((c) => c.chord.symbol),
+        );
+      }
+    },
+  );
 });
 
 describe("editing", () => {
