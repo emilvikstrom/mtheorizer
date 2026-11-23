@@ -52,7 +52,7 @@ export function ChromaticChords({ value, onOpenChord }: ChromaticChordsProps) {
                   className="play__button"
                   onClick={() => onOpenChord(open.root, open.qualityId)}
                 >
-                  {`Open ${label} in Chords & scales`}
+                  {`Open ${label} in Chords`}
                 </button>
               )}
             </li>

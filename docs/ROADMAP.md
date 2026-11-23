@@ -66,7 +66,7 @@ Mål: Förstå hur ackord hänger ihop.
 - Parallell- och relativtonart.
 
 Resultat:
-- Appen har flikar: **Chords & scales** (ackord- och skaluppslaget från M1 och M3) och **Circle of fifths**.
+- Appen har flikar: **Chords & scales** (ackord- och skaluppslaget från M1 och M3) och **Circle of fifths**. Sedan UI-01 är ackord och skalor två flikar, **Chords** och **Scales**.
 - Kvintcirkeln visar durtonarter ytterst, relativa molltonarter innerst och antal förtecken utanför. Positionerna med två namn (B/C♭, F♯/G♭, D♭/C♯) visar båda, och man kan välja stavning.
 - Vald tonart visar förtecken, skala, de sju diatoniska treklangerna med steg och funktion (T/S/D), dominanten i harmonisk moll samt relativ-, parallell-, dominant- och subdominanttonart.
 - `src/theory/keys.ts` härleder allt ur stavade toner, med tabelltester för alla positioner på cirkeln.
@@ -150,4 +150,5 @@ Mål: Appen blir även ett träningsverktyg: stava ackord och skalor själv, hö
 - ⏳ Språk och notnamn: svenska/engelska och B/H, solfège och Nashville-nummer (X-16).
 - ⏳ Ljud och in/ut: fler klanger och tempo (X-17), Web MIDI (X-18), dela och exportera (X-19).
 - ⏳ Fler instrument: ukulele, bas, mandolin och banjo (G-06).
+- ✅ Städning av gränssnittet (UI-01–UI-04): ackord och skalor i var sin flik, en inställningssida för stränginstrumentet (antal strängar, stämning per sträng, förval) i stället för en lista med instrument, fler skalor och "Find from notes" (vilka skalor har de här tonerna), och tonartspanelen vid kvintcirkeln uppdelad i ämnen med en rad om var ämnet syns på cirkeln.
 - ⏳ Teknik: PWA som fungerar offline (X-20) och Playwright-tester mot den byggda imagen (X-21).

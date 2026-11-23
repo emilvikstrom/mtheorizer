@@ -134,6 +134,16 @@ describe("scales and modes", () => {
     minorPentatonic: [0, 3, 5, 7, 10],
     minorBlues: [0, 3, 5, 6, 7, 10],
     majorBlues: [0, 2, 3, 4, 7, 9],
+    dorianFlat2: [0, 1, 3, 5, 7, 9, 10],
+    lydianAugmented: [0, 2, 4, 6, 8, 9, 11],
+    mixolydianFlat6: [0, 2, 4, 5, 7, 8, 10],
+    locrianNatural2: [0, 2, 3, 5, 6, 8, 10],
+    phrygianDominant: [0, 1, 4, 5, 7, 8, 10],
+    hungarianMinor: [0, 2, 3, 6, 7, 8, 11],
+    doubleHarmonic: [0, 1, 4, 5, 7, 8, 11],
+    bebopDominant: [0, 2, 4, 5, 7, 9, 10, 11],
+    hirajoshi: [0, 2, 3, 7, 8],
+    inSen: [0, 1, 5, 7, 10],
   };
   const ids = Object.keys(SCALES) as ScaleId[];
   const pitchClasses = Array.from({ length: 12 }, (_, pc) => pc);
@@ -189,6 +199,14 @@ describe("scales and modes", () => {
     expect(spell(9, "minorPentatonic")).toBe("A C D E G");
     expect(spell(9, "minorBlues")).toBe("A C D Eb E G");
     expect(spell(0, "majorBlues")).toBe("C D Eb E G A");
+    expect(spell(4, "phrygianDominant")).toBe("E F G# A B C D");
+    expect(spell(9, "hungarianMinor")).toBe("A B C D# E F G#");
+    expect(spell(0, "doubleHarmonic")).toBe("C Db E F G Ab B");
+    expect(spell(0, "lydianAugmented")).toBe("C D E F# G# A B");
+    expect(spell(11, "locrianNatural2")).toBe("B C# D E F G A");
+    expect(spell(7, "bebopDominant")).toBe("G A B C D E F F#");
+    expect(spell(9, "hirajoshi")).toBe("A B C E F");
+    expect(spell(4, "inSen")).toBe("E F A B D");
   });
 
   it("spells a tonic on a black key with the fewest accidentals", () => {

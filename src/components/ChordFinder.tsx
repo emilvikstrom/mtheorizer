@@ -5,9 +5,10 @@ import {
   type FretPick,
   type KeyboardTone,
   STRING_INSTRUMENTS,
-  STRING_INSTRUMENT_IDS,
   type StringInstrumentId,
   commonSpellings,
+  describeTuning,
+  presetFor,
   formatNote,
   identifyChords,
   pickedMidi,
@@ -15,6 +16,7 @@ import {
   tuningFor,
 } from "../theory";
 import type { IdentifyRoute } from "../route";
+import { storedNeck } from "../neck";
 import { FretPicker } from "./FretPicker";
 import { MidiInput } from "./MidiInput";
 import { OptionPicker, type PickerOption } from "./OptionPicker";
@@ -27,9 +29,10 @@ const WINDOW_OPTIONS: readonly PickerOption<string>[] = FRET_WINDOW_STARTS.map((
   label: `${start}–${start + FRET_WINDOW - 1}`,
 }));
 
-const SOURCE_OPTIONS: readonly PickerOption<Source>[] = [
+/** The piano, or the fretted instrument set up on the settings page. */
+const SOURCE_OPTIONS: readonly PickerOption<"piano" | "neck">[] = [
   { value: "piano", label: "Piano" },
-  ...STRING_INSTRUMENT_IDS.map((id) => ({ value: id, label: STRING_INSTRUMENTS[id].label })),
+  { value: "neck", label: "Fretboard" },
 ];
 
 /** Show the best matches only; a cluster of notes can fit dozens of odd chords. */
@@ -65,7 +68,7 @@ export function ChordFinder({ route, onRoute, selected, onChange, onOpen }: Chor
   const from = route.from ?? 1;
   const setPicks = (frets: readonly FretPick[]) =>
     onRoute({ ...route, frets: frets.length > 0 ? frets : undefined });
-  const strings = source === "piano" ? undefined : tuningFor(source);
+  const strings = source === "piano" ? undefined : tuningFor(source, route.tuning, route.strings);
   const noun = strings ? "frets" : "keys";
 
   // The pressed keys, or the notes the pressed frets sound in the instrument's tuning.
@@ -102,14 +105,29 @@ export function ChordFinder({ route, onRoute, selected, onChange, onOpen }: Chor
         legend="Play it on"
         name="finder-instrument"
         options={SOURCE_OPTIONS}
-        value={source}
-        onChange={(value) =>
+        value={source === "piano" ? "piano" : "neck"}
+        onChange={(value) => {
           // Another instrument has other strings, so the pressed frets don't carry over.
+          const { instrument, tuning, strings: open } = storedNeck();
           onRoute(
-            value === "piano" ? { page: "identify" } : { page: "identify", instrument: value },
-          )
-        }
+            value === "piano"
+              ? { page: "identify" }
+              : {
+                  page: "identify",
+                  instrument,
+                  ...(tuning ? { tuning } : {}),
+                  ...(open ? { strings: open } : {}),
+                },
+          );
+        }}
       />
+      {strings && (
+        <p className="controls__note">
+          {presetFor(strings.strings)?.label ?? `${strings.strings.length} strings`}:{" "}
+          {describeTuning(strings.strings)}.{" "}
+          <a href="#/settings">Change the strings or tuning in Settings</a>
+        </p>
+      )}
       <p className="finder__hint">
         {strings
           ? "Press the frets of the notes you play, one per string. Press again to let go. The lowest string you press is taken as the bass."

@@ -230,7 +230,7 @@ describe("App", () => {
       await user.click(screen.getByRole("radio", { name: "12-bar blues" }));
       expect(window.location.hash).toBe("#/progression/C/blues");
 
-      await user.click(screen.getByRole("tab", { name: "Chords & scales" }));
+      await user.click(screen.getByRole("tab", { name: "Chords" }));
       expect(window.location.hash).toBe("#/C/major?on=piano");
       await user.click(screen.getByRole("tab", { name: "Progressions" }));
       expect(window.location.hash).toBe("#/progression/C/blues");
@@ -241,7 +241,7 @@ describe("App", () => {
       const user = userEvent.setup();
       render(<App />);
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("I–V–vi–IV in A♭ major");
-      await user.click(screen.getByRole("button", { name: "Open Fm in Chords & scales" }));
+      await user.click(screen.getByRole("button", { name: "Open Fm in Chords" }));
       expect(window.location.hash).toBe("#/F/minor?on=piano");
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("F minor");
     });
@@ -254,7 +254,7 @@ describe("App", () => {
       await user.click(quality("♭9") as HTMLElement);
 
       await user.click(screen.getByRole("tab", { name: "Circle of fifths" }));
-      await user.click(screen.getByRole("tab", { name: "Chords & scales" }));
+      await user.click(screen.getByRole("tab", { name: "Chords" }));
       expect(heading()).toHaveTextContent("C7♭5♭9");
       expect(window.location.hash).toBe("#/C/major?with=7,flat5,flat9&on=piano");
     });
@@ -266,7 +266,7 @@ describe("App", () => {
       expect(heading()).toHaveTextContent("C7♭5♭9");
       expect(screen.getByRole("radio", { name: "2nd inversion" })).toBeChecked();
 
-      await user.click(screen.getByRole("radio", { name: "Guitar" }));
+      await user.click(screen.getByRole("radio", { name: "Fretboard" }));
       expect(window.location.hash).toBe("#/C/major?with=7,flat5,flat9&on=guitar");
       expect(heading()).toHaveTextContent("C7♭5♭9");
       expect(screen.queryByRole("img", { name: /^Piano keyboard/ })).not.toBeInTheDocument();
@@ -310,7 +310,7 @@ describe("App", () => {
     const { container } = render(<App />);
     expect(screen.getByRole("radio", { name: "Piano" })).toBeChecked();
 
-    await user.click(screen.getByRole("radio", { name: "Guitar" }));
+    await user.click(screen.getByRole("radio", { name: "Fretboard" }));
     expect(screen.queryByRole("img", { name: /^Piano keyboard/ })).not.toBeInTheDocument();
     expect(
       screen.getByRole("img", {
@@ -332,33 +332,34 @@ describe("App", () => {
     expect(highlightedKeys(container)).toEqual(["60:root", "64:third", "67:fifth"]);
   });
 
-  it("shows the guitar in another tuning and for the left hand", async () => {
+  it("shows the neck in another tuning and for the left hand, as set on the settings page", async () => {
     const user = userEvent.setup();
     window.location.hash = "#/D/major?on=guitar";
     render(<App />);
-    expect(screen.getByRole("radio", { name: "Standard" })).toBeChecked();
 
-    await user.click(screen.getByRole("radio", { name: "Drop D" }));
+    await user.click(screen.getByRole("tab", { name: "Settings" }));
+    expect(window.location.hash).toBe("#/settings");
+    expect(screen.getByRole("combobox", { name: "Preset" })).toHaveValue("guitar");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Preset" }), "guitarDropD");
+    await user.click(screen.getByRole("radio", { name: "Left-handed" }));
+
+    await user.click(screen.getByRole("tab", { name: "Chords" }));
     expect(
       screen.getByRole("img", {
-        name: /^Guitar neck showing D major in Drop D tuning, shape 1 of/,
+        name: /^Left-handed guitar neck showing D major in Drop D tuning, shape 1 of/,
       }),
     ).toBeInTheDocument();
-    expect(window.location.hash).toBe("#/D/major?on=guitar&tuning=dropD");
-
-    await user.click(screen.getByRole("radio", { name: "Left-handed" }));
-    expect(screen.getByRole("img", { name: /^Left-handed guitar neck/ })).toBeInTheDocument();
     expect(window.location.hash).toBe("#/D/major?on=guitar&tuning=dropD&hand=left");
 
-    // The choice follows a switch to a scale.
-    await user.click(screen.getByRole("radio", { name: "Scale" }));
+    // The setup follows a switch to a scale.
+    await user.click(screen.getByRole("tab", { name: "Scales" }));
     expect(window.location.hash).toBe("#/D/scale/major?on=guitar&tuning=dropD&hand=left");
   });
 
   it("steps through the chord shapes with the arrows", async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);
-    await user.click(screen.getByRole("radio", { name: "Guitar" }));
+    await user.click(screen.getByRole("radio", { name: "Fretboard" }));
     const previous = screen.getByRole("button", { name: "Previous shape" });
     const next = screen.getByRole("button", { name: "Next shape" });
     expect(previous).toBeDisabled();
@@ -400,7 +401,7 @@ describe("App", () => {
   it("stays in the same area of the neck when the chord changes", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole("radio", { name: "Guitar" }));
+    await user.click(screen.getByRole("radio", { name: "Fretboard" }));
     await user.click(screen.getByRole("button", { name: "Next shape" }));
     await user.click(screen.getByRole("button", { name: "Next shape" }));
     expect(screen.getByText("Frets 3–6")).toBeInTheDocument();
@@ -417,7 +418,7 @@ describe("App", () => {
   it("spells E♭ minor with flats on the guitar neck", async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);
-    await user.click(screen.getByRole("radio", { name: "Guitar" }));
+    await user.click(screen.getByRole("radio", { name: "Fretboard" }));
     await user.click(screen.getByRole("radio", { name: "D♯/E♭" }));
     await user.click(screen.getByRole("radio", { name: "Minor" }));
 
@@ -456,23 +457,31 @@ describe("App", () => {
   it("switches between the chord and circle of fifths tabs", async () => {
     const user = userEvent.setup();
     render(<App />);
-    expect(screen.getByRole("tab", { name: "Chords & scales" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    expect(screen.getByRole("tab", { name: "Chords" })).toHaveAttribute("aria-selected", "true");
 
     await user.click(screen.getByRole("tab", { name: "Circle of fifths" }));
     expect(screen.getByRole("tab", { name: "Circle of fifths" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
-    expect(screen.getByRole("tabpanel")).toHaveAccessibleName("Circle of fifths");
+    expect(screen.getAllByRole("tabpanel")[0]).toHaveAccessibleName("Circle of fifths");
     expect(screen.getByRole("radiogroup", { name: /Circle of fifths/ })).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Root" })).not.toBeInTheDocument();
 
     await user.keyboard("{ArrowLeft}");
-    expect(screen.getByRole("tab", { name: "Chords & scales" })).toHaveFocus();
-    expect(screen.getByRole("group", { name: "Root" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Scales" })).toHaveFocus();
+    expect(screen.getByRole("group", { name: "Scale" })).toBeInTheDocument();
+  });
+
+  it("keeps the root when moving between the chords and scales tabs", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("radio", { name: "D" }));
+    await user.click(screen.getByRole("tab", { name: "Scales" }));
+    expect(window.location.hash).toBe("#/D/scale/major?on=piano");
+    await user.click(screen.getByRole("tab", { name: "Circle of fifths" }));
+    await user.click(screen.getByRole("tab", { name: "Chords" }));
+    expect(window.location.hash).toBe("#/D/major?on=piano");
   });
 
   it("opens a diatonic chord from the circle in the chord tab", async () => {
@@ -480,12 +489,9 @@ describe("App", () => {
     render(<App />);
     await user.click(screen.getByRole("tab", { name: "Circle of fifths" }));
     await user.click(screen.getByRole("radio", { name: "A minor" }));
-    await user.click(screen.getByRole("button", { name: "Open B° in Chords & scales" }));
+    await user.click(screen.getByRole("button", { name: "Open B° in Chords" }));
 
-    expect(screen.getByRole("tab", { name: "Chords & scales" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    expect(screen.getByRole("tab", { name: "Chords" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("B diminished");
     expect(chordNotes()).toEqual(["B", "D", "F"]);
     expect(window.location.hash).toBe("#/B/diminished?on=piano");
@@ -499,7 +505,7 @@ describe("App", () => {
     expect(window.location.hash).toMatch(/^#\/quiz\?seed=\d+$/);
     expect(screen.getByRole("heading", { level: 2, name: "Key signatures" })).toBeInTheDocument();
     expect(screen.getByText(/^(How many|Which)/)).toBeInTheDocument();
-    await user.click(screen.getByRole("tab", { name: "Chords & scales" }));
+    await user.click(screen.getByRole("tab", { name: "Chords" }));
     expect(screen.queryByText("Nothing answered yet.")).toBeNull();
   });
 
@@ -524,7 +530,7 @@ describe("App", () => {
     expect(screen.getByRole("heading", { level: 2, name: "Tonnetz" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /^L, leading tone: E minor/ }));
     expect(window.location.hash).toBe("#/tonnetz/E/minor");
-    await user.click(screen.getByRole("tab", { name: "Chords & scales" }));
+    await user.click(screen.getByRole("tab", { name: "Chords" }));
     await user.click(screen.getByRole("tab", { name: "Tonnetz" }));
     expect(window.location.hash).toBe("#/tonnetz/E/minor");
   });
@@ -554,7 +560,7 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("tab", { name: "What chord is this?" }));
-    await user.click(screen.getByRole("radio", { name: "Guitar" }));
+    await user.click(screen.getByRole("radio", { name: "Fretboard" }));
     const fret = (string: number, n: number) =>
       document.querySelector<HTMLButtonElement>(
         `.fret-picker__cell[data-string="${string}"][data-fret="${n}"]`,
@@ -588,10 +594,7 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "C5" }));
     await user.click(screen.getByRole("button", { name: /^C\/E/ }));
 
-    expect(screen.getByRole("tab", { name: "Chords & scales" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    expect(screen.getByRole("tab", { name: "Chords" })).toHaveAttribute("aria-selected", "true");
     expect(chordNotes()).toEqual(["C", "E", "G"]);
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("C/E");
     expect(window.location.hash).toBe("#/C/major?on=piano&inv=1");
@@ -654,7 +657,7 @@ describe("App", () => {
     it("opens a chord built on a degree of the scale", async () => {
       const user = userEvent.setup();
       render(<App />);
-      await user.click(screen.getByRole("radio", { name: "Scale" }));
+      await user.click(screen.getByRole("tab", { name: "Scales" }));
       expect(screen.getByRole("heading", { name: "Chords that fit" })).toBeInTheDocument();
 
       await user.click(screen.getByRole("button", { name: "Am7" }));
@@ -665,7 +668,7 @@ describe("App", () => {
     it("leaves the section out for scales with fewer than seven tones", async () => {
       const user = userEvent.setup();
       render(<App />);
-      await user.click(screen.getByRole("radio", { name: "Scale" }));
+      await user.click(screen.getByRole("tab", { name: "Scales" }));
       await user.click(screen.getByRole("radio", { name: "Major pentatonic" }));
       expect(screen.queryByRole("heading", { name: "Chords that fit" })).not.toBeInTheDocument();
     });
@@ -675,14 +678,14 @@ describe("App", () => {
     it("switches to the major scale on the same root", async () => {
       const user = userEvent.setup();
       const { container } = render(<App />);
-      await user.click(screen.getByRole("radio", { name: "Scale" }));
+      await user.click(screen.getByRole("tab", { name: "Scales" }));
 
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("C major scale");
       expect(scaleNotes()).toEqual(["C", "D", "E", "F", "G", "A", "B"]);
       expect(screen.queryByRole("group", { name: "Qualities" })).not.toBeInTheDocument();
       expect(
         within(screen.getByRole("group", { name: "Scale" })).getAllByRole("radio"),
-      ).toHaveLength(18);
+      ).toHaveLength(28);
       expect(
         within(screen.getByRole("group", { name: "Tonic" })).getAllByRole("radio"),
       ).toHaveLength(12);
@@ -706,7 +709,7 @@ describe("App", () => {
     it("shows E♭ natural minor with flats", async () => {
       const user = userEvent.setup();
       render(<App />);
-      await user.click(screen.getByRole("radio", { name: "Scale" }));
+      await user.click(screen.getByRole("tab", { name: "Scales" }));
       await user.click(screen.getByRole("radio", { name: "D♯/E♭" }));
       await user.click(screen.getByRole("radio", { name: "Natural minor (Aeolian)" }));
 
@@ -719,10 +722,10 @@ describe("App", () => {
       render(<App />);
       await user.click(screen.getByRole("radio", { name: "Minor" }));
       await user.click(screen.getByRole("button", { name: "7" }));
-      await user.click(screen.getByRole("radio", { name: "Scale" }));
+      await user.click(screen.getByRole("tab", { name: "Scales" }));
       expect(screen.getByRole("radio", { name: "Natural minor (Aeolian)" })).toBeChecked();
 
-      await user.click(screen.getByRole("radio", { name: "Chord" }));
+      await user.click(screen.getByRole("tab", { name: "Chords" }));
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("C minor seventh");
     });
 
@@ -731,22 +734,60 @@ describe("App", () => {
       render(<App />);
       await user.click(screen.getByRole("radio", { name: "A" }));
       await user.click(screen.getByRole("radio", { name: "Minor" }));
-      await user.click(screen.getByRole("radio", { name: "Scale" }));
+      await user.click(screen.getByRole("tab", { name: "Scales" }));
 
       expect(screen.getByRole("radio", { name: "Natural minor (Aeolian)" })).toBeChecked();
       expect(scaleNotes()).toEqual(["A", "B", "C", "D", "E", "F", "G"]);
 
       await user.click(screen.getByRole("radio", { name: "Major (Ionian)" }));
-      await user.click(screen.getByRole("radio", { name: "Chord" }));
+      await user.click(screen.getByRole("tab", { name: "Chords" }));
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("A major");
       expect(chordNotes()).toEqual(["A", "C♯", "E"]);
+    });
+
+    it("finds the scales that hold some notes, and opens one", async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole("tab", { name: "Scales" }));
+      await user.click(screen.getByRole("radio", { name: "Find from notes" }));
+      expect(window.location.hash).toBe("#/scale-finder");
+      expect(screen.getByRole("tab", { name: "Scales" })).toHaveAttribute("aria-selected", "true");
+
+      const notes = screen.getByRole("group", { name: "Notes" });
+      for (const name of ["A", "C", "E"]) {
+        await user.click(within(notes).getByRole("button", { name: new RegExp(`^${name}( |$)`) }));
+      }
+      expect(window.location.hash).toBe("#/scale-finder?notes=9,0,4");
+      // A was picked first, so the A scales lead: A minor pentatonic has A, C and E and two more.
+      const first = document.querySelector(".suggestion__symbol");
+      expect(first).toHaveTextContent("A minor pentatonic");
+
+      await user.click(first!.closest("button")!);
+      expect(window.location.hash).toBe("#/A/scale/minorPentatonic?on=piano");
+      expect(scaleNotes()).toEqual(["A", "C", "D", "E", "G"]);
+
+      // Back to the finder, the notes are still there.
+      await user.click(screen.getByRole("radio", { name: "Find from notes" }));
+      expect(window.location.hash).toBe("#/scale-finder?notes=9,0,4");
+    });
+
+    it("shows the new modes of melodic and harmonic minor", async () => {
+      const user = userEvent.setup();
+      window.location.hash = "#/E/scale/phrygianDominant?on=piano";
+      render(<App />);
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
+        "E phrygian dominant scale",
+      );
+      expect(scaleNotes()).toEqual(["E", "F", "G♯", "A", "B", "C", "D"]);
+      await user.click(screen.getByRole("radio", { name: "Locrian ♮2 (Half-diminished)" }));
+      expect(scaleNotes()).toEqual(["E", "F♯", "G", "A", "B♭", "C", "D"]);
     });
 
     it("shows modes, pentatonic and blues scales", async () => {
       const user = userEvent.setup();
       render(<App />);
       await user.click(screen.getByRole("radio", { name: "D" }));
-      await user.click(screen.getByRole("radio", { name: "Scale" }));
+      await user.click(screen.getByRole("tab", { name: "Scales" }));
 
       await user.click(screen.getByRole("radio", { name: "Dorian" }));
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("D dorian scale");
@@ -763,17 +804,17 @@ describe("App", () => {
     it("goes back to a plain triad from a mode", async () => {
       const user = userEvent.setup();
       render(<App />);
-      await user.click(screen.getByRole("radio", { name: "Scale" }));
+      await user.click(screen.getByRole("tab", { name: "Scales" }));
       await user.click(screen.getByRole("radio", { name: "Locrian" }));
-      await user.click(screen.getByRole("radio", { name: "Chord" }));
+      await user.click(screen.getByRole("tab", { name: "Chords" }));
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("C diminished");
     });
 
     it("shows a scale on the guitar neck", async () => {
       const user = userEvent.setup();
       const { container } = render(<App />);
-      await user.click(screen.getByRole("radio", { name: "Scale" }));
-      await user.click(screen.getByRole("radio", { name: "Guitar" }));
+      await user.click(screen.getByRole("tab", { name: "Scales" }));
+      await user.click(screen.getByRole("radio", { name: "Fretboard" }));
 
       expect(
         screen.getByRole("img", {
@@ -887,7 +928,7 @@ describe("App", () => {
           "A natural minor scale",
         ),
       );
-      expect(screen.getByRole("radio", { name: "Guitar" })).toBeChecked();
+      expect(screen.getByRole("radio", { name: "Fretboard" })).toBeChecked();
     });
 
     it("links to a scale and an inversion", async () => {
@@ -899,7 +940,7 @@ describe("App", () => {
 
       render(<App />);
       expect(screen.getByRole("radio", { name: "1st inversion" })).toBeChecked();
-      await userEvent.click(screen.getByRole("radio", { name: "Scale" }));
+      await userEvent.click(screen.getByRole("tab", { name: "Scales" }));
       expect(window.location.hash).toBe("#/C/scale/major?on=piano");
       expect(container).toBeTruthy();
     });
@@ -927,7 +968,7 @@ describe("App", () => {
       await user.click(screen.getByRole("radio", { name: "A" }));
       await user.click(screen.getByRole("tab", { name: "Circle of fifths" }));
       await user.click(screen.getByRole("radio", { name: "D major" }));
-      await user.click(screen.getByRole("tab", { name: "Chords & scales" }));
+      await user.click(screen.getByRole("tab", { name: "Chords" }));
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("A major");
       await user.click(screen.getByRole("tab", { name: "Circle of fifths" }));
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("D major");
@@ -938,25 +979,25 @@ describe("App", () => {
     it("puts the instrument in the link", async () => {
       const user = userEvent.setup();
       render(<App />);
-      await user.click(screen.getByRole("radio", { name: "Guitar" }));
+      await user.click(screen.getByRole("radio", { name: "Fretboard" }));
       expect(window.location.hash).toBe("#/C/major?on=guitar");
     });
 
     it("remembers the instrument for links that do not name one", async () => {
       const user = userEvent.setup();
       const { unmount } = render(<App />);
-      await user.click(screen.getByRole("radio", { name: "Guitar" }));
+      await user.click(screen.getByRole("radio", { name: "Fretboard" }));
       unmount();
 
       window.history.replaceState(null, "", "#/D/major");
       render(<App />);
-      expect(screen.getByRole("radio", { name: "Guitar" })).toBeChecked();
+      expect(screen.getByRole("radio", { name: "Fretboard" })).toBeChecked();
     });
 
     it("lets a link override the remembered instrument", async () => {
       const user = userEvent.setup();
       const { unmount } = render(<App />);
-      await user.click(screen.getByRole("radio", { name: "Guitar" }));
+      await user.click(screen.getByRole("radio", { name: "Fretboard" }));
       unmount();
 
       window.history.replaceState(null, "", "#/D/major?on=piano");
@@ -1002,7 +1043,7 @@ describe("App", () => {
       const { container } = render(<App />);
       await choose("Steps");
       expect(keyLabels(container)).toEqual(["1", "2", "3"]);
-      await userEvent.click(screen.getByRole("radio", { name: "Scale" }));
+      await userEvent.click(screen.getByRole("tab", { name: "Scales" }));
       expect(keyLabels(container).slice(0, 7)).toEqual(["1", "2", "3", "4", "5", "6", "7"]);
       expect(window.location.hash).toContain("show=steps");
     });
@@ -1066,11 +1107,11 @@ describe("App", () => {
     it("keeps the choice when switching between chord and scale and between instruments", async () => {
       render(<App />);
       await choose("Intervals");
-      await userEvent.click(screen.getByRole("radio", { name: "Scale" }));
+      await userEvent.click(screen.getByRole("tab", { name: "Scales" }));
       expect(screen.getByRole("radio", { name: "Intervals" })).toBeChecked();
-      await userEvent.click(screen.getByRole("radio", { name: "Guitar" }));
+      await userEvent.click(screen.getByRole("radio", { name: "Fretboard" }));
       expect(window.location.hash).toContain("show=intervals");
-      await userEvent.click(screen.getByRole("radio", { name: "Chord" }));
+      await userEvent.click(screen.getByRole("tab", { name: "Chords" }));
       expect(screen.getByRole("radio", { name: "Intervals" })).toBeChecked();
     });
 
@@ -1137,7 +1178,7 @@ describe("App", () => {
       render(<App />);
       await user.click(screen.getByRole("radio", { name: "F♯/G♭" }));
       await user.click(spelling().getByRole("radio", { name: "G♭" }));
-      await user.click(screen.getByRole("radio", { name: "Scale" }));
+      await user.click(screen.getByRole("tab", { name: "Scales" }));
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("G♭ major scale");
       expect(scaleNotes()).toEqual(["G♭", "A♭", "B♭", "C♭", "D♭", "E♭", "F"]);
     });

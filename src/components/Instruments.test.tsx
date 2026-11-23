@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { App } from "../App";
+import { rememberNeck } from "../neck";
 import { defaultChordRoute, formatRoute, parseRoute } from "../route";
 
 /** Highlighted fret positions as "string/fret:role", sorted. */
@@ -36,8 +37,9 @@ describe("ukulele, bass and mandolin in the route", () => {
 describe("the instrument picker", () => {
   it("shows the ukulele with four strings and the familiar C chord", async () => {
     const user = userEvent.setup();
+    rememberNeck({ instrument: "ukulele" });
     const { container } = render(<App />);
-    await user.click(screen.getByRole("radio", { name: "Ukulele" }));
+    await user.click(screen.getByRole("radio", { name: "Fretboard" }));
     expect(window.location.hash).toBe("#/C/major?on=ukulele");
     expect(
       screen.getByRole("img", {
@@ -47,25 +49,30 @@ describe("the instrument picker", () => {
     // Only the A string is fretted, at the third fret; the other three are open.
     expect(highlightedFrets(container)).toEqual(["1/3:root", "2/0:third", "3/0:root", "4/0:fifth"]);
     expect(container.querySelectorAll(".fretboard__string")).toHaveLength(4);
-    // The guitar's tuning choice is not offered for it, the hand is.
-    expect(screen.queryByRole("radio", { name: "Drop D" })).not.toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Left-handed" })).toBeInTheDocument();
+    // The tuning is named, with a way to change it.
+    expect(screen.getByText(/Ukulele, GCEA: C E G A/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Settings/ })).toHaveAttribute("href", "#/settings");
   });
 
   it("shows the mandolin, a bass with five strings, and keeps the choice in the link for scales", async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);
-    await user.click(screen.getByRole("radio", { name: "Mandolin" }));
+    await user.click(screen.getByRole("tab", { name: "Settings" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Preset" }), "mandolin");
+    await user.click(screen.getByRole("tab", { name: "Chords" }));
+    await user.click(screen.getByRole("radio", { name: "Fretboard" }));
     expect(container.querySelectorAll(".fretboard__string")).toHaveLength(4);
     expect(screen.getByRole("img", { name: /^Mandolin neck showing C major/ })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("radio", { name: "5-string bass" }));
+    await user.click(screen.getByRole("tab", { name: "Settings" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Preset" }), "bass5");
+    await user.click(screen.getByRole("tab", { name: "Chords" }));
     expect(container.querySelectorAll(".fretboard__string")).toHaveLength(5);
     expect(
       screen.getByRole("img", { name: /^5-string bass neck showing C major/ }),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("radio", { name: "Scale" }));
+    await user.click(screen.getByRole("tab", { name: "Scales" }));
     expect(window.location.hash).toBe("#/C/scale/major?on=bass5");
     expect(
       screen.getByRole("img", { name: /^5-string bass neck showing C major scale/ }),
@@ -75,7 +82,7 @@ describe("the instrument picker", () => {
   it("opens a left-handed bass from a link and names it in the saved choices", async () => {
     window.location.hash = "#/E/minor?on=bass&hand=left";
     render(<App />);
-    expect(screen.getByRole("radio", { name: "Bass" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Fretboard" })).toBeChecked();
     expect(
       screen.getByRole("img", { name: /^Left-handed bass neck showing E minor/ }),
     ).toBeInTheDocument();

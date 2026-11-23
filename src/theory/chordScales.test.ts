@@ -20,7 +20,7 @@ describe("which scales fit over a chord", () => {
     ["major7", ["major", "lydian"]],
     ["dominant7", ["mixolydian", "lydianDominant", "altered"]],
     ["minor7", ["dorian", "naturalMinor"]],
-    ["halfDiminished7", ["locrian"]],
+    ["halfDiminished7", ["locrian", "locrianNatural2"]],
   ];
 
   describe.each(EXAMPLES)("%s", (id, expected) => {
@@ -146,16 +146,26 @@ describe("the chords in a scale", () => {
     }
   });
 
-  it("names a triad and a seventh on every degree of the seven-note scales", () => {
-    // Every seven-note scale here stacks into named triads, so nothing is left blank.
+  // Hungarian minor and double harmonic have augmented seconds, so some degrees stack into
+  // chords with no name (D F A♯ in C Hungarian minor). The table shows those as blanks.
+  const UNNAMED: readonly ScaleId[] = ["hungarianMinor", "doubleHarmonic"];
+
+  it("names a triad and a seventh on every degree of the seven-note modes", () => {
+    // Every mode of major, melodic and harmonic minor stacks into named triads, so nothing is blank.
     for (const scaleId of Object.keys(SCALES) as ScaleId[]) {
       const scale = scaleOnPitchClass(0, scaleId);
-      if (scale.tones.length !== 7) continue;
+      if (scale.tones.length !== 7 || UNNAMED.includes(scaleId)) continue;
       for (const c of chordsInScale(scale)) {
         expect(c.triad, `${scaleId} degree ${c.degree} triad`).toBeDefined();
         expect(c.seventh, `${scaleId} degree ${c.degree} seventh`).toBeDefined();
       }
     }
+  });
+
+  it("leaves a degree blank when its stacked thirds have no name", () => {
+    const hungarian = chordsInScale(scaleOnPitchClass(0, "hungarianMinor"));
+    expect(hungarian[0]?.triad).toBe("minor");
+    expect(hungarian[1]?.triad).toBeUndefined();
   });
 
   it("is empty for scales that do not have seven tones", () => {

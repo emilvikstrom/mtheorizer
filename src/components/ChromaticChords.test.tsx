@@ -29,9 +29,9 @@ describe("ChromaticChords", () => {
   it("opens the Neapolitan triad and the dominant seventh in the chord view", async () => {
     const onOpenChord = vi.fn();
     render(<ChromaticChords value={cMajor} onOpenChord={onOpenChord} />);
-    await userEvent.click(screen.getByRole("button", { name: "Open D♭ in Chords & scales" }));
+    await userEvent.click(screen.getByRole("button", { name: "Open D♭ in Chords" }));
     expect(onOpenChord).toHaveBeenLastCalledWith(note("D", -1), "major");
-    await userEvent.click(screen.getByRole("button", { name: "Open A♭7 in Chords & scales" }));
+    await userEvent.click(screen.getByRole("button", { name: "Open A♭7 in Chords" }));
     expect(onOpenChord).toHaveBeenLastCalledWith(note("A", -1), "dominant7");
   });
 });

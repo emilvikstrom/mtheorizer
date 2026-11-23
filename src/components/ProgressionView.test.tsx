@@ -123,7 +123,7 @@ describe("ProgressionView", () => {
   it("opens a chord in the chord view", async () => {
     const user = userEvent.setup();
     render(<Harness />);
-    await user.click(screen.getByRole("button", { name: "Open Am in Chords & scales" }));
+    await user.click(screen.getByRole("button", { name: "Open Am in Chords" }));
     expect(opened).toHaveBeenCalledWith(note("A"), "minor");
   });
 
@@ -271,5 +271,14 @@ describe("ProgressionView", () => {
     render(<Harness />);
     await user.click(screen.getByRole("radio", { name: "G♯/A♭" }));
     expect(cadenceList()[0]).toHaveTextContent("AuthenticV–I: E♭ → A♭");
+  });
+
+  it("lists the chromatic chords of the progression's key, moved here from the circle", () => {
+    render(<Harness />);
+    expect(
+      screen.getByRole("heading", { name: "Chromatic chords in C major" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Secondary leading-tone chords" })).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Chromatic chords" })).toBeInTheDocument();
   });
 });

@@ -68,7 +68,7 @@ export function NegativeHarmony({ value, onOpenChord }: NegativeHarmonyProps) {
               className="play__button"
               onClick={() => onOpenChord(row.negative.root, row.negative.qualityId)}
             >
-              {`Open ${row.negative.symbol} in Chords & scales`}
+              {`Open ${row.negative.symbol} in Chords`}
             </button>
           </li>
         ))}

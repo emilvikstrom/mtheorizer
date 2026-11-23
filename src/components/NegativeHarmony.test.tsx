@@ -35,7 +35,7 @@ describe("NegativeHarmony", () => {
   it("opens the negative chord in the chord view", async () => {
     const onOpenChord = vi.fn();
     render(<NegativeHarmony value={cMajor} onOpenChord={onOpenChord} />);
-    await userEvent.click(screen.getByRole("button", { name: "Open Cm in Chords & scales" }));
+    await userEvent.click(screen.getByRole("button", { name: "Open Cm in Chords" }));
     expect(onOpenChord).toHaveBeenLastCalledWith(note("C"), "minor");
   });
 });
