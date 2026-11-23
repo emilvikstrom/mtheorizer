@@ -26,7 +26,7 @@ describe("recent and favorite choices", () => {
     render(<App />);
     await user.click(screen.getByRole("button", { name: "7" }));
     await user.click(screen.getByRole("radio", { name: "1st inversion" }));
-    await user.click(screen.getByRole("radio", { name: "Guitar" }));
+    await user.click(screen.getByRole("radio", { name: "Fretboard" }));
     await user.click(screen.getByRole("radio", { name: "E" }));
     expect(window.location.hash).toBe("#/E/major?with=7&on=guitar");
 

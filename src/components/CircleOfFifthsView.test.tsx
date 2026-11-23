@@ -35,6 +35,14 @@ function Harness() {
   return <CircleOfFifthsView value={selected} onChange={setSelected} onOpenChord={opened} />;
 }
 
+/** Show the circle and pick a topic in the key panel. */
+async function showTopic(name: string) {
+  const user = userEvent.setup();
+  render(<Harness />);
+  await user.click(screen.getByRole("tab", { name }));
+  return user;
+}
+
 const heading = () => screen.getByRole("heading", { level: 2 });
 const listText = (name: string) =>
   within(screen.getByRole("list", { name }))
@@ -59,9 +67,9 @@ describe("CircleOfFifthsView", () => {
     const user = userEvent.setup();
     render(<Harness />);
     await user.click(screen.getByRole("radio", { name: "E♭ major" }));
-    await user.click(screen.getByRole("button", { name: "Open B♭ in Chords & scales" }));
+    await user.click(screen.getByRole("button", { name: "Open B♭ in Chords" }));
     expect(opened).toHaveBeenLastCalledWith(note("B", -1), "major");
-    await user.click(screen.getByRole("button", { name: "Open D° in Chords & scales" }));
+    await user.click(screen.getByRole("button", { name: "Open D° in Chords" }));
     expect(opened).toHaveBeenLastCalledWith(note("D"), "diminished");
   });
 
@@ -71,8 +79,8 @@ describe("CircleOfFifthsView", () => {
         .getAllByRole("listitem")
         .map((item) => item.querySelector(".triad__symbol")?.textContent);
 
-    it("shows C major borrowing from C minor, with the origin on each chord", () => {
-      render(<Harness />);
+    it("shows C major borrowing from C minor, with the origin on each chord", async () => {
+      await showTopic("Borrowed chords");
       expect(borrowedSymbols()).toEqual(["D°", "E♭", "Fm", "A♭", "B♭"]);
       const items = within(screen.getByRole("list", { name: "Borrowed chords" })).getAllByRole(
         "listitem",
@@ -88,31 +96,28 @@ describe("CircleOfFifthsView", () => {
     });
 
     it("shows a minor key borrowing from the parallel major", async () => {
-      const user = userEvent.setup();
-      render(<Harness />);
+      const user = await showTopic("Borrowed chords");
       await user.click(screen.getByRole("radio", { name: "A minor" }));
       expect(borrowedSymbols()).toEqual(["A", "Bm", "D"]);
     });
 
     it("follows the key and its spelling", async () => {
-      const user = userEvent.setup();
-      render(<Harness />);
+      const user = await showTopic("Borrowed chords");
       await user.click(screen.getByRole("radio", { name: "D♭ major / C♯ major" }));
       expect(borrowedSymbols()).toEqual(["E♭°", "F♭", "G♭m", "B𝄫", "C♭"]);
     });
 
     it("opens a borrowed chord, spelled as in the key", async () => {
-      const user = userEvent.setup();
-      render(<Harness />);
+      const user = await showTopic("Borrowed chords");
       await user.click(
         screen.getByRole("button", {
-          name: "Open A♭ in Chords & scales, borrowed from C minor",
+          name: "Open A♭ in Chords, borrowed from C minor",
         }),
       );
       expect(opened).toHaveBeenLastCalledWith(note("A", -1), "major");
       await user.click(
         screen.getByRole("button", {
-          name: "Open Fm in Chords & scales, borrowed from C minor",
+          name: "Open Fm in Chords, borrowed from C minor",
         }),
       );
       expect(opened).toHaveBeenLastCalledWith(note("F"), "minor");
@@ -126,138 +131,104 @@ describe("CircleOfFifthsView", () => {
         .getAllByRole("listitem")
         .map((item) => item.querySelector(selector)?.textContent);
 
-    it("shows C major's secondary dominants with the chord each one leads to", () => {
-      render(<Harness />);
+    it("shows C major's secondary dominants with the chord each one leads to", async () => {
+      await showTopic("Secondary dominants");
       expect(column(".triad__roman")).toEqual(["V7/ii", "V7/iii", "V7/IV", "V7/V", "V7/vi"]);
       expect(column(".triad__symbol")).toEqual(["A7", "B7", "C7", "D7", "E7"]);
       expect(column(".triad__function")).toEqual(["→ Dm", "→ Em", "→ F", "→ G", "→ Am"]);
     });
 
-    it("writes out the notes from outside the key, not only by styling", () => {
-      render(<Harness />);
+    it("writes out the notes from outside the key, not only by styling", async () => {
+      await showTopic("Secondary dominants");
       expect(column(".triad__foreign")).toEqual(["● C♯", "● D♯ F♯", "● B♭", "● F♯", "● G♯"]);
       expect(
         screen.getByRole("button", {
-          name: "Open D7 in Chords & scales, V7/V, resolves to G, with F♯ from outside the key",
+          name: "Open D7 in Chords, V7/V, resolves to G, with F♯ from outside the key",
         }),
       ).toBeInTheDocument();
     });
 
     it("says when a secondary dominant has only notes of the key", async () => {
-      const user = userEvent.setup();
-      render(<Harness />);
+      const user = await showTopic("Secondary dominants");
       await user.click(screen.getByRole("radio", { name: "A minor" }));
       expect(column(".triad__roman")).toEqual(["V7/III", "V7/iv", "V7/v", "V7/VI", "V7/VII"]);
       expect(column(".triad__foreign")[0]).toBe("in key");
       expect(
         screen.getByRole("button", {
-          name: "Open G7 in Chords & scales, V7/III, resolves to C, all notes in the key",
+          name: "Open G7 in Chords, V7/III, resolves to C, all notes in the key",
         }),
       ).toBeInTheDocument();
     });
 
     it("follows the key's spelling", async () => {
-      const user = userEvent.setup();
-      render(<Harness />);
+      const user = await showTopic("Secondary dominants");
       await user.click(screen.getByRole("radio", { name: "F♯ major / G♭ major" }));
       expect(column(".triad__symbol")).toEqual(["D♯7", "E♯7", "F♯7", "G♯7", "A♯7"]);
     });
 
     it("opens a secondary dominant as a dominant seventh", async () => {
-      const user = userEvent.setup();
-      render(<Harness />);
+      const user = await showTopic("Secondary dominants");
       await user.click(
         screen.getByRole("button", {
-          name: "Open D7 in Chords & scales, V7/V, resolves to G, with F♯ from outside the key",
+          name: "Open D7 in Chords, V7/V, resolves to G, with F♯ from outside the key",
         }),
       );
       expect(opened).toHaveBeenLastCalledWith(note("D"), "dominant7");
     });
   });
 
-  describe("secondary leading-tone chords", () => {
-    const list = () => screen.getByRole("list", { name: "Secondary leading-tone chords" });
-    const column = (selector: string) =>
-      within(list())
-        .getAllByRole("listitem")
-        .map((item) => item.querySelector(selector)?.textContent);
-
-    it("shows C major's leading-tone chords with the chord each one leads to", () => {
-      render(<Harness />);
-      expect(column(".triad__roman")).toEqual([
-        "vii°7/ii",
-        "vii°7/iii",
-        "vii°7/IV",
-        "vii°7/V",
-        "vii°7/vi",
-      ]);
-      expect(column(".triad__symbol")).toEqual(["C♯°7", "D♯°7", "E°7", "F♯°7", "G♯°7"]);
-      expect(column(".triad__function")).toEqual(["→ Dm", "→ Em", "→ F", "→ G", "→ Am"]);
-    });
-
-    it("writes out the notes from outside the key, not only by styling", () => {
-      render(<Harness />);
-      expect(column(".triad__foreign")).toEqual([
-        "● C♯ B♭",
-        "● D♯ F♯",
-        "● B♭ D♭",
-        "● F♯ E♭",
-        "● G♯",
-      ]);
-      expect(
-        screen.getByRole("button", {
-          name: "Open F♯°7 in Chords & scales, vii°7/V, resolves to G, with F♯ and E♭ from outside the key",
-        }),
-      ).toBeInTheDocument();
-    });
-
-    it("follows the key's spelling", async () => {
+  describe("the key panel", () => {
+    it("shows one topic at a time, the key's chords first", async () => {
       const user = userEvent.setup();
       render(<Harness />);
-      await user.click(screen.getByRole("radio", { name: "F♯ major / G♭ major" }));
-      expect(column(".triad__symbol")).toEqual(["F𝄪°7", "G𝄪°7", "A♯°7", "B♯°7", "C𝄪°7"]);
-    });
-
-    it("switches to half-diminished sevenths before major chords only", async () => {
-      const user = userEvent.setup();
-      render(<Harness />);
-      const toggle = screen.getByRole("button", { name: "Half-diminished ø7" });
-      expect(toggle).toHaveAttribute("aria-pressed", "false");
-      await user.click(toggle);
-      expect(toggle).toHaveAttribute("aria-pressed", "true");
-      expect(column(".triad__roman")).toEqual([
-        "vii°7/ii",
-        "vii°7/iii",
-        "viiø7/IV",
-        "viiø7/V",
-        "vii°7/vi",
+      const topics = within(screen.getByRole("tablist", { name: "About this key" }));
+      expect(topics.getAllByRole("tab").map((t) => t.textContent)).toEqual([
+        "Chords in the key",
+        "Nearby keys",
+        "Secondary dominants",
+        "Borrowed chords",
+        "Negative harmony",
       ]);
-      expect(column(".triad__symbol")).toEqual(["C♯°7", "D♯°7", "Em7♭5", "F♯m7♭5", "G♯°7"]);
-      await user.click(screen.getByRole("button", { name: "Diminished °7" }));
-      expect(column(".triad__symbol")).toEqual(["C♯°7", "D♯°7", "E°7", "F♯°7", "G♯°7"]);
-    });
-
-    it("opens a half-diminished leading-tone chord as a half-diminished seventh", async () => {
-      const user = userEvent.setup();
-      render(<Harness />);
-      await user.click(screen.getByRole("button", { name: "Half-diminished ø7" }));
-      await user.click(
-        screen.getByRole("button", {
-          name: "Open F♯m7♭5 in Chords & scales, viiø7/V, resolves to G, with F♯ from outside the key",
-        }),
+      expect(topics.getByRole("tab", { name: "Chords in the key" })).toHaveAttribute(
+        "aria-selected",
+        "true",
       );
-      expect(opened).toHaveBeenLastCalledWith(note("F", 1), "halfDiminished7");
+      expect(screen.getByRole("list", { name: "Diatonic triads" })).toBeInTheDocument();
+      expect(screen.queryByRole("list", { name: "Secondary dominants" })).not.toBeInTheDocument();
+
+      await user.click(topics.getByRole("tab", { name: "Secondary dominants" }));
+      expect(screen.getByRole("list", { name: "Secondary dominants" })).toBeInTheDocument();
+      expect(screen.queryByRole("list", { name: "Diatonic triads" })).not.toBeInTheDocument();
     });
 
-    it("opens a leading-tone chord as a diminished seventh", async () => {
+    it("says where each topic is on the circle, for the selected key", async () => {
       const user = userEvent.setup();
       render(<Harness />);
-      await user.click(
-        screen.getByRole("button", {
-          name: "Open F♯°7 in Chords & scales, vii°7/V, resolves to G, with F♯ and E♭ from outside the key",
-        }),
-      );
-      expect(opened).toHaveBeenLastCalledWith(note("F", 1), "diminished7");
+      const note = () => document.querySelector(".key-details__circle")?.textContent ?? "";
+      expect(note()).toMatch(/On the circle: The outlined block: F, C and G \(IV, I, V\)/);
+      await user.click(screen.getByRole("tab", { name: "Nearby keys" }));
+      expect(note()).toMatch(/G major is one step clockwise, F major one step counterclockwise/);
+      await user.click(screen.getByRole("tab", { name: "Borrowed chords" }));
+      expect(note()).toMatch(/C minor is three steps counterclockwise/);
+      await user.click(screen.getByRole("tab", { name: "Negative harmony" }));
+      expect(note()).toMatch(/between C and G,.*C ↔ G, F ↔ D/);
+      // The topic stays when the key changes, and the note follows the key.
+      await user.click(screen.getByRole("radio", { name: "A minor" }));
+      expect(note()).toMatch(/between A and E/);
+    });
+
+    it("keeps the key signature in view whatever the topic", async () => {
+      const user = await showTopic("Nearby keys");
+      await user.click(screen.getByRole("radio", { name: "E♭ major" }));
+      expect(screen.getByText("3 flats")).toBeInTheDocument();
+      expect(listText("Accidentals in the key signature")).toEqual(["B♭", "E♭", "A♭"]);
+    });
+
+    it("leaves the half-step chords to the progressions", () => {
+      render(<Harness />);
+      for (const name of ["Secondary leading-tone chords", "Chromatic chords"]) {
+        expect(screen.queryByRole("list", { name })).not.toBeInTheDocument();
+      }
     });
   });
 
@@ -308,8 +279,7 @@ describe("CircleOfFifthsView", () => {
   });
 
   it("jumps to related keys", async () => {
-    const user = userEvent.setup();
-    render(<Harness />);
+    const user = await showTopic("Nearby keys");
     await user.click(screen.getByRole("button", { name: /Relative minor/ }));
     expect(heading()).toHaveTextContent("A minor");
 

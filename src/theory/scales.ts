@@ -37,9 +37,27 @@ export type ScaleId =
   | "majorPentatonic"
   | "minorPentatonic"
   | "minorBlues"
-  | "majorBlues";
+  | "majorBlues"
+  | "dorianFlat2"
+  | "lydianAugmented"
+  | "mixolydianFlat6"
+  | "locrianNatural2"
+  | "phrygianDominant"
+  | "hungarianMinor"
+  | "doubleHarmonic"
+  | "bebopDominant"
+  | "hirajoshi"
+  | "inSen";
 
-export type ScaleGroupId = "minor" | "modes" | "jazz" | "symmetric" | "pentatonic";
+export type ScaleGroupId =
+  | "minor"
+  | "modes"
+  | "melodicModes"
+  | "harmonicModes"
+  | "jazz"
+  | "symmetric"
+  | "pentatonic"
+  | "world";
 
 export interface Scale {
   readonly id: ScaleId;
@@ -237,6 +255,106 @@ const MAJOR_BLUES_SCALE = scaleOf(
   { 1: flat("D") },
 );
 
+/** The second mode of melodic minor: phrygian with a major sixth (1 ♭2 ♭3 4 5 6 ♭7). */
+const DORIAN_FLAT_2_SCALE = scaleOf(
+  "dorianFlat2",
+  "Dorian ♭2",
+  [MINOR_SECOND, MINOR_THIRD, PERFECT_FOURTH, PERFECT_FIFTH, MAJOR_SIXTH, MINOR_SEVENTH],
+  {},
+  "Phrygian ♮6",
+);
+
+/** The third mode of melodic minor: lydian with a sharp fifth (1 2 3 ♯4 ♯5 6 7), for maj7♯5. */
+const LYDIAN_AUGMENTED_SCALE = scaleOf("lydianAugmented", "Lydian augmented", [
+  MAJOR_SECOND,
+  MAJOR_THIRD,
+  AUGMENTED_FOURTH,
+  AUGMENTED_FIFTH,
+  MAJOR_SIXTH,
+  MAJOR_SEVENTH,
+]);
+
+/** The fifth mode of melodic minor: mixolydian with a minor sixth (1 2 3 4 5 ♭6 ♭7). */
+const MIXOLYDIAN_FLAT_6_SCALE = scaleOf(
+  "mixolydianFlat6",
+  "Mixolydian ♭6",
+  [MAJOR_SECOND, MAJOR_THIRD, PERFECT_FOURTH, PERFECT_FIFTH, MINOR_SIXTH, MINOR_SEVENTH],
+  {},
+  "Aeolian dominant",
+);
+
+/** The sixth mode of melodic minor: locrian with a major second (1 2 ♭3 4 ♭5 ♭6 ♭7), for m7♭5. */
+const LOCRIAN_NATURAL_2_SCALE = scaleOf(
+  "locrianNatural2",
+  "Locrian ♮2",
+  [MAJOR_SECOND, MINOR_THIRD, PERFECT_FOURTH, DIMINISHED_FIFTH, MINOR_SIXTH, MINOR_SEVENTH],
+  {},
+  "Half-diminished",
+);
+
+/**
+ * The fifth mode of harmonic minor (1 ♭2 3 4 5 ♭6 ♭7): the scale of V7♭9 in a minor key, and of
+ * much flamenco and klezmer.
+ */
+const PHRYGIAN_DOMINANT_SCALE = scaleOf("phrygianDominant", "Phrygian dominant", [
+  MINOR_SECOND,
+  MAJOR_THIRD,
+  PERFECT_FOURTH,
+  PERFECT_FIFTH,
+  MINOR_SIXTH,
+  MINOR_SEVENTH,
+]);
+
+/** Harmonic minor with a raised fourth (1 2 ♭3 ♯4 5 ♭6 7): two augmented seconds. */
+const HUNGARIAN_MINOR_SCALE = scaleOf("hungarianMinor", "Hungarian minor", [
+  MAJOR_SECOND,
+  MINOR_THIRD,
+  AUGMENTED_FOURTH,
+  PERFECT_FIFTH,
+  MINOR_SIXTH,
+  MAJOR_SEVENTH,
+]);
+
+/** Major with a flat second and sixth (1 ♭2 3 4 5 ♭6 7): an augmented second in each half. */
+const DOUBLE_HARMONIC_SCALE = scaleOf(
+  "doubleHarmonic",
+  "Double harmonic major",
+  [MINOR_SECOND, MAJOR_THIRD, PERFECT_FOURTH, PERFECT_FIFTH, MINOR_SIXTH, MAJOR_SEVENTH],
+  {},
+  "Byzantine",
+);
+
+/**
+ * Mixolydian with a passing major seventh (1 2 3 4 5 6 ♭7 7). Eight notes, so a run of eighth
+ * notes from a chord tone on the beat lands on chord tones on every beat. The ♭7 and 7 share a
+ * letter.
+ */
+const BEBOP_DOMINANT_SCALE = scaleOf("bebopDominant", "Bebop dominant", [
+  MAJOR_SECOND,
+  MAJOR_THIRD,
+  PERFECT_FOURTH,
+  PERFECT_FIFTH,
+  MAJOR_SIXTH,
+  MINOR_SEVENTH,
+  MAJOR_SEVENTH,
+]);
+
+/** A Japanese pentatonic scale (1 2 ♭3 5 ♭6), the minor pentatonic's darker relative. */
+const HIRAJOSHI_SCALE = scaleOf("hirajoshi", "Hirajoshi", [
+  MAJOR_SECOND,
+  MINOR_THIRD,
+  PERFECT_FIFTH,
+  MINOR_SIXTH,
+]);
+
+/** A Japanese pentatonic scale with a half step above the tonic (1 ♭2 4 5 ♭7). */
+const IN_SEN_SCALE = scaleOf("inSen", "In-sen", [
+  MINOR_SECOND,
+  PERFECT_FOURTH,
+  PERFECT_FIFTH,
+  MINOR_SEVENTH,
+]);
+
 export const SCALES: Record<ScaleId, Scale> = {
   major: MAJOR_SCALE,
   naturalMinor: NATURAL_MINOR_SCALE,
@@ -256,6 +374,16 @@ export const SCALES: Record<ScaleId, Scale> = {
   minorPentatonic: MINOR_PENTATONIC_SCALE,
   minorBlues: MINOR_BLUES_SCALE,
   majorBlues: MAJOR_BLUES_SCALE,
+  dorianFlat2: DORIAN_FLAT_2_SCALE,
+  lydianAugmented: LYDIAN_AUGMENTED_SCALE,
+  mixolydianFlat6: MIXOLYDIAN_FLAT_6_SCALE,
+  locrianNatural2: LOCRIAN_NATURAL_2_SCALE,
+  phrygianDominant: PHRYGIAN_DOMINANT_SCALE,
+  hungarianMinor: HUNGARIAN_MINOR_SCALE,
+  doubleHarmonic: DOUBLE_HARMONIC_SCALE,
+  bebopDominant: BEBOP_DOMINANT_SCALE,
+  hirajoshi: HIRAJOSHI_SCALE,
+  inSen: IN_SEN_SCALE,
 };
 
 export interface ScaleGroup {
@@ -277,9 +405,26 @@ export const SCALE_GROUPS: readonly ScaleGroup[] = [
     scales: ["dorian", "phrygian", "lydian", "mixolydian", "locrian"],
   },
   {
+    id: "melodicModes",
+    name: "Modes of melodic minor",
+    scales: [
+      "dorianFlat2",
+      "lydianAugmented",
+      "lydianDominant",
+      "mixolydianFlat6",
+      "locrianNatural2",
+      "altered",
+    ],
+  },
+  {
+    id: "harmonicModes",
+    name: "Harmonic minor & relatives",
+    scales: ["phrygianDominant", "hungarianMinor", "doubleHarmonic"],
+  },
+  {
     id: "jazz",
-    name: "Jazz",
-    scales: ["lydianDominant", "altered"],
+    name: "Bebop",
+    scales: ["bebopDominant"],
   },
   {
     id: "symmetric",
@@ -290,6 +435,11 @@ export const SCALE_GROUPS: readonly ScaleGroup[] = [
     id: "pentatonic",
     name: "Pentatonic & blues",
     scales: ["majorPentatonic", "minorPentatonic", "minorBlues", "majorBlues"],
+  },
+  {
+    id: "world",
+    name: "Japanese pentatonic",
+    scales: ["hirajoshi", "inSen"],
   },
 ];
 

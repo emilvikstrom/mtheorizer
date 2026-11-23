@@ -21,7 +21,7 @@ test("a chord symbol is spelled with the right accidentals", async ({ page }) =>
   await expect(page.getByRole("img", { name: /E♭ minor: E♭, G♭, B♭/ })).toBeVisible();
 });
 
-test("chords & scales: C major screenshot", async ({ page }) => {
+test("chords: C major screenshot", async ({ page }) => {
   await page.goto("/#/C/major");
   await expect(page.getByRole("img", { name: /Piano keyboard showing C major/ })).toBeVisible();
   await expect(page).toHaveScreenshot("lookup-c-major.png", { fullPage: true });

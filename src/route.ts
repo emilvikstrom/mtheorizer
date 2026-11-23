@@ -31,6 +31,7 @@ import {
   circlePosition,
   formatBuilderChords,
   formatPicks,
+  formatTune,
   identifyQuality,
   isListeningLevel,
   isProgressionId,
@@ -42,10 +43,14 @@ import {
   note,
   parseBuilderChords,
   parsePicks,
+  parseTune,
   specOf,
   tuningFor,
 } from "./theory";
+import { type GuitarOptions, type NeckSetup, rememberNeck, storedNeck } from "./neck";
 import { DEFAULT_TONE_DISPLAY, type ToneDisplay, isToneDisplay } from "./toneLabels";
+
+export type { GuitarOptions } from "./neck";
 
 /**
  * What the app shows, kept in the URL hash so a link opens the same view:
@@ -63,6 +68,10 @@ import { DEFAULT_TONE_DISPLAY, type ToneDisplay, isToneDisplay } from "./toneLab
  *   #/identify?on=guitar&frets=6.0,5.2,4.2,3.0&from=13  the same on a guitar neck: pressed `string.fret`
  *                                  places, and the first fret shown (13 = frets 13–24)
  *   #/tonnetz/C/major              the Tonnetz with the C major triad selected
+ *   #/settings                     the instrument settings (strings, tuning, presets)
+ *   #/scale-finder?notes=0,4,7     the scales that hold these pitch classes (0 = C … 11 = B)
+ *   #/C/major?on=custom&tune=D4,A3,F3,C3,G2,C2  a neck of any strings: open strings from string 1,
+ *                                  letter, `s`/`b`, octave
  *
  * The chord is a base chord (`major`, `minor`, `diminished`, `augmented`, `sus2`,
  * `sus4` or `power`) and the qualities in `with`. Qualities that do not fit the
@@ -72,17 +81,11 @@ import { DEFAULT_TONE_DISPLAY, type ToneDisplay, isToneDisplay } from "./toneLab
  * Notes are a letter plus `s` (sharp) or `b` (flat). `#` is read as a sharp too.
  */
 
-/** The piano, or a fretted instrument: `on=guitar`, `on=ukulele`, `on=bass`, `on=bass5`, `on=mandolin`. */
-export type Instrument = "piano" | StringInstrumentId;
-
 /**
- * How the neck is shown. Left out of the route when it is the default (standard tuning, right-handed).
- * Only the guitar has a choice of tuning; the other instruments have one each.
+ * The piano, or a fretted instrument: `on=guitar`, `on=ukulele`, `on=bass`, `on=bass5`,
+ * `on=mandolin`, or `on=custom` with the strings in `tune`.
  */
-export interface GuitarOptions {
-  readonly tuning?: TuningId;
-  readonly left?: boolean;
-}
+export type Instrument = "piano" | StringInstrumentId;
 
 /**
  * What the keys and frets say. Left out of old links, which then follow the
@@ -145,7 +148,7 @@ export interface BuildRoute {
  * "What chord is this?". `instrument` is a string instrument when the neck is shown (the piano
  * when absent), `frets` the places pressed on it and `from` the first fret shown (1 when absent).
  */
-export interface IdentifyRoute {
+export interface IdentifyRoute extends Omit<GuitarOptions, "left"> {
   readonly page: "identify";
   readonly instrument?: StringInstrumentId;
   readonly frets?: readonly FretPick[];
@@ -171,6 +174,17 @@ export interface QuizRoute {
   readonly inversions?: true;
 }
 
+/** Find scales from notes: `notes` are pitch classes (0 = C), in the order they were picked. */
+export interface ScaleFinderRoute {
+  readonly page: "scaleFinder";
+  readonly notes: readonly number[];
+}
+
+/** The settings page. What it sets is remembered in the browser, not kept in the link. */
+export interface SettingsRoute {
+  readonly page: "settings";
+}
+
 /** The Tonnetz with one triad selected. */
 export interface TonnetzRoute {
   readonly page: "tonnetz";
@@ -185,7 +199,9 @@ export type Route =
   | BuildRoute
   | IdentifyRoute
   | QuizRoute
-  | TonnetzRoute;
+  | TonnetzRoute
+  | SettingsRoute
+  | ScaleFinderRoute;
 
 const MAX_INVERSION = 3;
 const STORAGE_KEY = "mtheorizer.instrument";
@@ -243,11 +259,41 @@ export function displayOptions(route: LookupRoute): DisplayOptions {
 export function guitarOptions(route: LookupRoute): GuitarOptions {
   return {
     ...(route.tuning && route.tuning !== "standard" ? { tuning: route.tuning } : {}),
+    ...(route.instrument === "custom" && route.strings ? { strings: route.strings } : {}),
     ...(route.left ? { left: true } : {}),
   };
 }
 
+/** `route` on the neck as `setup` says, or on the piano as it was. */
+export function withNeck<R extends LookupRoute>(route: R, setup: NeckSetup): R {
+  const next: Record<string, unknown> = { ...route };
+  delete next.tuning;
+  delete next.strings;
+  delete next.left;
+  return { ...next, ...setup } as unknown as R;
+}
+
+/** The neck of `route`, to remember it for the next link that does not say. */
+export function neckOf(route: LookupRoute): NeckSetup | undefined {
+  return route.instrument === "piano"
+    ? undefined
+    : { instrument: route.instrument, ...guitarOptions(route) };
+}
+
 // --- Defaults ---------------------------------------------------------------
+
+/** The remembered neck options (tuning, hand) when `instrument` is the remembered neck. */
+function storedOptions(instrument: Instrument): GuitarOptions {
+  if (instrument === "piano") return {};
+  const { instrument: remembered, ...options } = storedNeck();
+  return remembered === instrument ? options : {};
+}
+
+/** The instrument, and for a neck its tuning and hand, a chord or scale opens on when the link says nothing. */
+export function storedLookupSetup(): { instrument: Instrument } & GuitarOptions {
+  const instrument = storedInstrument();
+  return { instrument, ...storedOptions(instrument) };
+}
 
 export const defaultChordRoute = (instrument: Instrument = "piano"): ChordRoute => ({
   page: "chord",
@@ -255,7 +301,10 @@ export const defaultChordRoute = (instrument: Instrument = "piano"): ChordRoute 
   spec: specOf("major"),
   inversion: 0,
   instrument,
+  ...storedOptions(instrument),
 });
+
+export const defaultSettingsRoute = (): SettingsRoute => ({ page: "settings" });
 
 export const defaultIdentifyRoute = (): IdentifyRoute => ({ page: "identify" });
 
@@ -291,12 +340,18 @@ export function formatRouteNote(n: Note): string {
   return `${n.letter}${accidental}`;
 }
 
+/** `&tuning=dropD`, `&tune=D4,A3,…` and `&hand=left`, for the options that are not the default. */
+function formatNeckOptions(instrument: Instrument, options: GuitarOptions): string {
+  const { tuning, strings, left } = options;
+  const tuned = instrument === "guitar" && tuning ? `&tuning=${tuning}` : "";
+  const custom = instrument === "custom" && strings ? `&tune=${formatTune(strings)}` : "";
+  return `${tuned}${custom}${left ? "&hand=left" : ""}`;
+}
+
 function formatGuitarOptions(route: LookupRoute): string {
   const show = route.show ? `&show=${route.show}` : "";
   if (route.instrument === "piano") return show;
-  const { tuning, left } = guitarOptions(route);
-  const tuned = route.instrument === "guitar" && tuning ? `&tuning=${tuning}` : "";
-  return `${tuned}${left ? "&hand=left" : ""}${show}`;
+  return `${formatNeckOptions(route.instrument, guitarOptions(route))}${show}`;
 }
 
 /** `minor?with=7,9` style: the base chord, then the qualities. */
@@ -348,15 +403,49 @@ export function formatRoute(route: Route): string {
       return formatQuiz(route);
     case "tonnetz":
       return `#/tonnetz/${formatRouteNote(route.root)}/${route.mode}`;
+    case "settings":
+      return "#/settings";
+    case "scaleFinder":
+      return route.notes.length > 0
+        ? `#/scale-finder?notes=${route.notes.join(",")}`
+        : "#/scale-finder";
   }
 }
 
 function formatIdentify(route: IdentifyRoute): string {
   if (!route.instrument) return "#/identify";
   const parts = [`on=${route.instrument}`];
+  const neck = formatNeckOptions(route.instrument, route);
+  if (neck) parts.push(neck.slice(1));
   if (route.frets && route.frets.length > 0) parts.push(`frets=${formatPicks(route.frets)}`);
   if (route.from !== undefined && route.from !== 1) parts.push(`from=${route.from}`);
   return `#/identify?${parts.join("&")}`;
+}
+
+/** Pitch classes from link text, each once, in order; anything else is dropped. */
+function parseNotes(text: string | null): number[] {
+  const notes: number[] = [];
+  for (const part of (text ?? "").split(",")) {
+    if (!/^\d{1,2}$/.test(part)) continue;
+    const pc = Number(part);
+    if (pc < 12 && !notes.includes(pc)) notes.push(pc);
+  }
+  return notes;
+}
+
+function parseNeckOptions(instrument: Instrument, query: URLSearchParams): GuitarOptions {
+  const tuningParam = query.get("tuning");
+  const strings = instrument === "custom" ? parseTune(query.get("tune")) : undefined;
+  return {
+    ...(instrument === "guitar" &&
+    tuningParam !== null &&
+    tuningParam !== "standard" &&
+    (TUNING_IDS as string[]).includes(tuningParam)
+      ? { tuning: tuningParam as TuningId }
+      : {}),
+    ...(strings ? { strings } : {}),
+    ...(instrument !== "piano" && query.get("hand") === "left" ? { left: true } : {}),
+  };
 }
 
 function parseIdentify(query: URLSearchParams): IdentifyRoute {
@@ -365,11 +454,17 @@ function parseIdentify(query: URLSearchParams): IdentifyRoute {
     ? (on as StringInstrumentId)
     : undefined;
   if (!instrument) return { page: "identify" };
-  const frets = parsePicks(query.get("frets"), tuningFor(instrument).strings.length);
+  const options = parseNeckOptions(instrument, query);
+  const frets = parsePicks(
+    query.get("frets"),
+    tuningFor(instrument, options.tuning, options.strings).strings.length,
+  );
   const from = Number(query.get("from"));
   return {
     page: "identify",
     instrument,
+    ...(options.tuning ? { tuning: options.tuning } : {}),
+    ...(options.strings ? { strings: options.strings } : {}),
     ...(frets.length > 0 ? { frets } : {}),
     ...(FRET_WINDOW_STARTS.includes(from) && from !== 1 ? { from } : {}),
   };
@@ -538,6 +633,9 @@ function parseLink(
   const query = new URLSearchParams(queryAt === -1 ? "" : trimmed.slice(queryAt + 1));
   const parts = path.split("/").filter(Boolean).map(safeDecode);
 
+  if (parts[0] === "settings") return { page: "settings" };
+  if (parts[0] === "scale-finder")
+    return { page: "scaleFinder", notes: parseNotes(query.get("notes")) };
   if (parts[0] === "identify") return parseIdentify(query);
   if (parts[0] === "quiz") return parseQuiz(parts[1], query);
 
@@ -575,16 +673,7 @@ function parseLink(
 
   const onParam = query.get("on");
   const instrument = isInstrument(onParam) ? onParam : fallbackInstrument;
-  const tuningParam = query.get("tuning");
-  const options: GuitarOptions = {
-    ...(instrument === "guitar" &&
-    tuningParam !== null &&
-    tuningParam !== "standard" &&
-    (TUNING_IDS as string[]).includes(tuningParam)
-      ? { tuning: tuningParam as TuningId }
-      : {}),
-    ...(instrument !== "piano" && query.get("hand") === "left" ? { left: true } : {}),
-  };
+  const options = parseNeckOptions(instrument, query);
   const showParam = query.get("show");
   const display: DisplayOptions = isToneDisplay(showParam) ? { show: showParam } : {};
   const fallback = strict ? undefined : defaultChordRoute(instrument);
@@ -637,6 +726,8 @@ export function navigate(route: Route, options: { replace?: boolean } = {}) {
   const hash = formatRoute(route);
   if (route.page === "chord" || route.page === "scale") {
     rememberInstrument(route.instrument);
+    const neck = neckOf(route);
+    if (neck) rememberNeck(neck);
     if (route.show) rememberToneDisplay(route.show);
   }
   if (hash === window.location.hash) return;

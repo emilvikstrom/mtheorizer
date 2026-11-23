@@ -84,7 +84,7 @@ export function PivotChords({ value, onOpenChord }: PivotChordsProps) {
                         <button
                           type="button"
                           className={`triad triad--${triad.quality}`}
-                          aria-label={`Open ${triad.symbol} in Chords & scales, ${triad.roman} in ${formatKey(step.from)} and ${inTarget.roman} in ${formatKey(step.to)}`}
+                          aria-label={`Open ${triad.symbol} in Chords, ${triad.roman} in ${formatKey(step.from)} and ${inTarget.roman} in ${formatKey(step.to)}`}
                           onClick={() => {
                             const root = triad.notes[0];
                             if (root) onOpenChord(root, triad.quality);

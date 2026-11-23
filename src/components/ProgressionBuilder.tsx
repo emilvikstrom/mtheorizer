@@ -184,7 +184,7 @@ export function ProgressionBuilder({
                   <button
                     type="button"
                     className="triad builder__chord"
-                    aria-label={`Open ${chord.symbol} in Chords & scales`}
+                    aria-label={`Open ${chord.symbol} in Chords`}
                     onClick={() => onOpenChord(chord.root, step.quality)}
                   >
                     <span className="triad__roman">{step.roman}</span>

@@ -1,11 +1,14 @@
 import { expect, test } from "@playwright/test";
 
 const TABS = [
-  "Chords & scales",
+  "Chords",
+  "Scales",
   "Circle of fifths",
   "Progressions",
   "What chord is this?",
+  "Tonnetz",
   "Practice",
+  "Settings",
 ];
 
 test("every tab opens without errors", async ({ page }) => {
@@ -22,8 +25,10 @@ test("every tab opens without errors", async ({ page }) => {
     const tab = page.getByRole("tab", { name });
     await tab.click();
     await expect(tab).toHaveAttribute("aria-selected", "true");
-    await expect(page.getByRole("tabpanel")).toBeVisible();
-    await expect(page.getByRole("tabpanel")).not.toBeEmpty();
+    // The circle's key panel has a tab list of its own, so take the app's panel by name.
+    const panel = page.getByRole("tabpanel", { name, exact: true });
+    await expect(panel).toBeVisible();
+    await expect(panel).not.toBeEmpty();
   }
 
   expect(problems).toEqual([]);

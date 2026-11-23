@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { stopPlayback } from "../audio/playback";
 import { useSounding } from "../audio/sounding";
 import { ChordInfo } from "./ChordInfo";
@@ -26,7 +26,9 @@ import {
   type LookupRoute,
   type ScaleRoute,
   storedToneDisplay,
+  withNeck,
 } from "../route";
+import { storedNeck } from "../neck";
 import type { ToneDisplay } from "../toneLabels";
 import { ScaleInfo } from "./ScaleInfo";
 import { ScalePicker } from "./ScalePicker";
@@ -42,12 +44,9 @@ import {
   type Tuning,
   SCALES,
   type ScaleId,
-  STRING_INSTRUMENTS,
-  STRING_INSTRUMENT_IDS,
-  TUNINGS,
-  TUNING_IDS,
-  type TuningId,
   tuningFor,
+  describeTuning,
+  presetFor,
   chordFromSpec,
   chordHighlights,
   inversionCount,
@@ -70,21 +69,12 @@ import {
   spellScale,
 } from "../theory";
 
-type View = "chord" | "scale";
+export type View = "chord" | "scale";
 
-const VIEW_OPTIONS: readonly PickerOption<View>[] = [
-  { value: "chord", label: "Chord" },
-  { value: "scale", label: "Scale" },
-];
-
-const INSTRUMENT_OPTIONS: readonly PickerOption<Instrument>[] = [
+/** The piano, or the fretted instrument set up on the settings page. */
+const INSTRUMENT_OPTIONS: readonly PickerOption<"piano" | "neck">[] = [
   { value: "piano", label: "Piano" },
-  ...STRING_INSTRUMENT_IDS.map((id) => ({ value: id, label: STRING_INSTRUMENTS[id].label })),
-];
-
-const HAND_OPTIONS: readonly PickerOption<"right" | "left">[] = [
-  { value: "right", label: "Right-handed" },
-  { value: "left", label: "Left-handed" },
+  { value: "neck", label: "Fretboard" },
 ];
 
 /** A scale choice that matches no chord picks the plain triad of that scale. */
@@ -107,6 +97,16 @@ const TRIAD_FOR_SCALE: Record<ScaleId, ChordQualityId> = {
   minorPentatonic: "minor",
   minorBlues: "minor",
   majorBlues: "major",
+  dorianFlat2: "minor",
+  lydianAugmented: "augmented",
+  mixolydianFlat6: "major",
+  locrianNatural2: "diminished",
+  phrygianDominant: "major",
+  hungarianMinor: "minor",
+  doubleHarmonic: "major",
+  bebopDominant: "major",
+  hirajoshi: "minor",
+  inSen: "major",
 };
 
 const CHORD_LEGEND = { root: "Root", tone: "Chord tone" };
@@ -127,6 +127,43 @@ function follow(from: LookupRoute, next: LookupRoute): LookupRoute {
   const pc = pitchClass(from.root);
   const wasAutomatic = noteEquals(from.root, preferredRoot(from, pc));
   return wasAutomatic ? { ...next, root: preferredRoot(next, pc) } : next;
+}
+
+/**
+ * The chord or scale on the same root that the other tab shows. A chord becomes its parent scale
+ * and a scale becomes the chord it came from (`lastChord`, if it is that scale's chord) or its
+ * plain triad, so going to the scales and back lands on the same chord and inversion.
+ */
+export function switchView(
+  route: LookupRoute,
+  view: View,
+  lastChord: ChordRoute | undefined,
+): LookupRoute {
+  if (view === route.page) return route;
+  const { root, instrument } = route;
+  if (route.page === "chord") {
+    return follow(route, {
+      page: "scale",
+      root,
+      scaleId: CHORD_QUALITIES[nearestQuality(route.spec)].keyScale.id,
+      instrument,
+      ...guitarOptions(route),
+      ...displayOptions(route),
+    });
+  }
+  const chord: ChordRoute =
+    lastChord && CHORD_QUALITIES[nearestQuality(lastChord.spec)].keyScale.id === route.scaleId
+      ? { ...lastChord, root, instrument, ...guitarOptions(route), ...displayOptions(route) }
+      : {
+          page: "chord",
+          root,
+          spec: specOf(TRIAD_FOR_SCALE[route.scaleId]),
+          inversion: 0,
+          instrument,
+          ...guitarOptions(route),
+          ...displayOptions(route),
+        };
+  return follow(route, chord);
 }
 
 interface LookupProps {
@@ -159,43 +196,6 @@ export function Lookup({ route, onChange }: LookupProps) {
     if (route.page === "chord") onChange(follow(route, { ...route, spec }));
   };
 
-  // Switching to a scale and back returns to the same chord and inversion.
-  const lastChord = useRef<ChordRoute | undefined>(undefined);
-  useEffect(() => {
-    if (route.page === "chord") lastChord.current = route;
-  }, [route]);
-
-  const showView = (view: View) => {
-    if (view === route.page) return;
-    if (route.page === "chord") {
-      onChange(
-        follow(route, {
-          page: "scale",
-          root,
-          scaleId: CHORD_QUALITIES[nearestQuality(route.spec)].keyScale.id,
-          instrument,
-          ...guitarOptions(route),
-          ...displayOptions(route),
-        }),
-      );
-      return;
-    }
-    const before = lastChord.current;
-    const chord: ChordRoute =
-      before && CHORD_QUALITIES[nearestQuality(before.spec)].keyScale.id === route.scaleId
-        ? { ...before, root, instrument, ...guitarOptions(route), ...displayOptions(route) }
-        : {
-            page: "chord",
-            root,
-            spec: specOf(TRIAD_FOR_SCALE[route.scaleId]),
-            inversion: 0,
-            instrument,
-            ...guitarOptions(route),
-            ...displayOptions(route),
-          };
-    onChange(follow(route, chord));
-  };
-
   const spellings = commonSpellings(pc);
   const rootAndSpelling = (
     <>
@@ -219,44 +219,30 @@ export function Lookup({ route, onChange }: LookupProps) {
     </>
   );
 
-  const tuningId: TuningId = route.tuning ?? "standard";
-  // Standard tuning and the right hand are left out of the route (and so of the link).
-  const withGuitar = (change: { tuning?: TuningId; left?: boolean }): LookupRoute => {
-    const options = guitarOptions({ ...route, ...change });
-    const rest = { ...route };
-    delete rest.tuning;
-    delete rest.left;
-    return { ...rest, ...options };
-  };
-  const guitarPickers = instrument !== "piano" && (
-    <>
-      {instrument === "guitar" && (
-        <OptionPicker
-          legend="Tuning"
-          name="tuning"
-          options={TUNING_IDS.map((id) => ({ value: id, label: TUNINGS[id].label }))}
-          value={tuningId}
-          onChange={(tuning) => onChange(withGuitar({ tuning }))}
-        />
-      )}
-      <OptionPicker
-        legend="Hand"
-        name="hand"
-        options={HAND_OPTIONS}
-        value={route.left ? "left" : "right"}
-        onChange={(hand) => onChange(withGuitar({ left: hand === "left" }))}
-      />
-    </>
+  const neckTuning = tuningFor(
+    instrument === "piano" ? "guitar" : instrument,
+    route.tuning,
+    route.strings,
   );
-
   const instrumentPicker = (
     <OptionPicker
       legend="Show on"
       name="instrument"
       options={INSTRUMENT_OPTIONS}
-      value={instrument}
-      onChange={(value) => onChange({ ...route, instrument: value })}
+      value={instrument === "piano" ? "piano" : "neck"}
+      onChange={(value) =>
+        onChange(
+          value === "piano" ? { ...route, instrument: "piano" } : withNeck(route, storedNeck()),
+        )
+      }
     />
+  );
+  const neckSummary = instrument !== "piano" && (
+    <p className="controls__note">
+      {presetFor(neckTuning.strings)?.label ?? `${neckTuning.strings.length} strings`}:{" "}
+      {describeTuning(neckTuning.strings)}.{" "}
+      <a href="#/settings">Change the strings or tuning in Settings</a>
+    </p>
   );
 
   return (
@@ -265,13 +251,6 @@ export function Lookup({ route, onChange }: LookupProps) {
         className="controls"
         aria-label={route.page === "chord" ? "Choose a chord" : "Choose a scale"}
       >
-        <OptionPicker
-          legend="Look up"
-          name="view"
-          options={VIEW_OPTIONS}
-          value={route.page}
-          onChange={showView}
-        />
         {rootAndSpelling}
         {route.page === "chord" ? (
           <>
@@ -285,7 +264,7 @@ export function Lookup({ route, onChange }: LookupProps) {
             />
             <ChordBuilder root={root} spec={route.spec} onChange={build} />
             {instrumentPicker}
-            {guitarPickers}
+            {neckSummary}
             {displayPicker}
             {instrument === "piano" && (
               <InversionPicker
@@ -303,9 +282,9 @@ export function Lookup({ route, onChange }: LookupProps) {
             />
             <div className="controls__row">
               {instrumentPicker}
-              {guitarPickers}
               {displayPicker}
             </div>
+            {neckSummary}
           </>
         )}
       </section>
@@ -443,7 +422,11 @@ function ChordView({
   const { root, instrument } = route;
   const chord = useMemo(() => chordFromSpec(root, spec), [root, spec]);
   const tones = useMemo(() => chordHighlights(chord), [chord]);
-  const tuning = tuningFor(instrument === "piano" ? "guitar" : instrument, route.tuning);
+  const tuning = tuningFor(
+    instrument === "piano" ? "guitar" : instrument,
+    route.tuning,
+    route.strings,
+  );
   const shapes = useMemo(
     () =>
       chordShapes(tones, tuning.strings, {
@@ -506,6 +489,7 @@ function ScaleView({
   const tuning = tuningFor(
     route.instrument === "piano" ? "guitar" : route.instrument,
     route.tuning,
+    route.strings,
   );
   return (
     <>

@@ -3,8 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ChordFinder } from "./ChordFinder";
+import { rememberNeck } from "../neck";
 import type { IdentifyRoute } from "../route";
-import type { ChordMatch } from "../theory";
+import type { ChordMatch, StringInstrumentId } from "../theory";
 
 function Harness({ onOpen = () => {} }: { onOpen?: (match: ChordMatch) => void }) {
   const [selected, setSelected] = useState<readonly number[]>([]);
@@ -27,16 +28,18 @@ const cell = (string: number, fret: number) =>
 const symbols = () =>
   [...document.querySelectorAll(".suggestion__symbol")].map((el) => el.textContent);
 
-async function playOn(instrument: string) {
+/** Show the neck of `instrument`, as the settings page would have set it up. */
+async function playOn(instrument: StringInstrumentId) {
   const user = userEvent.setup();
+  rememberNeck({ instrument });
   render(<Harness />);
-  await user.click(screen.getByRole("radio", { name: instrument }));
+  await user.click(screen.getByRole("radio", { name: "Fretboard" }));
   return user;
 }
 
 describe("ChordFinder on a string instrument", () => {
   it("shows a neck instead of the piano when an instrument is chosen", async () => {
-    await playOn("Guitar");
+    await playOn("guitar");
     expect(screen.getByRole("group", { name: "Frets of the guitar" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "C4" })).not.toBeInTheDocument();
     expect(cell(6, 0)).toHaveAttribute("aria-label", "String 6, open, E");
@@ -45,7 +48,7 @@ describe("ChordFinder on a string instrument", () => {
   });
 
   it("names open E minor and takes the lowest string as the bass", async () => {
-    const user = await playOn("Guitar");
+    const user = await playOn("guitar");
     // Em: E2 B2 E3 G3 B3 E4.
     for (const [string, fret] of [
       [6, 0],
@@ -63,7 +66,7 @@ describe("ChordFinder on a string instrument", () => {
   });
 
   it("finds a slash chord when another note is the lowest string", async () => {
-    const user = await playOn("Guitar");
+    const user = await playOn("guitar");
     // C/E: E2 G2... open string 6 E, then C on string 5 (fret 3), G on string 3 (open).
     await user.click(cell(6, 0));
     await user.click(cell(5, 3));
@@ -72,7 +75,7 @@ describe("ChordFinder on a string instrument", () => {
   });
 
   it("lets a string hold one fret, and lets go when the place is pressed again", async () => {
-    const user = await playOn("Guitar");
+    const user = await playOn("guitar");
     await user.click(cell(2, 1));
     await user.click(cell(2, 3));
     expect(cell(2, 1)).toHaveAttribute("aria-pressed", "false");
@@ -83,7 +86,7 @@ describe("ChordFinder on a string instrument", () => {
   });
 
   it("asks for another fret after a single one, and clears them all", async () => {
-    const user = await playOn("Guitar");
+    const user = await playOn("guitar");
     await user.click(cell(3, 0));
     expect(screen.getByText(/One note is not a chord yet/)).toHaveTextContent("more fret");
     await user.click(cell(2, 0));
@@ -92,7 +95,7 @@ describe("ChordFinder on a string instrument", () => {
   });
 
   it("uses the tuning of the instrument: GCEA on the ukulele", async () => {
-    const user = await playOn("Ukulele");
+    const user = await playOn("ukulele");
     expect(document.querySelectorAll('.fret-picker__cell[data-fret="0"]')).toHaveLength(4);
     // C major on the ukulele: 0003 (G C E A from string 4 to 1) is G, C, E, C.
     await user.click(cell(4, 0));
@@ -106,7 +109,7 @@ describe("ChordFinder on a string instrument", () => {
     const onOpen = vi.fn();
     const user = userEvent.setup();
     render(<Harness onOpen={onOpen} />);
-    await user.click(screen.getByRole("radio", { name: "Guitar" }));
+    await user.click(screen.getByRole("radio", { name: "Fretboard" }));
     await user.click(cell(3, 0));
     await user.click(cell(2, 0));
     await user.click(cell(1, 0));
@@ -120,13 +123,13 @@ describe("ChordFinder on a string instrument", () => {
     const user = userEvent.setup();
     render(<Harness />);
     await user.click(screen.getByRole("button", { name: "C4" }));
-    await user.click(screen.getByRole("radio", { name: "Guitar" }));
+    await user.click(screen.getByRole("radio", { name: "Fretboard" }));
     await user.click(screen.getByRole("radio", { name: "Piano" }));
     expect(screen.getByRole("button", { name: "C4" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("shows frets 13–24 from the window picker and presses places there", async () => {
-    const user = await playOn("Guitar");
+    const user = await playOn("guitar");
     expect(cell(1, 13)).toBeNull();
     await user.click(screen.getByRole("radio", { name: "13–24" }));
     expect(cell(1, 12)).toBeNull();

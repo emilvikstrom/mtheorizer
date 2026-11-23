@@ -22,7 +22,7 @@ export const STANDARD_TUNING: readonly OpenString[] = [
 ];
 
 /** The fretted string instruments the app shows besides the piano. */
-export type StringInstrumentId = "guitar" | "ukulele" | "bass" | "bass5" | "mandolin";
+export type StringInstrumentId = "guitar" | "ukulele" | "bass" | "bass5" | "mandolin" | "custom";
 
 export const STRING_INSTRUMENTS: Readonly<Record<StringInstrumentId, { readonly label: string }>> =
   {
@@ -31,6 +31,8 @@ export const STRING_INSTRUMENTS: Readonly<Record<StringInstrumentId, { readonly 
     bass: { label: "Bass" },
     bass5: { label: "5-string bass" },
     mandolin: { label: "Mandolin" },
+    // Any number of strings in any tuning, set on the settings page.
+    custom: { label: "Custom" },
   };
 
 export const STRING_INSTRUMENT_IDS = Object.keys(STRING_INSTRUMENTS) as StringInstrumentId[];
@@ -39,7 +41,7 @@ export const STRING_INSTRUMENT_IDS = Object.keys(STRING_INSTRUMENTS) as StringIn
 export type TuningId = "standard" | "dropD" | "dadgad" | "ukulele" | "bass" | "bass5" | "mandolin";
 
 export interface Tuning {
-  readonly id: TuningId;
+  readonly id: TuningId | "custom";
   readonly label: string;
   readonly instrument: StringInstrumentId;
   /**
@@ -127,8 +129,43 @@ export const TUNINGS: Readonly<Record<TuningId, Tuning>> = {
 /** The tunings the guitar can be in. The other instruments have one each. */
 export const TUNING_IDS: readonly TuningId[] = ["standard", "dropD", "dadgad"];
 
-/** The tuning of `instrument`: a guitar uses `tuning` (standard when left out), the others their own. */
-export function tuningFor(instrument: StringInstrumentId, tuning: TuningId = "standard"): Tuning {
+/** The fewest and most strings a custom setup can have. */
+export const MIN_STRINGS = 2;
+export const MAX_STRINGS = 8;
+
+/** Open strings below this (G3) put the chord's root lowest in a grip; above it the grips start on any chord tone. */
+const ROOT_IN_BASS_BELOW = 55;
+
+/**
+ * A tuning made of `strings` (string 1 first, the highest-sounding on most instruments). How
+ * grips are searched follows from the range: instruments that reach below G3 (guitar, bass)
+ * put the root lowest and open chords stop at the third fret; higher ones (ukulele, mandolin)
+ * start grips on any chord tone and reach to the fourth fret. This reproduces the built-in
+ * tunings.
+ */
+export function customTuning(strings: readonly OpenString[]): Tuning {
+  const lowest = Math.min(...strings.map(openStringMidi));
+  const low = lowest < ROOT_IN_BASS_BELOW;
+  return {
+    id: "custom",
+    label: "Custom",
+    instrument: "custom",
+    strings,
+    rootInBass: low,
+    openChordMaxFret: low ? 3 : 4,
+  };
+}
+
+/**
+ * The tuning of `instrument`: a guitar uses `tuning` (standard when left out), a custom setup
+ * its own `strings` (standard guitar when left out), the others their own.
+ */
+export function tuningFor(
+  instrument: StringInstrumentId,
+  tuning: TuningId = "standard",
+  strings?: readonly OpenString[],
+): Tuning {
+  if (instrument === "custom") return customTuning(strings ?? STANDARD_TUNING);
   if (instrument !== "guitar") return TUNINGS[instrument];
   return TUNING_IDS.includes(tuning) ? TUNINGS[tuning] : TUNINGS.standard;
 }

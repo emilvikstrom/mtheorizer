@@ -27,6 +27,8 @@ import {
   progressionKeyOn,
   voiceProgression,
 } from "../theory";
+import { ChromaticChords } from "./ChromaticChords";
+import { LeadingToneChords } from "./LeadingToneChords";
 import { OptionPicker } from "./OptionPicker";
 import { RootPicker } from "./RootPicker";
 import { SoundSettings } from "./SoundSettings";
@@ -177,7 +179,7 @@ export function ProgressionView({
               <button
                 type="button"
                 className="triad"
-                aria-label={`Open ${chord.symbol} in Chords & scales`}
+                aria-label={`Open ${chord.symbol} in Chords`}
                 onClick={() => onOpenChord(chord.root, step.quality)}
               >
                 <span className="triad__roman">{step.roman}</span>
@@ -241,6 +243,18 @@ export function ProgressionView({
       </section>
 
       <Cadences k={k} />
+
+      <section className="key-details chromatic-harmony" aria-labelledby="chromatic-harmony">
+        <h3 id="chromatic-harmony" className="key-details__name">
+          Chromatic chords in {formatKey(k)}
+        </h3>
+        <p className="key-details__text">
+          Chords from outside the key that lead into one of its chords by a half step. Use them to
+          colour a progression. Click one to open it.
+        </p>
+        <LeadingToneChords value={k} onOpenChord={onOpenChord} />
+        <ChromaticChords value={k} onOpenChord={onOpenChord} />
+      </section>
 
       {onBuild && (
         <div className="builder__footer">
