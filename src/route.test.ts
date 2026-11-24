@@ -13,6 +13,9 @@ import {
 import {
   CHORD_QUALITY_IDS,
   CIRCLE_OF_FIFTHS,
+  MAX_PRESSED_KEYS,
+  PIANO_HIGHEST,
+  PIANO_LOWEST,
   type KeyMode,
   PROGRESSIONS,
   PROGRESSION_IDS,
@@ -165,6 +168,36 @@ describe("parseRoute", () => {
         from: 13,
       }),
     ).toBe("#/identify?on=guitar&frets=5.14,6.0&from=13");
+  });
+
+  it("keeps the pressed piano keys of the chord finder in the link", () => {
+    expect(formatRoute({ page: "identify", keys: [60, 64, 67] })).toBe("#/identify?keys=60,64,67");
+    expect(formatRoute({ page: "identify", keys: [] })).toBe("#/identify");
+    for (let midi = PIANO_LOWEST; midi <= PIANO_HIGHEST; midi++) {
+      const route = { page: "identify" as const, keys: [midi] };
+      expect(parseRoute(formatRoute(route))).toEqual(route);
+    }
+    const two = { page: "identify" as const, keys: [36, 48, 52, 55, 59, 62, 64, 67, 71, 74] };
+    expect(parseRouteStrict(formatRoute(two))).toEqual(two);
+    // Out of order, twice, off the piano or past the limit: repaired, never broken.
+    expect(parseRoute("#/identify?keys=67,60,64,60,200,x")).toEqual({
+      page: "identify",
+      keys: [60, 64, 67],
+    });
+    expect(parseRoute("#/identify?keys=1,2,3")).toEqual({ page: "identify" });
+    const many = Array.from({ length: 30 }, (_, i) => 40 + i);
+    expect(parseRoute(`#/identify?keys=${many.join(",")}`)).toEqual({
+      page: "identify",
+      keys: many.slice(0, MAX_PRESSED_KEYS),
+    });
+    // The keys belong to the piano: a neck link drops them.
+    expect(parseRoute("#/identify?on=guitar&keys=60,64")).toEqual({
+      page: "identify",
+      instrument: "guitar",
+    });
+    expect(formatRoute({ page: "identify", instrument: "guitar", keys: [60] })).toBe(
+      "#/identify?on=guitar",
+    );
   });
 
   it("repairs a chord finder link that does not fit its instrument", () => {

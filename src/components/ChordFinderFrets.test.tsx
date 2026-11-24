@@ -8,14 +8,11 @@ import type { IdentifyRoute } from "../route";
 import type { ChordMatch, StringInstrumentId } from "../theory";
 
 function Harness({ onOpen = () => {} }: { onOpen?: (match: ChordMatch) => void }) {
-  const [selected, setSelected] = useState<readonly number[]>([]);
   const [route, setRoute] = useState<IdentifyRoute>({ page: "identify" });
   return (
     <ChordFinder
       route={route}
       onRoute={setRoute}
-      selected={selected}
-      onChange={setSelected}
       onOpen={onOpen}
     />
   );

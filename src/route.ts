@@ -31,6 +31,7 @@ import {
   type FretPick,
   circlePosition,
   formatBuilderChords,
+  formatKeys,
   formatPicks,
   formatTune,
   identifyQuality,
@@ -45,6 +46,7 @@ import {
   normalizeSpec,
   note,
   parseBuilderChords,
+  parseKeys,
   parsePicks,
   parseTune,
   specOf,
@@ -69,7 +71,7 @@ export type { GuitarOptions } from "./neck";
  *   #/progression/Ab/pop           the I–V–vi–IV progression in A♭ major
  *   #/build/C/major?c=1,5,6s,4     a progression built from the key's chords (`s` = seventh chord)
  *   #/build/D/dorian?c=1,4         the same from any tonality (`minor` is natural minor)
- *   #/identify                     "What chord is this?" (the keys you pick on the piano are not in the link)
+ *   #/identify?keys=60,64,67       "What chord is this?" with keys pressed on the piano (MIDI numbers)
  *   #/identify?on=guitar&frets=6.0,5.2,4.2,3.0&from=13  the same on a guitar neck: pressed `string.fret`
  *                                  places, and the first fret shown (13 = frets 13–24)
  *   #/tonnetz/C/major              the Tonnetz with the C major triad selected
@@ -152,9 +154,11 @@ export interface BuildRoute {
 /**
  * "What chord is this?". `instrument` is a string instrument when the neck is shown (the piano
  * when absent), `frets` the places pressed on it and `from` the first fret shown (1 when absent).
+ * On the piano, `keys` are the pressed keys as MIDI numbers, lowest first.
  */
 export interface IdentifyRoute extends Omit<GuitarOptions, "left"> {
   readonly page: "identify";
+  readonly keys?: readonly number[];
   readonly instrument?: StringInstrumentId;
   readonly frets?: readonly FretPick[];
   readonly from?: number;
@@ -419,7 +423,10 @@ export function formatRoute(route: Route): string {
 }
 
 function formatIdentify(route: IdentifyRoute): string {
-  if (!route.instrument) return "#/identify";
+  if (!route.instrument) {
+    const keys = formatKeys(route.keys ?? []);
+    return keys ? `#/identify?keys=${keys}` : "#/identify";
+  }
   const parts = [`on=${route.instrument}`];
   const neck = formatNeckOptions(route.instrument, route);
   if (neck) parts.push(neck.slice(1));
@@ -459,7 +466,10 @@ function parseIdentify(query: URLSearchParams): IdentifyRoute {
   const instrument = (STRING_INSTRUMENT_IDS as readonly unknown[]).includes(on)
     ? (on as StringInstrumentId)
     : undefined;
-  if (!instrument) return { page: "identify" };
+  if (!instrument) {
+    const keys = parseKeys(query.get("keys"));
+    return keys.length > 0 ? { page: "identify", keys } : { page: "identify" };
+  }
   const options = parseNeckOptions(instrument, query);
   const frets = parsePicks(
     query.get("frets"),

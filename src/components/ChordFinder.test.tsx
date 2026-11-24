@@ -6,15 +6,23 @@ import { ChordFinder } from "./ChordFinder";
 import type { IdentifyRoute } from "../route";
 import type { ChordMatch } from "../theory";
 
-function Harness({ onOpen = () => {} }: { onOpen?: (match: ChordMatch) => void }) {
-  const [selected, setSelected] = useState<readonly number[]>([]);
-  const [route, setRoute] = useState<IdentifyRoute>({ page: "identify" });
+function Harness({
+  onOpen = () => {},
+  start = { page: "identify" },
+  onRoute = () => {},
+}: {
+  onOpen?: (match: ChordMatch) => void;
+  start?: IdentifyRoute;
+  onRoute?: (route: IdentifyRoute) => void;
+}) {
+  const [route, setRoute] = useState<IdentifyRoute>(start);
   return (
     <ChordFinder
       route={route}
-      onRoute={setRoute}
-      selected={selected}
-      onChange={setSelected}
+      onRoute={(next) => {
+        onRoute(next);
+        setRoute(next);
+      }}
       onOpen={onOpen}
     />
   );
@@ -25,6 +33,26 @@ const suggestions = () =>
   screen.queryAllByRole("button").filter((b) => b.classList.contains("suggestion"));
 
 describe("ChordFinder", () => {
+  it("keeps the pressed keys in the route, lowest first", async () => {
+    const user = userEvent.setup();
+    const onRoute = vi.fn();
+    render(<Harness onRoute={onRoute} />);
+    await user.click(key("G4"));
+    await user.click(key("C4"));
+    expect(onRoute).toHaveBeenLastCalledWith({ page: "identify", keys: [60, 67] });
+    await user.click(key("C4"));
+    await user.click(key("G4"));
+    expect(onRoute).toHaveBeenLastCalledWith({ page: "identify" });
+  });
+
+  it("shows the keys of a shared link", () => {
+    render(<Harness start={{ page: "identify", keys: [52, 60, 67] }} />);
+    expect(key("E3")).toHaveAttribute("aria-pressed", "true");
+    expect(key("C4")).toHaveAttribute("aria-pressed", "true");
+    const names = suggestions().map((b) => b.querySelector(".suggestion__symbol")?.textContent);
+    expect(names[0]).toBe("C/E");
+  });
+
   it("guides you when no key is pressed", () => {
     render(<Harness />);
     expect(screen.getByText(/Press at least two different notes/)).toBeInTheDocument();

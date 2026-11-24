@@ -578,6 +578,40 @@ describe("App", () => {
     expect(fret(5, 3)).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("opens the pressed keys of a shared chord finder link", () => {
+    window.location.hash = "#/identify?keys=57,60,64,67";
+    render(<App />);
+    expect(screen.getByRole("tab", { name: "What chord is this?" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "A3" })).toHaveAttribute("aria-pressed", "true");
+    expect(document.querySelector(".suggestion__symbol")).toHaveTextContent("Am7");
+  });
+
+  it("writes the keys of a MIDI keyboard to the chord finder link", async () => {
+    const user = userEvent.setup();
+    const input = { name: "Test Keys", onmidimessage: null as ((e: unknown) => void) | null };
+    const access = { inputs: { values: () => [input][Symbol.iterator]() }, onstatechange: null };
+    Object.defineProperty(navigator, "requestMIDIAccess", {
+      value: async () => access,
+      configurable: true,
+    });
+    try {
+      window.location.hash = "#/identify";
+      render(<App />);
+      await user.click(screen.getByRole("button", { name: "Connect a MIDI keyboard" }));
+      await screen.findByText("Connected: Test Keys");
+      for (const midi of [62, 65, 69]) {
+        act(() => input.onmidimessage?.({ data: new Uint8Array([0x90, midi, 90]) }));
+      }
+      await user.click(screen.getByRole("button", { name: "Use these keys" }));
+      expect(window.location.hash).toBe("#/identify?keys=62,65,69");
+    } finally {
+      delete (navigator as unknown as Record<string, unknown>).requestMIDIAccess;
+    }
+  });
+
   it("finds a chord from pressed keys and opens it in the chord tab", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -587,6 +621,7 @@ describe("App", () => {
     // The pressed keys survive a visit to another tab.
     await user.click(screen.getByRole("button", { name: "E4" }));
     await user.click(screen.getByRole("button", { name: "G4" }));
+    expect(window.location.hash).toBe("#/identify?keys=64,67");
     await user.click(screen.getByRole("tab", { name: "Circle of fifths" }));
     await user.click(screen.getByRole("tab", { name: "What chord is this?" }));
     expect(screen.getByRole("button", { name: "E4" })).toHaveAttribute("aria-pressed", "true");
