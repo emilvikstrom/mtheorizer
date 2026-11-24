@@ -119,14 +119,12 @@ export function ChordFinder({ route, onRoute, onOpen }: ChordFinderProps) {
             return;
           }
           if (source === "piano") pianoKeys.current = selected;
-          onRoute(
-            {
-                  page: "identify",
-                  instrument,
-                  ...(tuning ? { tuning } : {}),
-                  ...(open ? { strings: open } : {}),
-            },
-          );
+          onRoute({
+            page: "identify",
+            instrument,
+            ...(tuning ? { tuning } : {}),
+            ...(open ? { strings: open } : {}),
+          });
         }}
       />
       {strings && (

@@ -9,13 +9,7 @@ import type { ChordMatch, StringInstrumentId } from "../theory";
 
 function Harness({ onOpen = () => {} }: { onOpen?: (match: ChordMatch) => void }) {
   const [route, setRoute] = useState<IdentifyRoute>({ page: "identify" });
-  return (
-    <ChordFinder
-      route={route}
-      onRoute={setRoute}
-      onOpen={onOpen}
-    />
-  );
+  return <ChordFinder route={route} onRoute={setRoute} onOpen={onOpen} />;
 }
 
 const cell = (string: number, fret: number) =>

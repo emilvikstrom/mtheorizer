@@ -30,6 +30,7 @@ import {
   FRET_WINDOW_STARTS,
   type FretPick,
   circlePosition,
+  fitBuilderChords,
   formatBuilderChords,
   formatKeys,
   formatPicks,
@@ -72,6 +73,8 @@ export type { GuitarOptions } from "./neck";
  *   #/progression/Ab/pop           the I–V–vi–IV progression in A♭ major
  *   #/build/C/major?c=1,5,6s,4     a progression built from the key's chords (`s` = seventh chord)
  *   #/build/D/dorian?c=1,4         the same from any tonality (`minor` is natural minor)
+ *   #/build/C/major?c=1,b6,v5/2    with a chord borrowed from the parallel key (`b`) and a
+ *                                  secondary dominant (`v5/2` = V7/ii)
  *   #/identify?keys=60,64,67       "What chord is this?" with keys pressed on the piano (MIDI numbers)
  *   #/identify?on=guitar&frets=6.0,5.2,4.2,3.0&from=13  the same on a guitar neck: pressed `string.fret`
  *                                  places, and the first fret shown (13 = frets 13–24)
@@ -697,10 +700,11 @@ function parseLink(
   if (parts[0] === "build") {
     const t = parseTonality(parts[1], parts[2] === "minor" ? "naturalMinor" : parts[2]);
     if (!t) return strict ? undefined : defaultBuildRoute();
-    // A list that makes no sense gives an empty progression, not a different key.
+    // A list that makes no sense gives an empty progression, not a different key, and a chord
+    // the tonality lacks (a borrowed one in a mode) is left out.
     const steps = parseBuilderChords(query.get("c") ?? "");
     if (!steps && strict) return undefined;
-    return { page: "build", tonality: t, steps: steps ?? [] };
+    return { page: "build", tonality: t, steps: fitBuilderChords(t, steps ?? []) };
   }
 
   const onParam = query.get("on");

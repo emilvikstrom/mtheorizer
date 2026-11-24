@@ -11,8 +11,8 @@ Status: ✅ klar · 🚧 pågår · ⏳ planerad · 💡 idé
 | M3 | Skalor och modi | ✅ |
 | M4 | Lyssna på ackord och skalor | ✅ |
 | M5 | Tonarter och harmoniska samband | ✅ |
-| M6 | Ackordbyggare | ⏳ |
-| M7 | Utbyggd kvintcirkel (flera ringar) | ⏳ |
+| M6 | Ackordbyggare | ✅ |
+| M7 | Utbyggd kvintcirkel (flera ringar) | ✅ |
 | M8 | Harmoni och progressioner | 🚧 |
 | M9 | Öva | 💡 |
 | X  | Tvärgående förbättringar (delbara länkar, språk, CI) | ⏳ |
@@ -71,7 +71,7 @@ Resultat:
 - Vald tonart visar förtecken, skala, de sju diatoniska treklangerna med steg och funktion (T/S/D), dominanten i harmonisk moll samt relativ-, parallell-, dominant- och subdominanttonart.
 - `src/theory/keys.ts` härleder allt ur stavade toner, med tabelltester för alla positioner på cirkeln.
 
-## M6 – Ackordbyggare ⏳
+## M6 – Ackordbyggare ✅
 
 Mål: Ackordväljaren ersätts av en byggare. Man väljer ett grundackord (C, Cm, C°, C+, Csus2, Csus4 eller C5) och lägger på kvaliteter, och appen namnger resultatet.
 
@@ -83,9 +83,9 @@ Mål: Ackordväljaren ersätts av en byggare. Man väljer ett grundackord (C, Cm
 - Ackord bygger vidare på samma piano, gitarr, ljud och omvändningar, och får delbara länkar.
 - Därefter åt andra hållet: skriv in en ackordsymbol (`F#m7b5/C`) eller klicka in toner och se vilket ackord de bildar.
 
-Uppgifter: M6-01–M6-08 är klara. Sökfältet för ackordsymboler (M6-06b) och gitarren i "What chord is this?" (M6-08b) ligger under **Senare** i [BACKLOG.md](BACKLOG.md).
+Uppgifter: M6-01–M6-08d är klara, senast pianots tangenter i länken till "What chord is this?" (M6-08d).
 
-## M7 – Utbyggd kvintcirkel ⏳
+## M7 – Utbyggd kvintcirkel ✅
 
 Mål: Kvintcirkeln visar inte bara tonarter utan hur ackorden i en tonart ligger i förhållande till varandra. Det är de varianterna med flera rader (ringar) som finns på tryckta ackordhjul och på nätet.
 
@@ -114,7 +114,7 @@ Andra varianter som finns och som vi kan ta med:
 - **Camelot-hjulet:** samma ringar med nummer 1A–12B som DJ:ar använder för att mixa låtar i kompatibla tonarter.
 - **Kvintcirkeln som inte stänger sig:** tolv rena kvinter blir något större än sju oktaver (cirka 23,5 cent, det pytagoreiska kommat), därför är instrument temperade. Man kan lyssna på skillnaden.
 
-Uppgifter: M7-01–M7-04 under **Nästa**, resten under **Senare**.
+Uppgifter: alla är klara, senast Camelot-koden in och ut (M7-09b). Pilar för sekundärdominanter på cirkeln ligger under M8-03b och UI-04b.
 
 ## M8 – Harmoni och progressioner 🚧
 

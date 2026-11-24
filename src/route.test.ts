@@ -31,6 +31,8 @@ import {
   key,
   tonality,
   tonalitySpellings,
+  borrowedDegrees,
+  secondaryTargets,
   keysAt,
   normalizeSpec,
   noteEquals,
@@ -703,6 +705,56 @@ describe("build links", () => {
         }
       }
     }
+  });
+
+  it("reads borrowed chords and secondary dominants back in every key", () => {
+    for (const id of ["major", "naturalMinor"] as const) {
+      for (const pc of PITCH_CLASSES) {
+        for (const tonic of tonalitySpellings(pc, id)) {
+          const t = tonality(tonic, id);
+          const steps = [
+            { degree: 1, size: "triad" as const },
+            ...borrowedDegrees(t).map((degree) => ({
+              degree,
+              size: "seventh" as const,
+              from: "borrowed" as const,
+            })),
+            ...secondaryTargets(t)
+              .slice(0, 3)
+              .map((degree) => ({ degree, size: "seventh" as const, from: "secondary" as const })),
+          ];
+          const route: Route = { page: "build", tonality: t, steps };
+          expect(parseRouteStrict(formatRoute(route))).toEqual(route);
+        }
+      }
+    }
+    expect(
+      formatRoute({
+        page: "build",
+        tonality: tonality(note("C"), "major"),
+        steps: [
+          { degree: 1, size: "triad" },
+          { degree: 6, size: "triad", from: "borrowed" },
+          { degree: 2, size: "seventh", from: "secondary" },
+        ],
+      }),
+    ).toBe("#/build/C/major?c=1,b6,v5/2");
+  });
+
+  it("leaves out the chords a tonality lacks", () => {
+    // D dorian borrows nothing, and nothing points at its diminished vi°.
+    expect(parseRoute("#/build/D/dorian?c=1,b6,v5/6,v5/4")).toEqual({
+      page: "build",
+      tonality: tonality(note("D"), "dorian"),
+      steps: [
+        { degree: 1, size: "triad" },
+        { degree: 4, size: "seventh", from: "secondary" },
+      ],
+    });
+    // C major borrows no I from itself.
+    expect(parseRoute("#/build/C/major?c=b1,5")).toMatchObject({
+      steps: [{ degree: 5, size: "triad" }],
+    });
   });
 
   it("reads old minor links as natural minor", () => {

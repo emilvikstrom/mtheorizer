@@ -145,8 +145,8 @@ export function CircleOfFifthsView({
             >
               Camelot wheel
             </button>
-            {camelot && <CamelotJump value={selected} onChange={setSelected} />}
           </div>
+          {camelot && <CamelotJump value={selected} onChange={setSelected} />}
           <CircleOfFifths
             value={selected}
             onChange={setSelected}
