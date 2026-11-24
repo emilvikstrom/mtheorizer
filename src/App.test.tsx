@@ -578,6 +578,22 @@ describe("App", () => {
     expect(fret(5, 3)).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("keeps the Camelot wheel in the circle link while keys change", async () => {
+    const user = userEvent.setup();
+    window.location.hash = "#/circle/C/major";
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Camelot wheel" }));
+    expect(window.location.hash).toBe("#/circle/C/major?camelot=1");
+    const field = screen.getByRole("textbox", { name: "Go to Camelot code" });
+    await user.clear(field);
+    await user.type(field, "4A");
+    expect(window.location.hash).toBe("#/circle/F/minor?camelot=1");
+    await user.click(screen.getByRole("radio", { name: "G major" }));
+    expect(window.location.hash).toBe("#/circle/G/major?camelot=1");
+    await user.click(screen.getByRole("button", { name: "Camelot wheel" }));
+    expect(window.location.hash).toBe("#/circle/G/major");
+  });
+
   it("opens the pressed keys of a shared chord finder link", () => {
     window.location.hash = "#/identify?keys=57,60,64,67";
     render(<App />);

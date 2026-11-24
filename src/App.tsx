@@ -173,7 +173,13 @@ export function App() {
         {route.page === "circle" ? (
           <CircleOfFifthsView
             value={route.key}
-            onChange={(key) => navigate({ page: "circle", key })}
+            onChange={(key) =>
+              navigate({ page: "circle", key, ...(route.camelot ? { camelot: true } : {}) })
+            }
+            camelot={route.camelot ?? false}
+            onCamelot={(on) =>
+              navigate({ page: "circle", key: route.key, ...(on ? { camelot: true } : {}) })
+            }
             onOpenChord={(root, quality) =>
               navigate({
                 page: "chord",

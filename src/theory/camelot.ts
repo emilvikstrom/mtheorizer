@@ -1,4 +1,4 @@
-import { type Key, type KeyMode, circlePosition, keysAt } from "./keys";
+import { type Key, type KeyMode, circlePosition, keyEquals, keysAt } from "./keys";
 
 /**
  * The Camelot wheel: the circle of fifths with the keys numbered 1–12 and
@@ -77,4 +77,14 @@ export function compatibleKeys(k: Key): CompatibleKey[] {
 export function camelotCompatible(a: Key, b: Key): boolean {
   const target = camelotCode(b).label;
   return compatibleKeys(a).some(({ code }) => code.label === target);
+}
+
+/**
+ * The key to jump to for a typed Camelot code ("8B", " 2a "), or undefined when the text is no
+ * code. `current` is kept when it already has the code, so G♭ major stays G♭ for 2B; otherwise
+ * the most common spelling is chosen.
+ */
+export function keyForCamelot(code: string, current?: Key): Key | undefined {
+  const keys = keysForCamelot(code);
+  return (current && keys.find((k) => keyEquals(k, current))) ?? keys[0];
 }

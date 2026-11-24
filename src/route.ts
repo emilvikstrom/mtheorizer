@@ -68,6 +68,7 @@ export type { GuitarOptions } from "./neck";
  *   #/C/major?on=piano&vs=A-minor  C major compared with A minor (`vs=Root-base`, qualities in `vsw`)
  *   #/C/major?on=piano&show=intervals  chord with intervals (R 3 5) on the keys; also names, steps, none
  *   #/circle/Bb/major              circle of fifths with B♭ major selected
+ *   #/circle/A/minor?camelot=1     the same with the Camelot wheel (8A) shown
  *   #/progression/Ab/pop           the I–V–vi–IV progression in A♭ major
  *   #/build/C/major?c=1,5,6s,4     a progression built from the key's chords (`s` = seventh chord)
  *   #/build/D/dorian?c=1,4         the same from any tonality (`minor` is natural minor)
@@ -132,6 +133,8 @@ export type LookupRoute = ChordRoute | ScaleRoute;
 export interface CircleRoute {
   readonly page: "circle";
   readonly key: Key;
+  /** The circle numbered as the Camelot wheel. */
+  readonly camelot?: true;
 }
 
 /** A common chord progression put in a key; the key's mode comes from the progression. */
@@ -399,7 +402,7 @@ export function formatRoute(route: Route): string {
     case "scale":
       return `#/${formatRouteNote(route.root)}/scale/${route.scaleId}?on=${route.instrument}${formatGuitarOptions(route)}`;
     case "circle":
-      return `#/circle/${formatRouteNote(route.key.tonic)}/${route.key.mode}`;
+      return `#/circle/${formatRouteNote(route.key.tonic)}/${route.key.mode}${route.camelot ? "?camelot=1" : ""}`;
     case "progression":
       return `#/progression/${formatRouteNote(route.tonic)}/${route.id}`;
     case "build": {
@@ -676,7 +679,10 @@ function parseLink(
 
   if (parts[0] === "circle") {
     const k = parseCircleKey(parts[1], parts[2]);
-    return k ? { page: "circle", key: k } : strict ? undefined : defaultCircleRoute();
+    if (!k) return strict ? undefined : defaultCircleRoute();
+    return query.get("camelot") === "1"
+      ? { page: "circle", key: k, camelot: true }
+      : { page: "circle", key: k };
   }
 
   if (parts[0] === "progression") {

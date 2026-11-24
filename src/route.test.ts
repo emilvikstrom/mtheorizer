@@ -338,6 +338,23 @@ describe("parseRoute", () => {
     });
   });
 
+  it("keeps the Camelot wheel in the circle link", () => {
+    const route = { page: "circle", key: key(note("A"), "minor"), camelot: true } as const;
+    expect(formatRoute(route)).toBe("#/circle/A/minor?camelot=1");
+    expect(parseRoute("#/circle/A/minor?camelot=1")).toEqual(route);
+    for (let position = 0; position < 12; position++) {
+      for (const mode of ["major", "minor"] as const) {
+        for (const k of keysAt(position, mode)) {
+          const withWheel = { page: "circle", key: k, camelot: true } as const;
+          expect(parseRouteStrict(formatRoute(withWheel))).toEqual(withWheel);
+        }
+      }
+    }
+    for (const off of ["", "?camelot=0", "?camelot=yes"]) {
+      expect(parseRoute(`#/circle/A/minor${off}`)).toEqual({ page: "circle", key: route.key });
+    }
+  });
+
   it("falls back to C major on the circle for a bad circle link", () => {
     for (const hash of ["#/circle", "#/circle/Cs/foo", "#/circle/Ds/major", "#/circle/H/minor"]) {
       expectSame(parseRoute(hash), defaultCircleRoute());

@@ -11,6 +11,7 @@ import {
   fifthsFall,
   formatKey,
 } from "../theory";
+import { CamelotJump } from "./CamelotJump";
 import { CircleOfFifths, type ClickAction, type RingCount } from "./CircleOfFifths";
 import { FifthCircleComma } from "./FifthCircleComma";
 import { KeyDetails } from "./KeyDetails";
@@ -37,17 +38,24 @@ export function CircleOfFifthsView({
   value: selected,
   onChange: setSelected,
   onOpenChord,
+  camelot: camelotProp,
+  onCamelot,
 }: {
   value: Key;
   onChange: (key: Key) => void;
   onOpenChord: (root: Note, quality: ChordQualityId) => void;
+  /** Whether the Camelot wheel is shown, when the link holds it; otherwise the view keeps it. */
+  camelot?: boolean;
+  onCamelot?: (on: boolean) => void;
 }) {
   const [rings, setRings] = useState<RingCount>(3);
   const [stepRing, setStepRing] = useState(true);
   const [chordSize, setChordSize] = useState<ChordSize>("triads");
   const [clickAction, setClickAction] = useState<ClickAction>("key");
   const [fall, setFall] = useState(false);
-  const [camelot, setCamelot] = useState(false);
+  const [ownCamelot, setOwnCamelot] = useState(false);
+  const camelot = camelotProp ?? ownCamelot;
+  const setCamelot = onCamelot ?? setOwnCamelot;
   const minor = selected.mode === "minor";
   const chain = fifthsFall(selected);
 
@@ -137,6 +145,7 @@ export function CircleOfFifthsView({
             >
               Camelot wheel
             </button>
+            {camelot && <CamelotJump value={selected} onChange={setSelected} />}
           </div>
           <CircleOfFifths
             value={selected}

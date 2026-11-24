@@ -1659,6 +1659,12 @@ body {
 .symbol-field__message--error {
   color: var(--dominant);
 }
+.camelot-jump {
+  flex-basis: 100%;
+  max-width: 16rem;
+  margin: 4px auto 0;
+  text-align: left;
+}
 
 /* Share and export */
 

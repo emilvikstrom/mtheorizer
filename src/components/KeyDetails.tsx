@@ -5,6 +5,7 @@ import {
   type Key,
   type Note,
   borrowedChords,
+  camelotCode,
   secondaryDominants,
   circlePosition,
   diatonicTriads,
@@ -99,6 +100,11 @@ export function KeyDetails({ value, onChange, onOpenChord }: KeyDetailsProps) {
       <header className="key-details__header">
         <p className="key-details__eyebrow">
           {value.mode === "major" ? "Major key" : "Minor key (natural minor)"}
+          <span className="key-details__camelot">
+            {" · "}
+            <abbr title="Camelot wheel code, as DJ software shows it">Camelot</abbr>{" "}
+            {camelotCode(value).label}
+          </span>
         </p>
         <h2 id="key-name" className="key-details__name" aria-live="polite">
           {formatKey(value)}
