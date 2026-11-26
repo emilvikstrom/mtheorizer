@@ -4,6 +4,7 @@ import {
   camelotCode,
   camelotCompatible,
   compatibleKeys,
+  keyForCamelot,
   keysForCamelot,
 } from "./camelot";
 import {
@@ -201,5 +202,43 @@ describe("compatibleKeys", () => {
     expect(camelotCompatible(k("C", "major"), k("D", "major"))).toBe(false);
     expect(camelotCompatible(k("C", "major"), k("C", "minor"))).toBe(false);
     expect(camelotCompatible(k("C", "major"), k("F♯", "major"))).toBe(false);
+  });
+});
+
+describe("keyForCamelot", () => {
+  it("jumps to the key of every code in the table", () => {
+    for (const [, label] of [...MAJORS, ...MINORS]) {
+      const found = keyForCamelot(label);
+      expect(found && camelotCode(found).label).toBe(label);
+    }
+    expect(keyForCamelot("8B") && formatKey(keyForCamelot("8B")!)).toBe("C major");
+    expect(keyForCamelot("8a") && formatKey(keyForCamelot("8a")!)).toBe("A minor");
+  });
+
+  it("round-trips all 24 keys, in every spelling the circle offers", () => {
+    for (let position = 0; position < CIRCLE_OF_FIFTHS.length; position++) {
+      for (const mode of ["major", "minor"] as const) {
+        for (const spelled of keysAt(position, mode)) {
+          const code = camelotCode(spelled).label;
+          // From anywhere else, the most common spelling …
+          expect(formatKey(keyForCamelot(code)!)).toBe(formatKey(keysAt(position, mode)[0]!));
+          // … and from the key itself, that very spelling.
+          expect(formatKey(keyForCamelot(code, spelled)!)).toBe(formatKey(spelled));
+        }
+      }
+    }
+  });
+
+  it("keeps the current spelling only when it has the code", () => {
+    const gFlat = k("G♭", "major");
+    expect(formatKey(keyForCamelot("2B", gFlat)!)).toBe("G♭ major");
+    expect(formatKey(keyForCamelot("3B", gFlat)!)).toBe("D♭ major");
+    expect(formatKey(keyForCamelot("2A", gFlat)!)).toBe("D♯ minor");
+  });
+
+  it("gives nothing for text that is no code", () => {
+    for (const bad of ["", "0A", "13B", "8C", "B8", "8", "C major"]) {
+      expect(keyForCamelot(bad)).toBeUndefined();
+    }
   });
 });

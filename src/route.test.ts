@@ -13,6 +13,9 @@ import {
 import {
   CHORD_QUALITY_IDS,
   CIRCLE_OF_FIFTHS,
+  MAX_PRESSED_KEYS,
+  PIANO_HIGHEST,
+  PIANO_LOWEST,
   type KeyMode,
   PROGRESSIONS,
   PROGRESSION_IDS,
@@ -28,6 +31,8 @@ import {
   key,
   tonality,
   tonalitySpellings,
+  borrowedDegrees,
+  secondaryTargets,
   keysAt,
   normalizeSpec,
   noteEquals,
@@ -167,6 +172,36 @@ describe("parseRoute", () => {
     ).toBe("#/identify?on=guitar&frets=5.14,6.0&from=13");
   });
 
+  it("keeps the pressed piano keys of the chord finder in the link", () => {
+    expect(formatRoute({ page: "identify", keys: [60, 64, 67] })).toBe("#/identify?keys=60,64,67");
+    expect(formatRoute({ page: "identify", keys: [] })).toBe("#/identify");
+    for (let midi = PIANO_LOWEST; midi <= PIANO_HIGHEST; midi++) {
+      const route = { page: "identify" as const, keys: [midi] };
+      expect(parseRoute(formatRoute(route))).toEqual(route);
+    }
+    const two = { page: "identify" as const, keys: [36, 48, 52, 55, 59, 62, 64, 67, 71, 74] };
+    expect(parseRouteStrict(formatRoute(two))).toEqual(two);
+    // Out of order, twice, off the piano or past the limit: repaired, never broken.
+    expect(parseRoute("#/identify?keys=67,60,64,60,200,x")).toEqual({
+      page: "identify",
+      keys: [60, 64, 67],
+    });
+    expect(parseRoute("#/identify?keys=1,2,3")).toEqual({ page: "identify" });
+    const many = Array.from({ length: 30 }, (_, i) => 40 + i);
+    expect(parseRoute(`#/identify?keys=${many.join(",")}`)).toEqual({
+      page: "identify",
+      keys: many.slice(0, MAX_PRESSED_KEYS),
+    });
+    // The keys belong to the piano: a neck link drops them.
+    expect(parseRoute("#/identify?on=guitar&keys=60,64")).toEqual({
+      page: "identify",
+      instrument: "guitar",
+    });
+    expect(formatRoute({ page: "identify", instrument: "guitar", keys: [60] })).toBe(
+      "#/identify?on=guitar",
+    );
+  });
+
   it("repairs a chord finder link that does not fit its instrument", () => {
     // The piano has no neck, so the frets and window are dropped.
     expect(parseRoute("#/identify?on=piano&frets=1.0&from=13")).toEqual({ page: "identify" });
@@ -303,6 +338,23 @@ describe("parseRoute", () => {
       page: "quiz",
       mode: "listening",
     });
+  });
+
+  it("keeps the Camelot wheel in the circle link", () => {
+    const route = { page: "circle", key: key(note("A"), "minor"), camelot: true } as const;
+    expect(formatRoute(route)).toBe("#/circle/A/minor?camelot=1");
+    expect(parseRoute("#/circle/A/minor?camelot=1")).toEqual(route);
+    for (let position = 0; position < 12; position++) {
+      for (const mode of ["major", "minor"] as const) {
+        for (const k of keysAt(position, mode)) {
+          const withWheel = { page: "circle", key: k, camelot: true } as const;
+          expect(parseRouteStrict(formatRoute(withWheel))).toEqual(withWheel);
+        }
+      }
+    }
+    for (const off of ["", "?camelot=0", "?camelot=yes"]) {
+      expect(parseRoute(`#/circle/A/minor${off}`)).toEqual({ page: "circle", key: route.key });
+    }
   });
 
   it("falls back to C major on the circle for a bad circle link", () => {
@@ -653,6 +705,56 @@ describe("build links", () => {
         }
       }
     }
+  });
+
+  it("reads borrowed chords and secondary dominants back in every key", () => {
+    for (const id of ["major", "naturalMinor"] as const) {
+      for (const pc of PITCH_CLASSES) {
+        for (const tonic of tonalitySpellings(pc, id)) {
+          const t = tonality(tonic, id);
+          const steps = [
+            { degree: 1, size: "triad" as const },
+            ...borrowedDegrees(t).map((degree) => ({
+              degree,
+              size: "seventh" as const,
+              from: "borrowed" as const,
+            })),
+            ...secondaryTargets(t)
+              .slice(0, 3)
+              .map((degree) => ({ degree, size: "seventh" as const, from: "secondary" as const })),
+          ];
+          const route: Route = { page: "build", tonality: t, steps };
+          expect(parseRouteStrict(formatRoute(route))).toEqual(route);
+        }
+      }
+    }
+    expect(
+      formatRoute({
+        page: "build",
+        tonality: tonality(note("C"), "major"),
+        steps: [
+          { degree: 1, size: "triad" },
+          { degree: 6, size: "triad", from: "borrowed" },
+          { degree: 2, size: "seventh", from: "secondary" },
+        ],
+      }),
+    ).toBe("#/build/C/major?c=1,b6,v5/2");
+  });
+
+  it("leaves out the chords a tonality lacks", () => {
+    // D dorian borrows nothing, and nothing points at its diminished vi°.
+    expect(parseRoute("#/build/D/dorian?c=1,b6,v5/6,v5/4")).toEqual({
+      page: "build",
+      tonality: tonality(note("D"), "dorian"),
+      steps: [
+        { degree: 1, size: "triad" },
+        { degree: 4, size: "seventh", from: "secondary" },
+      ],
+    });
+    // C major borrows no I from itself.
+    expect(parseRoute("#/build/C/major?c=b1,5")).toMatchObject({
+      steps: [{ degree: 5, size: "triad" }],
+    });
   });
 
   it("reads old minor links as natural minor", () => {

@@ -17,7 +17,6 @@ import {
   builderStepsFor,
   cadenceChords,
   chordOnKeyboard,
-  describeVoiceLeading,
   findProgressions,
   formatKey,
   formatNote,
@@ -35,7 +34,7 @@ import { ChromaticChords } from "./ChromaticChords";
 import { LeadingToneChords } from "./LeadingToneChords";
 import { SoundSettings } from "./SoundSettings";
 import { TonalityPicker, TonicPicker } from "./TonalityPicker";
-import { VoiceLeadingPiano } from "./VoiceLeadingPiano";
+import { SmoothVoicing } from "./SmoothVoicing";
 
 interface ProgressionViewProps {
   tonic: Note;
@@ -257,43 +256,12 @@ export function ProgressionView({
           ))}
         </ol>
 
-        <div className="voicing-toggle">
-          <button
-            type="button"
-            className="play__button"
-            aria-pressed={smooth}
-            onClick={() => setSmooth((on) => !on)}
-          >
-            Smooth voicing
-          </button>
-          <span className="voicing-toggle__hint">
-            {smooth
-              ? "Each chord takes the inversion that moves the least from the one before."
-              : "Chords are played in root position."}
-          </span>
-        </div>
-
-        {voiced && (
-          <ol className="voice-leading" aria-label="Voice leading between the chords">
-            {voiced.transitions.map((transition, i) => (
-              <li key={i} className="voice-leading__step">
-                <span className="voice-leading__chords">
-                  {chords[i]?.chord.symbol} → {chords[i + 1]?.chord.symbol}
-                </span>
-                <span className="voice-leading__text">{describeVoiceLeading(transition)}</span>
-                <details className="voice-leading__piano">
-                  <summary>
-                    Show on the piano: {chords[i]?.chord.symbol} → {chords[i + 1]?.chord.symbol}
-                  </summary>
-                  <VoiceLeadingPiano
-                    leading={transition}
-                    names={[chords[i]?.chord.symbol ?? "", chords[i + 1]?.chord.symbol ?? ""]}
-                  />
-                </details>
-              </li>
-            ))}
-          </ol>
-        )}
+        <SmoothVoicing
+          names={chords.map(({ chord }) => chord.symbol)}
+          smooth={smooth}
+          onToggle={() => setSmooth((on) => !on)}
+          voiced={voiced}
+        />
 
         {audioSupported() && (
           <div className="play" role="group" aria-label="Listen">

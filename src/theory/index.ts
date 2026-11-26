@@ -16,6 +16,7 @@ export * from "./keys";
 export * from "./modes";
 export * from "./negativeHarmony";
 export * from "./notes";
+export * from "./pianoKeys";
 export * from "./pivotChords";
 export * from "./progressions";
 export * from "./progressionBuilder";

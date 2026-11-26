@@ -30,7 +30,9 @@ import {
   FRET_WINDOW_STARTS,
   type FretPick,
   circlePosition,
+  fitBuilderChords,
   formatBuilderChords,
+  formatKeys,
   formatPicks,
   formatTune,
   identifyQuality,
@@ -45,6 +47,7 @@ import {
   normalizeSpec,
   note,
   parseBuilderChords,
+  parseKeys,
   parsePicks,
   parseTune,
   specOf,
@@ -66,10 +69,13 @@ export type { GuitarOptions } from "./neck";
  *   #/C/major?on=piano&vs=A-minor  C major compared with A minor (`vs=Root-base`, qualities in `vsw`)
  *   #/C/major?on=piano&show=intervals  chord with intervals (R 3 5) on the keys; also names, steps, none
  *   #/circle/Bb/major              circle of fifths with B♭ major selected
+ *   #/circle/A/minor?camelot=1     the same with the Camelot wheel (8A) shown
  *   #/progression/Ab/pop           the I–V–vi–IV progression in A♭ major
  *   #/build/C/major?c=1,5,6s,4     a progression built from the key's chords (`s` = seventh chord)
  *   #/build/D/dorian?c=1,4         the same from any tonality (`minor` is natural minor)
- *   #/identify                     "What chord is this?" (the keys you pick on the piano are not in the link)
+ *   #/build/C/major?c=1,b6,v5/2    with a chord borrowed from the parallel key (`b`) and a
+ *                                  secondary dominant (`v5/2` = V7/ii)
+ *   #/identify?keys=60,64,67       "What chord is this?" with keys pressed on the piano (MIDI numbers)
  *   #/identify?on=guitar&frets=6.0,5.2,4.2,3.0&from=13  the same on a guitar neck: pressed `string.fret`
  *                                  places, and the first fret shown (13 = frets 13–24)
  *   #/tonnetz/C/major              the Tonnetz with the C major triad selected
@@ -130,6 +136,8 @@ export type LookupRoute = ChordRoute | ScaleRoute;
 export interface CircleRoute {
   readonly page: "circle";
   readonly key: Key;
+  /** The circle numbered as the Camelot wheel. */
+  readonly camelot?: true;
 }
 
 /** A common chord progression put in a key; the key's mode comes from the progression. */
@@ -152,9 +160,11 @@ export interface BuildRoute {
 /**
  * "What chord is this?". `instrument` is a string instrument when the neck is shown (the piano
  * when absent), `frets` the places pressed on it and `from` the first fret shown (1 when absent).
+ * On the piano, `keys` are the pressed keys as MIDI numbers, lowest first.
  */
 export interface IdentifyRoute extends Omit<GuitarOptions, "left"> {
   readonly page: "identify";
+  readonly keys?: readonly number[];
   readonly instrument?: StringInstrumentId;
   readonly frets?: readonly FretPick[];
   readonly from?: number;
@@ -395,7 +405,7 @@ export function formatRoute(route: Route): string {
     case "scale":
       return `#/${formatRouteNote(route.root)}/scale/${route.scaleId}?on=${route.instrument}${formatGuitarOptions(route)}`;
     case "circle":
-      return `#/circle/${formatRouteNote(route.key.tonic)}/${route.key.mode}`;
+      return `#/circle/${formatRouteNote(route.key.tonic)}/${route.key.mode}${route.camelot ? "?camelot=1" : ""}`;
     case "progression":
       return `#/progression/${formatRouteNote(route.tonic)}/${route.id}`;
     case "build": {
@@ -419,7 +429,10 @@ export function formatRoute(route: Route): string {
 }
 
 function formatIdentify(route: IdentifyRoute): string {
-  if (!route.instrument) return "#/identify";
+  if (!route.instrument) {
+    const keys = formatKeys(route.keys ?? []);
+    return keys ? `#/identify?keys=${keys}` : "#/identify";
+  }
   const parts = [`on=${route.instrument}`];
   const neck = formatNeckOptions(route.instrument, route);
   if (neck) parts.push(neck.slice(1));
@@ -459,7 +472,10 @@ function parseIdentify(query: URLSearchParams): IdentifyRoute {
   const instrument = (STRING_INSTRUMENT_IDS as readonly unknown[]).includes(on)
     ? (on as StringInstrumentId)
     : undefined;
-  if (!instrument) return { page: "identify" };
+  if (!instrument) {
+    const keys = parseKeys(query.get("keys"));
+    return keys.length > 0 ? { page: "identify", keys } : { page: "identify" };
+  }
   const options = parseNeckOptions(instrument, query);
   const frets = parsePicks(
     query.get("frets"),
@@ -666,7 +682,10 @@ function parseLink(
 
   if (parts[0] === "circle") {
     const k = parseCircleKey(parts[1], parts[2]);
-    return k ? { page: "circle", key: k } : strict ? undefined : defaultCircleRoute();
+    if (!k) return strict ? undefined : defaultCircleRoute();
+    return query.get("camelot") === "1"
+      ? { page: "circle", key: k, camelot: true }
+      : { page: "circle", key: k };
   }
 
   if (parts[0] === "progression") {
@@ -681,10 +700,11 @@ function parseLink(
   if (parts[0] === "build") {
     const t = parseTonality(parts[1], parts[2] === "minor" ? "naturalMinor" : parts[2]);
     if (!t) return strict ? undefined : defaultBuildRoute();
-    // A list that makes no sense gives an empty progression, not a different key.
+    // A list that makes no sense gives an empty progression, not a different key, and a chord
+    // the tonality lacks (a borrowed one in a mode) is left out.
     const steps = parseBuilderChords(query.get("c") ?? "");
     if (!steps && strict) return undefined;
-    return { page: "build", tonality: t, steps: steps ?? [] };
+    return { page: "build", tonality: t, steps: fitBuilderChords(t, steps ?? []) };
   }
 
   const onParam = query.get("on");

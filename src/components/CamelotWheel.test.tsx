@@ -96,4 +96,46 @@ describe("Camelot wheel", () => {
     expect(labels(container)[0]).toBe("0");
     expect(outlined(container)).toHaveLength(0);
   });
+
+  it("shows the key's code in the key panel, wheel or not", () => {
+    render(<Harness start={key(note("A"), "minor")} />);
+    expect(document.querySelector(".key-details__camelot")).toHaveTextContent("Camelot 8A");
+  });
+
+  it("jumps to the key of a typed code once it is valid", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    expect(screen.queryByRole("textbox", { name: "Go to Camelot code" })).toBeNull();
+    await user.click(toggle());
+    const field = screen.getByRole("textbox", { name: "Go to Camelot code" });
+    expect(field).toHaveValue("8B");
+    await user.clear(field);
+    await user.type(field, "2");
+    // "2" is not a code yet, so the key stays.
+    expect(field).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("C major");
+    await user.type(field, "a");
+    expect(field).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("D♯ minor");
+    expect(field).toHaveValue("2a");
+    expect(document.querySelector(".key-details__camelot")).toHaveTextContent("Camelot 2A");
+  });
+
+  it("keeps the spelling that is selected when it already has the code", async () => {
+    const user = userEvent.setup();
+    render(<Harness start={key(note("G", -1), "major")} />);
+    await user.click(toggle());
+    const field = screen.getByRole("textbox", { name: "Go to Camelot code" });
+    await user.clear(field);
+    await user.type(field, "2B");
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("G♭ major");
+  });
+
+  it("follows the key when it is picked on the circle", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(toggle());
+    await user.click(screen.getByRole("radio", { name: "G major" }));
+    expect(screen.getByRole("textbox", { name: "Go to Camelot code" })).toHaveValue("9B");
+  });
 });

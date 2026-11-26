@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ChordFinder } from "./components/ChordFinder";
 import { CircleOfFifthsView } from "./components/CircleOfFifthsView";
 import { Lookup, switchView } from "./components/Lookup";
@@ -100,9 +100,6 @@ export function App() {
     }
   }, [route]);
 
-  // The keys pressed in "What chord is this?" (MIDI numbers).
-  const [pressed, setPressed] = useState<readonly number[]>([]);
-
   // A remembered chord or scale is shown on the neck as set up now, not as it was.
   const fresh = <R extends ChordRoute | ScaleRoute>(remembered: R): R => {
     return remembered.instrument === "piano" ? remembered : withNeck(remembered, storedNeck());
@@ -176,7 +173,13 @@ export function App() {
         {route.page === "circle" ? (
           <CircleOfFifthsView
             value={route.key}
-            onChange={(key) => navigate({ page: "circle", key })}
+            onChange={(key) =>
+              navigate({ page: "circle", key, ...(route.camelot ? { camelot: true } : {}) })
+            }
+            camelot={route.camelot ?? false}
+            onCamelot={(on) =>
+              navigate({ page: "circle", key: route.key, ...(on ? { camelot: true } : {}) })
+            }
             onOpenChord={(root, quality) =>
               navigate({
                 page: "chord",
@@ -223,8 +226,6 @@ export function App() {
           <ChordFinder
             route={route}
             onRoute={navigate}
-            selected={pressed}
-            onChange={setPressed}
             onOpen={(match) =>
               navigate({
                 page: "chord",

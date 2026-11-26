@@ -1659,6 +1659,10 @@ body {
 .symbol-field__message--error {
   color: var(--dominant);
 }
+.camelot-jump {
+  max-width: 16rem;
+  margin: 0 auto 10px;
+}
 
 /* Share and export */
 
@@ -2933,6 +2937,17 @@ body {
   margin: 8px 0 0;
   font-size: 0.9rem;
   color: var(--muted);
+}
+
+/* Borrowed chords and secondary dominants, under the tonality's own chords. */
+.builder__group {
+  margin: 14px 0 6px;
+  font-size: 0.95rem;
+}
+
+.builder__source {
+  color: var(--muted);
+  font-style: italic;
 }
 
 .builder__list {

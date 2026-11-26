@@ -151,4 +151,77 @@ describe("ProgressionBuilder", () => {
       vi.useRealTimers();
     }
   });
+
+  it("adds chords borrowed from the parallel key and secondary dominants", async () => {
+    const onChange = setup([triad(1)]);
+    const borrowedList = screen.getByRole("list", { name: "Borrowed from C minor" });
+    expect(
+      within(borrowedList)
+        .getAllByRole("button")
+        .map((b) => b.querySelector(".triad__symbol")?.textContent),
+    ).toEqual(["D°", "E♭", "Fm", "A♭", "B♭"]);
+    await userEvent.click(
+      screen.getByRole("button", { name: "Add A♭ (♭VI), borrowed from C minor" }),
+    );
+    expect(onChange).toHaveBeenLastCalledWith(c, [
+      triad(1),
+      { degree: 6, size: "triad", from: "borrowed" },
+    ]);
+    await userEvent.click(screen.getByRole("button", { name: "Add A7 (V7/ii), resolves to Dm" }));
+    expect(onChange).toHaveBeenLastCalledWith(c, [
+      triad(1),
+      { degree: 2, size: "seventh", from: "secondary" },
+    ]);
+    // With sevenths chosen, the borrowed chords are sevenths too.
+    await userEvent.click(screen.getByRole("radio", { name: "Sevenths" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Add B♭7 (♭VII7), borrowed from C minor" }),
+    );
+    expect(onChange).toHaveBeenLastCalledWith(c, [
+      triad(1),
+      { degree: 7, size: "seventh", from: "borrowed" },
+    ]);
+  });
+
+  it("marks borrowed chords and secondary dominants in the list in words", () => {
+    setup([
+      triad(1),
+      { degree: 6, size: "triad", from: "borrowed" },
+      { degree: 5, size: "seventh", from: "secondary" },
+      triad(5),
+    ]);
+    const items = within(
+      screen.getByRole("list", { name: "Chords of your progression" }),
+    ).getAllByRole("listitem");
+    expect(items[1]).toHaveTextContent("♭VI");
+    expect(items[1]).toHaveTextContent("A♭ C E♭ · borrowed from C minor");
+    expect(items[2]).toHaveTextContent("V7/V");
+    expect(items[2]).toHaveTextContent("D F♯ A C · secondary dominant of G");
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("I–♭VI–V7/V–V");
+  });
+
+  it("suggests the target after a secondary dominant", () => {
+    setup([triad(1), { degree: 6, size: "seventh", from: "secondary" }]);
+    expect(screen.getByRole("heading", { name: "What could come after E7?" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add Am (vi) next" })).toBeInTheDocument();
+  });
+
+  it("offers no borrowed chords in a mode, and drops them when the tonality changes", async () => {
+    const steps: BuilderChord[] = [triad(1), { degree: 7, size: "triad", from: "borrowed" }];
+    const onChange = setup(steps);
+    await userEvent.click(screen.getByRole("radio", { name: "Dorian" }));
+    expect(onChange).toHaveBeenLastCalledWith(tonality(note("C"), "dorian"), [triad(1)]);
+  });
+
+  it("plays with smooth voicing and explains each move", async () => {
+    setup([triad(1), triad(4), triad(5), triad(1)]);
+    await userEvent.click(screen.getByRole("button", { name: "Smooth voicing" }));
+    expect(
+      screen.getByRole("list", { name: "Voice leading between the chords" }),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Play your progression in C major with smooth voicing" }),
+    );
+    expect(audio.play).toHaveBeenCalledOnce();
+  });
 });

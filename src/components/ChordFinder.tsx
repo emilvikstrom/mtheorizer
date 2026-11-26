@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   type ChordMatch,
   FRET_WINDOW,
@@ -12,6 +13,8 @@ import {
   formatNote,
   identifyChords,
   pickedMidi,
+  normalizeKeys,
+  toggleKey,
   togglePick,
   tuningFor,
 } from "../theory";
@@ -39,12 +42,9 @@ const SOURCE_OPTIONS: readonly PickerOption<"piano" | "neck">[] = [
 const MAX_SUGGESTIONS = 12;
 
 interface ChordFinderProps {
-  /** The instrument, pressed frets and fret window, which live in the link. */
+  /** The instrument, pressed keys or frets and fret window, which live in the link. */
   route: IdentifyRoute;
   onRoute: (route: IdentifyRoute) => void;
-  /** MIDI numbers of the pressed keys. */
-  selected: readonly number[];
-  onChange: (selected: readonly number[]) => void;
   /** Open `match` in the chord tab. */
   onOpen: (match: ChordMatch) => void;
 }
@@ -62,8 +62,14 @@ const omittedText = (match: ChordMatch) =>
  * and see which chords the notes form. The lowest note is the bass, so C, E, G and
  * A with C lowest gives Am7/C.
  */
-export function ChordFinder({ route, onRoute, selected, onChange, onOpen }: ChordFinderProps) {
+export function ChordFinder({ route, onRoute, onOpen }: ChordFinderProps) {
   const source: Source = route.instrument ?? "piano";
+  // MIDI numbers of the pressed keys.
+  const selected: readonly number[] = route.keys ?? [];
+  const setKeys = (keys: readonly number[]) =>
+    onRoute(keys.length > 0 ? { page: "identify", keys } : { page: "identify" });
+  // The neck's link has no room for the keys, so they wait here for a trip back to the piano.
+  const pianoKeys = useRef<readonly number[]>([]);
   const picks: readonly FretPick[] = route.frets ?? [];
   const from = route.from ?? 1;
   const setPicks = (frets: readonly FretPick[]) =>
@@ -72,7 +78,7 @@ export function ChordFinder({ route, onRoute, selected, onChange, onOpen }: Chor
   const noun = strings ? "frets" : "keys";
 
   // The pressed keys, or the notes the pressed frets sound in the instrument's tuning.
-  const sorted = strings ? pickedMidi(picks, strings.strings) : [...selected].sort((a, b) => a - b);
+  const sorted = strings ? pickedMidi(picks, strings.strings) : normalizeKeys(selected);
   const bass = sorted[0];
   const matches = identifyChords(
     sorted.map((midi) => midi % 12),
@@ -87,8 +93,7 @@ export function ChordFinder({ route, onRoute, selected, onChange, onOpen }: Chor
       : [];
   });
 
-  const toggle = (midi: number) =>
-    onChange(selected.includes(midi) ? selected.filter((m) => m !== midi) : [...selected, midi]);
+  const toggle = (midi: number) => setKeys(toggleKey(selected, midi));
 
   const pitchClasses = new Set(sorted.map((midi) => midi % 12));
   const count = pitchClasses.size;
@@ -109,16 +114,17 @@ export function ChordFinder({ route, onRoute, selected, onChange, onOpen }: Chor
         onChange={(value) => {
           // Another instrument has other strings, so the pressed frets don't carry over.
           const { instrument, tuning, strings: open } = storedNeck();
-          onRoute(
-            value === "piano"
-              ? { page: "identify" }
-              : {
-                  page: "identify",
-                  instrument,
-                  ...(tuning ? { tuning } : {}),
-                  ...(open ? { strings: open } : {}),
-                },
-          );
+          if (value === "piano") {
+            setKeys(pianoKeys.current);
+            return;
+          }
+          if (source === "piano") pianoKeys.current = selected;
+          onRoute({
+            page: "identify",
+            instrument,
+            ...(tuning ? { tuning } : {}),
+            ...(open ? { strings: open } : {}),
+          });
         }}
       />
       {strings && (
@@ -158,7 +164,7 @@ export function ChordFinder({ route, onRoute, selected, onChange, onOpen }: Chor
         </>
       ) : (
         <>
-          <MidiInput onUse={onChange} />
+          <MidiInput onUse={(midis) => setKeys(normalizeKeys(midis))} />
           <Piano
             tones={tones}
             name={sorted.length === 0 ? "no keys pressed" : "the pressed keys"}
@@ -172,7 +178,7 @@ export function ChordFinder({ route, onRoute, selected, onChange, onOpen }: Chor
         <button
           type="button"
           className="finder__clear"
-          onClick={() => (strings ? setPicks([]) : onChange([]))}
+          onClick={() => (strings ? setPicks([]) : setKeys([]))}
           disabled={(strings ? picks.length : selected.length) === 0}
         >
           Clear {noun}

@@ -150,6 +150,10 @@ describe("progression data", () => {
   });
 });
 
+/** Whether every chord of the progression is one of its tonality's own. */
+const inside = (id: ProgressionId): boolean =>
+  builderStepsFor(PROGRESSIONS[id])?.every((s) => s.from === undefined) ?? false;
+
 describe("progressions in every key", () => {
   it("spells I–V–vi–IV in all 15 major keys of the circle", () => {
     const keys = allKeys("major");
@@ -195,7 +199,7 @@ describe("progressions in every key", () => {
     }
   });
 
-  it.each(PROGRESSION_IDS.filter((id) => builderStepsFor(PROGRESSIONS[id])))(
+  it.each(PROGRESSION_IDS.filter(inside))(
     "%s: every chord tone is in the scale, on every tonic",
     (id) => {
       const progression = PROGRESSIONS[id];
@@ -211,10 +215,11 @@ describe("progressions in every key", () => {
   );
 
   it("keeps most progressions inside their tonality", () => {
-    const inside = PROGRESSION_IDS.filter((id) => builderStepsFor(PROGRESSIONS[id]));
-    expect(inside.length).toBeGreaterThan(PROGRESSION_IDS.length / 2);
-    // The ones that borrow are the ones that say so.
-    expect(builderStepsFor(PROGRESSIONS.heroic)).toBeUndefined();
+    expect(PROGRESSION_IDS.filter(inside).length).toBeGreaterThan(PROGRESSION_IDS.length / 2);
+    // The ones that borrow are the ones that say so. The builder can borrow ♭VI and ♭VII, but
+    // not the major V of the Andalusian cadence.
+    expect(inside("heroic")).toBe(false);
+    expect(builderStepsFor(PROGRESSIONS.heroic)?.some((s) => s.from === "borrowed")).toBe(true);
     expect(builderStepsFor(PROGRESSIONS.andalusian)).toBeUndefined();
   });
 });
