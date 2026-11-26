@@ -2322,6 +2322,26 @@ body {
   stroke: var(--accent-ink-root);
 }
 
+/* A progression: one chord to a bar, rows of four bars. */
+.staff--progression {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.staff__barline {
+  stroke: var(--key-stroke);
+  stroke-width: 1;
+}
+
+.staff__barline--end {
+  stroke-width: 3;
+}
+
+.staff__chord-name {
+  fill: var(--text);
+  font-weight: 600;
+}
+
 .midi {
   display: grid;
   gap: 12px;

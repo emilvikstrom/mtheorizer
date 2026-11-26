@@ -9,7 +9,8 @@
  */
 
 import { type Accidental, type Letter, type Note, letterIndex, note } from "./notes";
-import type { SpelledScale } from "./scales";
+import { type SpelledScale, spellScale } from "./scales";
+import { type Tonality, isMajorTonality } from "./tonality";
 
 export type Clef = "treble" | "bass";
 
@@ -205,4 +206,26 @@ export function displacedSteps(steps: readonly number[]): Set<number> {
     if (below !== undefined && step - below === 1 && !moved.has(below)) moved.add(step);
   });
   return moved;
+}
+
+/**
+ * The key signature a progression in `t` is written with. Major, natural minor and the modes have
+ * their own; any other tonality takes the signature of the major or minor key on its tonic with the
+ * same third, so A harmonic minor is written in A minor with a sharp before each G.
+ */
+export function tonalitySignature(t: Tonality): Note[] {
+  if (SIGNATURE_SCALES.has(t.scale)) return scaleSignature(spellScale(t.tonic, t.scale));
+  return scaleSignature(spellScale(t.tonic, isMajorTonality(t.scale) ? "major" : "naturalMinor"));
+}
+
+/**
+ * A progression on the staff, one chord to a bar. The key signature holds throughout, and an
+ * accidental holds only to the bar line, so a note that goes against the signature is marked
+ * again in each bar it comes back in.
+ */
+export function placeProgression(
+  bars: readonly (readonly StaffTone[])[],
+  signature: readonly Note[] = [],
+): StaffNote[][] {
+  return bars.map((tones) => placeOnStaff(tones, signature));
 }

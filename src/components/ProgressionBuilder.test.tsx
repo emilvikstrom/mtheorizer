@@ -224,4 +224,26 @@ describe("ProgressionBuilder", () => {
     );
     expect(audio.play).toHaveBeenCalledOnce();
   });
+
+  it("writes the progression on a staff, one chord to a bar, following the smooth voicing", async () => {
+    setup([triad(1), { degree: 6, size: "triad", from: "borrowed" }, triad(4), triad(5)]);
+    const staff = screen.getByRole("img", { name: /^Staff notation of I–♭VI–IV–V in C major/ });
+    expect(staff.querySelectorAll(".staff__bar")).toHaveLength(4);
+    expect(
+      [...staff.querySelectorAll(".staff__chord-name")].map((n) => n.textContent),
+    ).toEqual(["C", "A♭", "F", "G"]);
+    // Only the borrowed chord's flats are written beside the notes.
+    const signed = [...staff.querySelectorAll(".staff__note[data-sign]")].map(
+      (n) => `${n.getAttribute("data-note")}${n.getAttribute("data-octave")}`,
+    );
+    expect(signed).toEqual(["A♭4", "E♭5"]);
+    const rootPosition = staff.getAttribute("aria-label");
+    expect(rootPosition).toContain("bar 3, F: F4 A4 C5");
+
+    await userEvent.click(screen.getByRole("button", { name: "Smooth voicing" }));
+    const smooth = screen.getByRole("img", { name: /^Staff notation of/ }).getAttribute("aria-label");
+    // F follows C and A♭ in the inversion that moves least: C stays.
+    expect(smooth).not.toBe(rootPosition);
+    expect(smooth).toContain("bar 1, C: C4 E4 G4");
+  });
 });

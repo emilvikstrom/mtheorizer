@@ -35,6 +35,7 @@ import { LeadingToneChords } from "./LeadingToneChords";
 import { SoundSettings } from "./SoundSettings";
 import { TonalityPicker, TonicPicker } from "./TonalityPicker";
 import { SmoothVoicing } from "./SmoothVoicing";
+import { ProgressionNotation } from "./Staff";
 
 interface ProgressionViewProps {
   tonic: Note;
@@ -255,6 +256,13 @@ export function ProgressionView({
             </li>
           ))}
         </ol>
+
+        <ProgressionNotation
+          chords={chords}
+          tonality={t}
+          voiced={voiced}
+          name={`${progression.name} in ${name}`}
+        />
 
         <SmoothVoicing
           names={chords.map(({ chord }) => chord.symbol)}

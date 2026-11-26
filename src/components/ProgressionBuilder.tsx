@@ -34,6 +34,7 @@ import {
 } from "../theory";
 import { OptionPicker } from "./OptionPicker";
 import { SmoothVoicing } from "./SmoothVoicing";
+import { ProgressionNotation } from "./Staff";
 import { SoundSettings } from "./SoundSettings";
 import { TonalityPicker, TonicPicker } from "./TonalityPicker";
 
@@ -362,6 +363,15 @@ export function ProgressionBuilder({
               );
             })}
           </ol>
+        )}
+
+        {steps.length > 0 && (
+          <ProgressionNotation
+            chords={chords}
+            tonality={value}
+            voiced={voiced}
+            name={`${chords.map(({ step }) => step.roman).join("–")} in ${name}`}
+          />
         )}
 
         {steps.length > 1 && (
