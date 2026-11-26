@@ -191,7 +191,9 @@ export function App() {
             }
           />
         ) : route.page === "build" ? (
-          <ProgressionBuilder
+          <>
+            <SavedChoices route={route} onOpen={navigate} />
+            <ProgressionBuilder
             value={route.tonality}
             steps={route.steps}
             onChange={(tonality, steps) => navigate({ page: "build", tonality, steps })}
@@ -206,6 +208,7 @@ export function App() {
               })
             }
           />
+          </>
         ) : route.page === "progression" ? (
           <ProgressionView
             tonic={route.tonic}

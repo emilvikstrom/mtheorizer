@@ -11,8 +11,15 @@ import {
   saveList,
   toggleFavorite,
 } from "./saved";
-import { parseRoute } from "./route";
-import { note, specOf } from "./theory";
+import { type BuildRoute, formatRoute, parseRoute } from "./route";
+import {
+  borrowedDegrees,
+  note,
+  secondaryTargets,
+  specOf,
+  tonality,
+  tonalitySpellings,
+} from "./theory";
 
 describe("addRecent", () => {
   it("puts the newest first and drops duplicates", () => {
@@ -52,6 +59,16 @@ describe("choiceOf", () => {
     );
   });
 
+  it("accepts a progression from the builder, but not an empty one", () => {
+    expect(choiceOf("#/build/C/major?c=1,b6,v5/5,5")).toBe("#/build/C/major?c=1,b6,v5/5,5");
+    expect(choiceOf("#/build/D/dorian?c=1s,4s")).toBe("#/build/D/dorian?c=1s,4s");
+    expect(choiceOf("#/build/C/major")).toBeUndefined();
+    expect(choiceOf("#/build/C/major?c=x")).toBeUndefined();
+    // A chord the tonality lacks is dropped from the link, so it is not the canonical form.
+    expect(choiceOf("#/build/D/dorian?c=1,b6")).toBeUndefined();
+    expect(choiceOf("#/progression/C/pop")).toBeUndefined();
+  });
+
   it("rejects circle links, broken links and non-canonical ones", () => {
     expect(choiceOf("#/C/major?with=banana&on=piano")).toBeUndefined();
     expect(choiceOf("#/C/minor?with=flat5&on=piano")).toBeUndefined();
@@ -74,6 +91,39 @@ describe("round trip", () => {
     // What a chord is compared with is not part of the saved choice.
     const compared = { ...route, vs: { root: note("A"), spec: specOf("minor") } };
     expect(hashOf(compared)).toBe(hashOf(route));
+  });
+});
+
+describe("saved progressions", () => {
+  it("round-trips borrowed chords and secondary dominants in every major and minor key", () => {
+    for (const id of ["major", "naturalMinor"] as const) {
+      for (let pc = 0; pc < 12; pc++) {
+        for (const tonic of tonalitySpellings(pc, id)) {
+          const t = tonality(tonic, id);
+          const route: BuildRoute = {
+            page: "build",
+            tonality: t,
+            steps: [
+              { degree: 1, size: "triad" },
+              ...borrowedDegrees(t).map((degree) => ({
+                degree,
+                size: "triad" as const,
+                from: "borrowed" as const,
+              })),
+              ...secondaryTargets(t).map((degree) => ({
+                degree,
+                size: "seventh" as const,
+                from: "secondary" as const,
+              })),
+            ],
+          };
+          const hash = hashOf(route);
+          expect(hash).toBe(formatRoute(route));
+          expect(choiceOf(hash)).toBe(hash);
+          expect(routeOf(hash)).toEqual(route);
+        }
+      }
+    }
   });
 });
 

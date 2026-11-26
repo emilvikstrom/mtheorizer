@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import type { LookupRoute } from "../route";
 import {
   FAVORITES_KEY,
   RECENT_KEY,
+  type SavedRoute,
   addRecent,
   hashOf,
   loadList,
@@ -10,22 +10,42 @@ import {
   saveList,
   toggleFavorite,
 } from "../saved";
-import { SCALES, STRING_INSTRUMENTS, chordFromSpec, formatNote, inversionSymbol } from "../theory";
+import {
+  SCALES,
+  STRING_INSTRUMENTS,
+  builderChords,
+  chordFromSpec,
+  formatNote,
+  formatTonality,
+  inversionSymbol,
+} from "../theory";
 
-/** Short name of a stored choice: "Cm7", "C/E", "A Natural minor". */
-function labelOf(route: LookupRoute): string {
+/** Short name of a stored choice: "Cm7", "C/E", "A Natural minor", "I–♭VI–V7/V–V in C major". */
+function labelOf(route: SavedRoute): string {
+  if (route.page === "build") {
+    const steps = builderChords(route.tonality, route.steps).map(({ step }) => step.roman);
+    return `${steps.join("–")} in ${formatTonality(route.tonality)}`;
+  }
   if (route.page === "scale") return `${formatNote(route.root)} ${SCALES[route.scaleId].name}`;
   return inversionSymbol(chordFromSpec(route.root, route.spec), route.inversion);
 }
 
-const instrumentOf = (route: LookupRoute) =>
-  route.instrument === "piano" ? "Piano" : STRING_INSTRUMENTS[route.instrument].label;
+/** The instrument a chord or scale is shown on; a progression has none. */
+const instrumentOf = (route: SavedRoute): string | undefined =>
+  route.page === "build"
+    ? undefined
+    : route.instrument === "piano"
+      ? "Piano"
+      : STRING_INSTRUMENTS[route.instrument].label;
 
 interface Props {
-  /** The choice on screen. It is added to the recent list. */
-  readonly route: LookupRoute;
+  /**
+   * The choice on screen. A chord or scale is added to the recent list. A progression is not,
+   * since every chord added or moved would be a new entry, but it can be saved as a favourite.
+   */
+  readonly route: SavedRoute;
   /** Restores a whole saved choice. */
-  readonly onOpen: (route: LookupRoute) => void;
+  readonly onOpen: (route: SavedRoute) => void;
 }
 
 /** Recent choices and pinned favourites, kept in localStorage. One click restores the whole choice. */
@@ -34,9 +54,10 @@ export function SavedChoices({ route, onOpen }: Props) {
   const [favorites, setFavorites] = useState(() => loadList(FAVORITES_KEY));
   const current = hashOf(route);
 
-  // The choice on screen joins the recent list as soon as it changes (adjusted while rendering).
+  const progression = route.page === "build";
+  // The chord or scale on screen joins the recent list as soon as it changes (adjusted while rendering).
   const [seen, setSeen] = useState<string>();
-  if (seen !== current) {
+  if (!progression && seen !== current) {
     setSeen(current);
     setRecent(addRecent(recent, current));
   }
@@ -51,6 +72,8 @@ export function SavedChoices({ route, onOpen }: Props) {
   const chip = (hash: string) => {
     const saved = routeOf(hash);
     const label = labelOf(saved);
+    const instrument = instrumentOf(saved);
+    const named = instrument ? `${label} (${instrument})` : label;
     const isFavorite = favorites.includes(hash);
     return (
       <li key={hash} className="saved__item">
@@ -58,19 +81,19 @@ export function SavedChoices({ route, onOpen }: Props) {
           type="button"
           className="saved__open"
           aria-current={hash === current ? "true" : undefined}
-          aria-label={`Open ${label} (${instrumentOf(saved)})`}
+          aria-label={`Open ${named}`}
           onClick={() => onOpen(saved)}
         >
           <span className="saved__label">{label}</span>
-          {saved.instrument !== "piano" ? (
-            <span className="saved__meta">{instrumentOf(saved)}</span>
+          {instrument && instrument !== "Piano" ? (
+            <span className="saved__meta">{instrument}</span>
           ) : null}
         </button>
         <button
           type="button"
           className="saved__pin"
           aria-pressed={isFavorite}
-          aria-label={`Favorite ${label} (${instrumentOf(saved)})`}
+          aria-label={`Favorite ${named}`}
           onClick={() => toggle(hash)}
         >
           {isFavorite ? "★" : "☆"}
@@ -79,10 +102,23 @@ export function SavedChoices({ route, onOpen }: Props) {
     );
   };
 
-  if (recent.length === 0 && favorites.length === 0) return null;
+  const canSave = progression && route.steps.length > 0;
+  if (recent.length === 0 && favorites.length === 0 && !canSave) return null;
 
   return (
     <section className="saved" aria-label="Recent and favorite choices">
+      {canSave ? (
+        <div className="saved__group">
+          <button
+            type="button"
+            className="saved__clear"
+            aria-pressed={favorites.includes(current)}
+            onClick={() => toggle(current)}
+          >
+            {favorites.includes(current) ? "★ Saved as a favorite" : "☆ Save this progression"}
+          </button>
+        </div>
+      ) : null}
       {favorites.length > 0 ? (
         <div className="saved__group">
           <p className="saved__heading" aria-hidden="true">
