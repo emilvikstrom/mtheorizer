@@ -6,7 +6,9 @@ import {
   PROGRESSION_TAGS,
   type ProgressionId,
   findProgressions,
+  parseProgressionTags,
   progressionChords,
+  sortProgressionTags,
   progressionTonality,
   progressionTonalityOn,
 } from "./progressions";
@@ -221,6 +223,22 @@ describe("progressions in every key", () => {
     expect(inside("heroic")).toBe(false);
     expect(builderStepsFor(PROGRESSIONS.heroic)?.some((s) => s.from === "borrowed")).toBe(true);
     expect(builderStepsFor(PROGRESSIONS.andalusian)).toBeUndefined();
+  });
+});
+
+describe("progression keywords in a link", () => {
+  it("reads keywords in the usual order, each once, and leaves out unknown words", () => {
+    expect(parseProgressionTags("sad,jazz")).toEqual(sortProgressionTags(["jazz", "sad"]));
+    expect(parseProgressionTags("jazz,jazz,banana,,JAZZ")).toEqual(["jazz"]);
+    expect(parseProgressionTags(null)).toEqual([]);
+    expect(parseProgressionTags("")).toEqual([]);
+  });
+
+  it("round-trips every keyword and all of them together", () => {
+    for (const tag of PROGRESSION_TAGS) expect(parseProgressionTags(tag)).toEqual([tag]);
+    expect(parseProgressionTags([...PROGRESSION_TAGS].reverse().join(","))).toEqual([
+      ...PROGRESSION_TAGS,
+    ]);
   });
 });
 

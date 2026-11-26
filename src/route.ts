@@ -18,6 +18,7 @@ import {
   type Note,
   PROGRESSIONS,
   type ProgressionId,
+  type ProgressionTag,
   SCALES,
   type ScaleId,
   type SpellingGroupId,
@@ -25,6 +26,7 @@ import {
   STRING_INSTRUMENT_IDS,
   type StringInstrumentId,
   type Tonality,
+  type TonalityId,
   TUNING_IDS,
   type TuningId,
   FRET_WINDOW_STARTS,
@@ -48,8 +50,10 @@ import {
   note,
   parseBuilderChords,
   parseKeys,
+  parseProgressionTags,
   parsePicks,
   parseTune,
+  sortProgressionTags,
   specOf,
   tonality,
   tuningFor,
@@ -71,6 +75,7 @@ export type { GuitarOptions } from "./neck";
  *   #/circle/Bb/major              circle of fifths with B♭ major selected
  *   #/circle/A/minor?camelot=1     the same with the Camelot wheel (8A) shown
  *   #/progression/Ab/pop           the I–V–vi–IV progression in A♭ major
+ *   #/progression/C/pop?tags=jazz,sad&in=dorian  the same, with the finder's keywords and tonality
  *   #/build/C/major?c=1,5,6s,4     a progression built from the key's chords (`s` = seventh chord)
  *   #/build/D/dorian?c=1,4         the same from any tonality (`minor` is natural minor)
  *   #/build/C/major?c=1,b6,v5/2    with a chord borrowed from the parallel key (`b`) and a
@@ -140,11 +145,17 @@ export interface CircleRoute {
   readonly camelot?: true;
 }
 
-/** A common chord progression put in a key; the key's mode comes from the progression. */
+/**
+ * A common chord progression put in a key; the key's mode comes from the progression. `tags` and
+ * `only` are what "Find a progression" filters the list by: keywords (in the order of
+ * `PROGRESSION_TAGS`, left out when none) and a tonality.
+ */
 export interface ProgressionRoute {
   readonly page: "progression";
   readonly tonic: Note;
   readonly id: ProgressionId;
+  readonly tags?: readonly ProgressionTag[];
+  readonly only?: TonalityId;
 }
 
 /**
@@ -406,8 +417,13 @@ export function formatRoute(route: Route): string {
       return `#/${formatRouteNote(route.root)}/scale/${route.scaleId}?on=${route.instrument}${formatGuitarOptions(route)}`;
     case "circle":
       return `#/circle/${formatRouteNote(route.key.tonic)}/${route.key.mode}${route.camelot ? "?camelot=1" : ""}`;
-    case "progression":
-      return `#/progression/${formatRouteNote(route.tonic)}/${route.id}`;
+    case "progression": {
+      const filter: string[] = [];
+      const tags = sortProgressionTags(route.tags ?? []);
+      if (tags.length > 0) filter.push(`tags=${tags.join(",")}`);
+      if (route.only) filter.push(`in=${route.only}`);
+      return `#/progression/${formatRouteNote(route.tonic)}/${route.id}${filter.length > 0 ? `?${filter.join("&")}` : ""}`;
+    }
     case "build": {
       const chords = formatBuilderChords(route.steps);
       const { tonic, scale } = route.tonality;
@@ -692,7 +708,17 @@ function parseLink(
     const id = parts[2];
     if (id !== undefined && isProgressionId(id)) {
       const t = parseTonality(parts[1], PROGRESSIONS[id].tonality);
-      if (t) return { page: "progression", tonic: t.tonic, id };
+      if (t) {
+        const tags = parseProgressionTags(query.get("tags"));
+        const only = query.get("in");
+        return {
+          page: "progression",
+          tonic: t.tonic,
+          id,
+          ...(tags.length > 0 ? { tags } : {}),
+          ...(only !== null && isTonalityId(only) ? { only } : {}),
+        };
+      }
     }
     return strict ? undefined : defaultProgressionRoute();
   }

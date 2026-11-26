@@ -93,7 +93,12 @@ describe("placeProgression", () => {
     "marks exactly the notes against the signature in $tonic.letter $scale",
     (t) => {
       const signature = tonalitySignature(t);
-      const steps = [triad(1), ...secondaryTargets(t).map(secondary), borrowed(borrowedDegrees(t)[0] ?? 1), triad(1)];
+      const steps = [
+        triad(1),
+        ...secondaryTargets(t).map(secondary),
+        borrowed(borrowedDegrees(t)[0] ?? 1),
+        triad(1),
+      ];
       for (const bar of bars(t, steps)) {
         for (const placed of bar) {
           const against = placed.note.accidental !== signed(signature, placed.note);
@@ -116,8 +121,9 @@ describe("placeProgression", () => {
   it("repeats an accidental after the bar line", () => {
     const c = tonality(note("C"), "major");
     const placed = bars(c, [secondary(5), secondary(5)]);
-    expect(placed.map((bar) => bar.filter((p) => p.sign === 1).map((p) => formatNote(p.note))))
-      .toEqual([["F♯"], ["F♯"]]);
+    expect(
+      placed.map((bar) => bar.filter((p) => p.sign === 1).map((p) => formatNote(p.note))),
+    ).toEqual([["F♯"], ["F♯"]]);
   });
 
   it("follows the notes of a smooth voicing, naturals and all", () => {

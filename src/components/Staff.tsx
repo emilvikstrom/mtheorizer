@@ -414,8 +414,11 @@ export function ProgressionNotation({ chords, tonality, voiced, name }: Progress
   const bars = chords.map(({ chord }, i) => ({
     symbol: chord.symbol,
     tones:
-      voiced?.voicings[i]?.map((t) => ({ note: t.note, midi: t.midi, isRoot: t.role === "root" })) ??
-      chordOnKeyboard(chord),
+      voiced?.voicings[i]?.map((t) => ({
+        note: t.note,
+        midi: t.midi,
+        isRoot: t.role === "root",
+      })) ?? chordOnKeyboard(chord),
   }));
   return (
     <section className="notation" aria-labelledby="progression-notation-title">

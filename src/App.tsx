@@ -194,26 +194,42 @@ export function App() {
           <>
             <SavedChoices route={route} onOpen={navigate} />
             <ProgressionBuilder
-            value={route.tonality}
-            steps={route.steps}
-            onChange={(tonality, steps) => navigate({ page: "build", tonality, steps })}
-            onBack={() => navigate(lastProgression.current ?? defaultProgressionRoute())}
-            onOpenChord={(root, quality) =>
-              navigate({
-                page: "chord",
-                root,
-                spec: specOf(quality),
-                inversion: 0,
-                ...storedLookupSetup(),
-              })
-            }
-          />
+              value={route.tonality}
+              steps={route.steps}
+              onChange={(tonality, steps) => navigate({ page: "build", tonality, steps })}
+              onBack={() => navigate(lastProgression.current ?? defaultProgressionRoute())}
+              onOpenChord={(root, quality) =>
+                navigate({
+                  page: "chord",
+                  root,
+                  spec: specOf(quality),
+                  inversion: 0,
+                  ...storedLookupSetup(),
+                })
+              }
+            />
           </>
         ) : route.page === "progression" ? (
           <ProgressionView
             tonic={route.tonic}
             id={route.id}
-            onChange={(tonic, id) => navigate({ page: "progression", tonic, id })}
+            onChange={(tonic, id) => navigate({ ...route, tonic, id })}
+            filter={{ tags: route.tags ?? [], ...(route.only ? { only: route.only } : {}) }}
+            onFilter={({ tags, only }) => {
+              const next: ProgressionRoute = {
+                page: "progression",
+                tonic: route.tonic,
+                id: route.id,
+              };
+              navigate(
+                {
+                  ...next,
+                  ...(tags.length > 0 ? { tags } : {}),
+                  ...(only ? { only } : {}),
+                },
+                { replace: true },
+              );
+            }}
             onBuild={(tonality, steps) => navigate({ page: "build", tonality, steps })}
             onOpenChord={(root, quality) =>
               navigate({
