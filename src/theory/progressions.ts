@@ -86,6 +86,14 @@ export type ProgressionTag = (typeof PROGRESSION_TAGS)[number];
 export const isProgressionTag = (tag: string): tag is ProgressionTag =>
   (PROGRESSION_TAGS as readonly string[]).includes(tag);
 
+/** `tags` once each, in the order of `PROGRESSION_TAGS`, so a set of keywords has one link. */
+export const sortProgressionTags = (tags: readonly string[]): ProgressionTag[] =>
+  PROGRESSION_TAGS.filter((tag) => tags.includes(tag));
+
+/** Keywords from link text (`jazz,sad`); a word that is not a keyword is left out. */
+export const parseProgressionTags = (text: string | null): ProgressionTag[] =>
+  sortProgressionTags((text ?? "").split(",").filter(isProgressionTag));
+
 export interface ProgressionStep {
   /** Scale degree of the tonality (1–7) the chord is built on. */
   readonly degree: number;

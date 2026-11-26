@@ -92,4 +92,31 @@ describe("recent and favorite choices", () => {
     await user.click(screen.getByRole("tab", { name: "Circle of fifths" }));
     expect(screen.queryByRole("region", { name: "Recent and favorite choices" })).toBeNull();
   });
+
+  it("saves a progression from the builder and opens it again from the chord tab", async () => {
+    const user = userEvent.setup();
+    window.location.hash = "#/build/C/major?c=1,b6,v5/5,5";
+    render(<App />);
+    // A progression is not a recent choice: each edit would be one.
+    expect(screen.queryByRole("list", { name: "Recent" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "☆ Save this progression" }));
+    expect(screen.getByRole("button", { name: "★ Saved as a favorite" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(JSON.parse(window.localStorage.getItem(FAVORITES_KEY) ?? "[]")).toEqual([
+      "#/build/C/major?c=1,b6,v5/5,5",
+    ]);
+
+    await user.click(screen.getByRole("tab", { name: "Chords" }));
+    await user.click(screen.getByRole("button", { name: "Open I–♭VI–V7/V–V in C major" }));
+    expect(window.location.hash).toBe("#/build/C/major?c=1,b6,v5/5,5");
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("I–♭VI–V7/V–V");
+  });
+
+  it("offers no save button for an empty progression", () => {
+    window.location.hash = "#/build/C/major";
+    render(<App />);
+    expect(screen.queryByRole("button", { name: /Save this progression/ })).toBeNull();
+  });
 });

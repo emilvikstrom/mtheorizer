@@ -1,4 +1,5 @@
 import {
+  type BuildRoute,
   formatLegacyChordRoute,
   formatRoute,
   type LookupRoute,
@@ -10,29 +11,37 @@ import {
  * Recent and favourite choices. A choice is stored as its link (`#/Db/major?on=guitar`),
  * so the whole selection (note, chord, instrument, inversion, guitar options) comes
  * back with one click. Links saved before the chord builder (`#/C/dominant7`) are
- * still read and are stored again in the current form.
+ * still read and are stored again in the current form. A progression from the builder
+ * (`#/build/C/major?c=1,b6,v5/5,5`) can be a favourite too.
  */
+
+/** What can be saved: a chord, a scale, or a progression of at least one chord. */
+export type SavedRoute = LookupRoute | BuildRoute;
 
 export const MAX_RECENT = 8;
 export const RECENT_KEY = "mtheorizer.recent";
 export const FAVORITES_KEY = "mtheorizer.favorites";
 
 /**
- * The stored link of a lookup choice in its current form, or undefined for
- * anything that is not one. A link that is not written exactly the way the app
- * writes it (apart from the older chord names) is rejected.
+ * The stored link of a chord, scale or progression in its current form, or undefined
+ * for anything that is not one. A link that is not written exactly the way the app
+ * writes it (apart from the older chord names) is rejected, and so is an empty progression.
  */
 export function choiceOf(hash: string): string | undefined {
   if (!hash.startsWith("#/")) return undefined;
   const route = parseRouteStrict(hash);
-  if (!route || (route.page !== "chord" && route.page !== "scale")) return undefined;
+  if (!route) return undefined;
+  if (route.page === "build") {
+    return route.steps.length > 0 && formatRoute(route) === hash ? hash : undefined;
+  }
+  if (route.page !== "chord" && route.page !== "scale") return undefined;
   const current = formatRoute(route);
   const legacy = route.page === "chord" ? formatLegacyChordRoute(route) : undefined;
   return current === hash || legacy === hash ? current : undefined;
 }
 
 /** The link of a saved or recent choice. What a chord is compared with is not part of the choice. */
-export function hashOf(route: LookupRoute): string {
+export function hashOf(route: SavedRoute): string {
   if (route.page === "chord" && route.vs) {
     const rest = { ...route };
     delete rest.vs;
@@ -42,7 +51,7 @@ export function hashOf(route: LookupRoute): string {
 }
 
 /** The route a stored link stands for. Only call with values from `choiceOf`. */
-export const routeOf = (hash: string): LookupRoute => parseRoute(hash) as LookupRoute;
+export const routeOf = (hash: string): SavedRoute => parseRoute(hash) as SavedRoute;
 
 /** `hash` first, without duplicates, at most `max` long. */
 export function addRecent(list: readonly string[], hash: string, max = MAX_RECENT): string[] {

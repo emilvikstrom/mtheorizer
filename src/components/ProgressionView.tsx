@@ -25,6 +25,7 @@ import {
   progressionChords,
   progressionTonalityOn,
   retune,
+  sortProgressionTags,
   tonalityKey,
   tonalityLabel,
   tonalityScale,
@@ -35,6 +36,7 @@ import { LeadingToneChords } from "./LeadingToneChords";
 import { SoundSettings } from "./SoundSettings";
 import { TonalityPicker, TonicPicker } from "./TonalityPicker";
 import { SmoothVoicing } from "./SmoothVoicing";
+import { ProgressionNotation } from "./Staff";
 
 interface ProgressionViewProps {
   tonic: Note;
@@ -44,7 +46,21 @@ interface ProgressionViewProps {
   onBuild?: (tonality: Tonality, steps: readonly BuilderChord[]) => void;
   /** Open a chord of the progression in the chord view. */
   onOpenChord: (root: Note, quality: ChordQualityId) => void;
+  /**
+   * What "Find a progression" filters by, when the link holds it. Without `onFilter` the view
+   * keeps the filter itself.
+   */
+  filter?: ProgressionFilter;
+  onFilter?: (filter: ProgressionFilter) => void;
 }
+
+/** Keywords (all must match) and a tonality to narrow the ready-made progressions down. */
+export interface ProgressionFilter {
+  readonly tags: readonly ProgressionTag[];
+  readonly only?: TonalityId;
+}
+
+const NO_FILTER: ProgressionFilter = { tags: [] };
 
 /** The four cadences in the key of the shown progression, each with its own play button. */
 function Cadences({ k }: { k: Key }) {
@@ -93,17 +109,20 @@ function Cadences({ k }: { k: Key }) {
 interface FinderProps {
   selected: ProgressionId;
   onPick: (id: ProgressionId) => void;
+  filter: ProgressionFilter;
+  onFilter: (filter: ProgressionFilter) => void;
 }
 
 /** Keywords and a tonality to narrow the list of ready-made progressions down, then the matches. */
-function ProgressionFinder({ selected, onPick }: FinderProps) {
-  const [tags, setTags] = useState<readonly ProgressionTag[]>([]);
-  const [only, setOnly] = useState<TonalityId | undefined>(undefined);
+function ProgressionFinder({ selected, onPick, filter, onFilter }: FinderProps) {
+  const { tags, only } = filter;
   const found = findProgressions(tags, only);
+  const setTags = (next: readonly ProgressionTag[]) =>
+    onFilter({ tags: sortProgressionTags(next), ...(only ? { only } : {}) });
+  const setOnly = (next: TonalityId | undefined) =>
+    onFilter({ tags, ...(next ? { only: next } : {}) });
   const toggle = (tag: ProgressionTag) =>
-    setTags((current) =>
-      current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag],
-    );
+    setTags(tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag]);
 
   return (
     <section className="finder" aria-labelledby="finder-title">
@@ -178,7 +197,11 @@ export function ProgressionView({
   onChange,
   onBuild,
   onOpenChord,
+  filter: filterProp,
+  onFilter,
 }: ProgressionViewProps) {
+  const [ownFilter, setOwnFilter] = useState<ProgressionFilter>(NO_FILTER);
+  const filter = filterProp ?? ownFilter;
   const progression = PROGRESSIONS[id];
   const t = progressionTonalityOn(progression, tonic);
   const chords = progressionChords(progression, t);
@@ -204,6 +227,8 @@ export function ProgressionView({
       <ProgressionFinder
         selected={id}
         onPick={(next) => onChange(retune(t, PROGRESSIONS[next].tonality).tonic, next)}
+        filter={filter}
+        onFilter={onFilter ?? setOwnFilter}
       />
 
       <div className="progression__pickers">
@@ -255,6 +280,13 @@ export function ProgressionView({
             </li>
           ))}
         </ol>
+
+        <ProgressionNotation
+          chords={chords}
+          tonality={t}
+          voiced={voiced}
+          name={`${progression.name} in ${name}`}
+        />
 
         <SmoothVoicing
           names={chords.map(({ chord }) => chord.symbol)}

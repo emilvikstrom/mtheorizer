@@ -19,6 +19,8 @@ import {
   type KeyMode,
   PROGRESSIONS,
   PROGRESSION_IDS,
+  PROGRESSION_TAGS,
+  sortProgressionTags,
   SCALES,
   type ScaleId,
   type ChordSpec,
@@ -469,6 +471,48 @@ describe("progression links", () => {
     ]) {
       expect(parseRoute(hash), hash).toEqual(defaultProgressionRoute());
     }
+  });
+
+  it("keeps the finder's keywords and tonality in the link", () => {
+    const route = {
+      page: "progression" as const,
+      tonic: note("C"),
+      id: "pop" as const,
+      tags: ["jazz", "sad"] as const,
+      only: "dorian" as const,
+    };
+    const hash = formatRoute(route);
+    expect(hash).toBe(
+      `#/progression/C/pop?tags=${sortProgressionTags(["jazz", "sad"]).join(",")}&in=dorian`,
+    );
+    expect(parseRoute(hash)).toEqual({ ...route, tags: sortProgressionTags(["jazz", "sad"]) });
+    for (const tag of PROGRESSION_TAGS) {
+      const one = {
+        page: "progression" as const,
+        tonic: note("C"),
+        id: "pop" as const,
+        tags: [tag],
+      };
+      expect(parseRouteStrict(formatRoute(one))).toEqual(one);
+    }
+    for (const only of TONALITY_IDS) {
+      const one = { page: "progression" as const, tonic: note("C"), id: "pop" as const, only };
+      expect(parseRouteStrict(formatRoute(one))).toEqual(one);
+    }
+  });
+
+  it("ignores keywords and tonalities it does not know", () => {
+    expect(parseRoute("#/progression/C/pop?tags=jazz,banana&in=klingon")).toEqual({
+      page: "progression",
+      tonic: note("C"),
+      id: "pop",
+      tags: ["jazz"],
+    });
+    expect(parseRoute("#/progression/C/pop?tags=banana")).toEqual({
+      page: "progression",
+      tonic: note("C"),
+      id: "pop",
+    });
   });
 
   it("checks the tonic against the progression's mode: D♯ minor is a key, D♯ major is not", () => {

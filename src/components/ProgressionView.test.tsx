@@ -348,4 +348,22 @@ describe("ProgressionView", () => {
     expect(screen.getByRole("list", { name: "Secondary leading-tone chords" })).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Chromatic chords" })).toBeInTheDocument();
   });
+
+  it("writes the progression on a staff with the key signature", () => {
+    render(<Harness start={note("E", -1)} />);
+    const staff = screen.getByRole("img", { name: /^Staff notation of I–V–vi–IV in E♭ major/ });
+    expect(staff.querySelectorAll(".staff__bar")).toHaveLength(4);
+    // B♭, E♭ and A♭ are in the signature, at the start of the row, so no note needs a sign.
+    expect(staff.querySelectorAll(".staff__signature").length).toBeGreaterThanOrEqual(3);
+    expect(staff.querySelectorAll(".staff__note[data-sign]")).toHaveLength(0);
+  });
+
+  it("writes the borrowed chords of the heroic cadence with their flats", () => {
+    render(<Harness startId="heroic" />);
+    const staff = screen.getByRole("img", { name: /^Staff notation of I–♭VI–♭VII–I/ });
+    const signed = [...staff.querySelectorAll(".staff__note[data-sign]")].map((n) =>
+      n.getAttribute("data-note"),
+    );
+    expect(signed).toEqual(["A♭", "E♭", "B♭"]);
+  });
 });

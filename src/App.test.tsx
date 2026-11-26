@@ -578,6 +578,32 @@ describe("App", () => {
     expect(fret(5, 3)).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("keeps the progression finder's keywords and tonality in the link", async () => {
+    const user = userEvent.setup();
+    window.location.hash = "#/progression/C/pop";
+    render(<App />);
+    const keywords = within(screen.getByRole("group", { name: "Keywords" }));
+    await user.click(keywords.getByRole("button", { name: "jazz" }));
+    expect(window.location.hash).toBe("#/progression/C/pop?tags=jazz");
+    await user.click(screen.getByRole("radio", { name: "Dorian" }));
+    expect(window.location.hash).toBe("#/progression/C/pop?tags=jazz&in=dorian");
+    await user.click(keywords.getByRole("button", { name: "jazz" }));
+    expect(window.location.hash).toBe("#/progression/C/pop?in=dorian");
+  });
+
+  it("opens a shared progression link with its filter in place", () => {
+    window.location.hash = "#/progression/C/pop?tags=jazz,banana&in=major";
+    render(<App />);
+    const keywords = within(screen.getByRole("group", { name: "Keywords" }));
+    expect(keywords.getByRole("button", { name: "jazz" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText(/^Tonality: major/)).toBeInTheDocument();
+    const names = within(screen.getByRole("list", { name: "Progressions" }))
+      .getAllByRole("button")
+      .map((b) => b.getAttribute("aria-label") ?? "");
+    expect(names.length).toBeGreaterThan(0);
+    expect(names.every((n) => n.endsWith(", major"))).toBe(true);
+  });
+
   it("keeps the Camelot wheel in the circle link while keys change", async () => {
     const user = userEvent.setup();
     window.location.hash = "#/circle/C/major";
